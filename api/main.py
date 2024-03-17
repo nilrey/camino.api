@@ -1,66 +1,73 @@
-#  python3 -m venv venv
+#  # python3 -m venv venv
 #  source venv/bin/activate
-from typing import List
-from fastapi import FastAPI
+#  uvicorn app.main:app --reload
+from typing import List, Annotated
+from fastapi import FastAPI, Form
 import psycopg2
 import json
+import uuid
 from api.config import load_config
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
-
-from api.models.models import Role, User
-
+from api.models.models import *
+from api.bin.doc import getDockerInfo
 
 app = FastAPI()
-engine = create_engine('postgresql://postgres:postgres@127.0.0.1/camino_db1')
 
-# @app.get("/api/roles/{role_id}")
-# async def read_item(role_id):
-#    config  = load_config()
-#    with psycopg2.connect(**config) as conn:
-#       with conn.cursor() as cur:
-#          table  = "common.roles"
-#          uid = "operator"
-#          query = f"SELECT * FROM {table} where code='{uid}'"
-#          with open('logfile1.log', 'w') as f:
-#             f.write(query)
-#          cur.execute(query)
-#    return {"role_count": cur.rowcount}
-
-@app.get("/roles")
-async def orm_get_roles():
+def make_session():
+   engine = create_engine('postgresql://postgres:postgres@127.0.0.1/camino_db1')
    session_maker = sessionmaker(bind=engine)
+   return session_maker
+   
+def db_conn():
+   session_maker = make_session()
    db: Session = session_maker()
-   all_roles: List[Role] = db.query(Role).all()
-   return json.dumps( {'results': [ {"name":rl.name, "code":rl.code} for rl in all_roles ] } )
+   return db
 
-@app.get("/users")
-async def orm_get_users():
-   session_maker = sessionmaker(bind=engine)
-   db: Session = session_maker()
-   all_users: List[User] = db.query(User).all()
-   return  [ {"id": ln.id, "name": ln.name, "role_code": ln.role_code, 
-                                     "login": ln.login, "password": ln.password, "description": ln.description, 
-                                     "is_deleted": ln.is_deleted} for ln in all_users ] 
+def getUuid():
+   return str(uuid.uuid4())
 
-@app.get("/users")
-async def orm_get_users():
-   session_maker = sessionmaker(bind=engine)
-   db: Session = session_maker()
-   all_users: List[User] = db.query(User).all()
-   return  [ {"id": ln.id, "name": ln.name, "role_code": ln.role_code, 
-                                     "login": ln.login, "password": ln.password, "description": ln.description, 
-                                     "is_deleted": ln.is_deleted} for ln in all_users ] 
+def insert_new(ClassName, newRecord, returnId = True):
+   session_factory = make_session()
+   with db_conn() as session:
+      session.add(newRecord)
+      session.commit()
+      session.refresh(newRecord)
+   if returnId == True:
+      nRecord: List[ClassName] = db_conn().query(ClassName).filter_by(id=newRecord.id)
+      resp = nRecord[0]
+   else:
+      resp = newRecord
+   return resp
+
+@app.post("/users/create")
+async def orm_create_user(name: Annotated[str, Form()],
+                          login: Annotated[str, Form()],
+                          password: Annotated[str, Form()],
+                          role: Annotated[str, Form()],
+                          description: Annotated[str, Form()]
+                          ):
+   newUser = insert_new (User, User( id=getUuid(), name = name, login=login, role_code=role, password=password, description=description, is_deleted=False) )
+   return newUser
 
 # 978bb79f-d2d9-4cb2-94c9-3a75c8960729
 @app.get("/users/{userId}")
 async def orm_single_user(userId):
-   session_maker = sessionmaker(bind=engine)
-   db: Session = session_maker()
-   all_users: List[User] = db.query(User).filter_by(id=userId)
-   return  [ {"id": ln.id, "name": ln.name, "role_code": ln.role_code, 
-                                     "login": ln.login, "password": ln.password, "description": ln.description, 
-                                     "is_deleted": ln.is_deleted} for ln in all_users ] 
+   all_users: List[User] = db_conn().query(User).filter_by(id=userId)
+   return  [ {"id": ln.id, "name": ln.name, "role_code": ln.role_code,  "login": ln.login, "password": ln.password, "description": ln.description,  "is_deleted": ln.is_deleted} for ln in all_users ] 
+
+
+@app.post("/roles/create")
+async def orm_create_role(code: Annotated[str, Form()],
+                          name: Annotated[str, Form()]
+                          ):
+   newRole = insert_new (Role, Role( name = name, code=code ) , False)
+   return newRole
+
+
+@app.get("/docker/info")
+async def docker_get_info():
+   return getDockerInfo()
 
 
 # @app.post("/projects/create")
