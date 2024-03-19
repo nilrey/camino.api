@@ -7,6 +7,7 @@ import psycopg2
 import json
 import uuid
 from api.config import load_config
+from api.manage import mng_create_user
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from api.models.models import *
@@ -47,8 +48,8 @@ async def orm_create_user(name: Annotated[str, Form()],
                           role: Annotated[str, Form()],
                           description: Annotated[str, Form()]
                           ):
-   newUser = insert_new (User, User( id=getUuid(), name = name, login=login, role_code=role, password=password, description=description, is_deleted=False) )
-   return newUser
+   
+   return mng_create_user(name, login, password, role, description)
 
 # 978bb79f-d2d9-4cb2-94c9-3a75c8960729
 @app.get("/users/{userId}")
