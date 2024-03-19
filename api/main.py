@@ -7,7 +7,7 @@ import psycopg2
 import json
 import uuid
 from api.config import load_config
-from api.manage import mng_create_user
+from api.manage import mng_create_user, mng_create_role, mng_single_user
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from api.models.models import *
@@ -48,22 +48,21 @@ async def orm_create_user(name: Annotated[str, Form()],
                           role: Annotated[str, Form()],
                           description: Annotated[str, Form()]
                           ):
-   
    return mng_create_user(name, login, password, role, description)
 
-# 978bb79f-d2d9-4cb2-94c9-3a75c8960729
+# fa33e1e7-0474-446c-9284-6ebda3f14fa0
 @app.get("/users/{userId}")
 async def orm_single_user(userId):
-   all_users: List[User] = db_conn().query(User).filter_by(id=userId)
-   return  [ {"id": ln.id, "name": ln.name, "role_code": ln.role_code,  "login": ln.login, "password": ln.password, "description": ln.description,  "is_deleted": ln.is_deleted} for ln in all_users ] 
-
+   # all_users: List[User] = db_conn().query(User).filter_by(id=userId)
+   # return  [ {"id": ln.id, "name": ln.name, "role_code": ln.role_code,  "login": ln.login, "password": ln.password, "description": ln.description,  "is_deleted": ln.is_deleted} for ln in all_users ] 
+   res = mng_single_user(userId)
+   return res
 
 @app.post("/roles/create")
 async def orm_create_role(code: Annotated[str, Form()],
                           name: Annotated[str, Form()]
                           ):
-   newRole = insert_new (Role, Role( name = name, code=code ) , False)
-   return newRole
+   return mng_create_role(name = name, code=code)
 
 
 @app.get("/docker/info")
