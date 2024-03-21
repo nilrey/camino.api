@@ -4,7 +4,10 @@
 from typing import Annotated
 from fastapi import FastAPI, Form
 from api.manage.manage import *
+from api.logg import *
 
+
+logger.info("Main is started")
 app = FastAPI()
 
 # Users 

@@ -21,10 +21,10 @@ def getUuid():
    return str(uuid.uuid4())
 
 def parseDbException():
-   resp = [
+   resp = {
       "error" : True,
       "text" : ""
-   ]
+   }
    return resp
 
 

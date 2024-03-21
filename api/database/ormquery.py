@@ -1,4 +1,4 @@
-from api.models.models import *
+from api.database.models.models import *
 from api.database.dbquery import *
 
 
