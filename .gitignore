@@ -1,6 +1,5 @@
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 venv
-test.py
-/api/test.py
+.vscode/
 **/log
