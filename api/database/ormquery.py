@@ -7,6 +7,11 @@ def mngdb_create_user( name, login, password, role, description):
     return newUser
 
 
+def mngdb_update_user( id, **kwargs):
+    updUser = update_record (User, id, **kwargs)
+    return updUser  
+
+
 def mngdb_single_user(userId):
    res = select_byid(User, userId)
    return res

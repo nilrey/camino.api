@@ -1,8 +1,9 @@
-
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine
+from sqlalchemy import text, insert, update, select
 import uuid
 from typing import List
+from api.logg import *
 
 
 def make_session():
@@ -28,16 +29,19 @@ def parseDbException():
    return resp
 
 
+def select_byid(ClassName, recordId):
+   all_rec: List[ClassName] = db_conn().query(ClassName).filter_by(id=recordId)
+   return all_rec.first()
+
+
 def insert_new(ClassName, newRecord, returnId = True):
-   try:
-      
+   try:      
       with db_conn() as session:
          session.add(newRecord)
          session.commit()
          session.refresh(newRecord)
       if returnId == True:
-         nRecord: List[ClassName] = db_conn().query(ClassName).filter_by(id=newRecord.id)
-         resp = nRecord[0]
+         resp = select_byid(ClassName, newRecord.id)
       else:
          resp = newRecord
    except Exception as e:
@@ -45,6 +49,20 @@ def insert_new(ClassName, newRecord, returnId = True):
    return resp
 
 
-def select_byid(ClassName, recordId):
-   all_rec: List[ClassName] = db_conn().query(ClassName).filter_by(id=recordId)
-   return all_rec.first()
+def select_all(ClassName):
+   all_rec: List[ClassName] = db_conn().query(ClassName).all()
+   return all_rec
+
+
+def update_record(ClassName, recId, **values):
+   try:      
+      logger.info(values)
+      with db_conn() as session:
+         stmt = update(ClassName).values(**values).filter_by(id=recId)
+         session.execute(stmt)
+         session.commit()
+      resp = select_byid(ClassName, recId)   
+   except Exception as e:
+      resp = {'error':True, 'message':str(e)}
+
+   return resp

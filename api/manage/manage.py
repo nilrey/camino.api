@@ -11,8 +11,8 @@ def mng_single_user( userId ):
    return mngdb_single_user( userId )
 
 
-def mng_update_user(name, login, password, role, description):
-   return True
+def mng_update_user(id, **kwargs):
+   return mngdb_update_user(id, **kwargs)
 
 
 # Roles

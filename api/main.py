@@ -36,15 +36,17 @@ async def api_single_user(userId):
 
 # update record by id
 @app.patch("/users/{userId}")
-async def api_update_user(name: Annotated[str, Form()],
+async def api_update_user(userId, 
+                          name: Annotated[str, Form()],
                           login: Annotated[str, Form()],
                           password: Annotated[str, Form()],
                           role: Annotated[str, Form()],
                           description: Annotated[str, Form()]
                           ):
-   output = mng_update_user(name, login, password, role, description)
+   fields = {'name':name, 'login':login, 'password':password, 'role_code':role, 'description':description }
+   
+   output = mng_update_user(userId, **fields)
    return output
-
 
 
 # Roles
