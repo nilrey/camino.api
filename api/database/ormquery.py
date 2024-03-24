@@ -17,6 +17,11 @@ def mngdb_single_user(userId):
    return res
 
 
+def mngdb_delete_user(userId):
+    res = delete_record(User, userId)
+    return res
+
+
 def mngdb_create_role( name, code):
     newRole = insert_new (Role, Role( name = name, code=code ) , False)
     return newRole

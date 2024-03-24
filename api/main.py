@@ -1,23 +1,22 @@
 #  # python3 -m venv venv
 #  source venv/bin/activate
 #  uvicorn app.main:app --reload
-from typing import Annotated
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, UploadFile
 from api.manage.manage import *
 from api.logg import *
+import json
 
 
 logger.info("Main is started")
 app = FastAPI()
 
 # Users 
-# create new
 @app.post("/users/create")
-async def api_create_user(name: Annotated[str, Form()],
-                          login: Annotated[str, Form()],
-                          password: Annotated[str, Form()],
-                          role: Annotated[str, Form()],
-                          description: Annotated[str, Form()]
+async def api_create_user(name:str,
+                          login:str,
+                          password:str,
+                          role:str,
+                          description:str = None,
                           ):
    return mng_create_user(name, login, password, role, description)
 
@@ -29,30 +28,30 @@ async def api_single_user(userId):
 
 # delete record by id
 @app.delete("/users/{userId}")
-async def api_single_user(userId):
-   output = mng_single_user(userId)
+async def api_delete_user(userId):
+   output = mng_delete_user(userId)
    return output
 
 
 # update record by id
-@app.patch("/users/{userId}")
+@app.put("/users/{userId}")
 async def api_update_user(userId, 
-                          name: Annotated[str, Form()],
-                          login: Annotated[str, Form()],
-                          password: Annotated[str, Form()],
-                          role: Annotated[str, Form()],
-                          description: Annotated[str, Form()]
+                          name:str = None,
+                          login:str = None ,
+                          password:str = None ,
+                          role:str = None ,
+                          description: str = None 
                           ):
    fields = {'name':name, 'login':login, 'password':password, 'role_code':role, 'description':description }
-   
+   logger.info(fields)
    output = mng_update_user(userId, **fields)
    return output
 
 
 # Roles
 @app.post("/roles/create")
-async def api_create_role(code: Annotated[str, Form()],
-                          name: Annotated[str, Form()]
+async def api_create_role(code:str = None,
+                          name:str = None
                           ):
    return mng_create_role(name = name, code=code)
 
@@ -63,4 +62,3 @@ async def api_create_role(code: Annotated[str, Form()],
 @app.get("/docker/info")
 async def api_docker_get_info():
    return mng_docker_get_info()
-

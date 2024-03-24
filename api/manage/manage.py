@@ -15,6 +15,9 @@ def mng_update_user(id, **kwargs):
    return mngdb_update_user(id, **kwargs)
 
 
+def mng_delete_user(id):
+   return mngdb_delete_user(id)
+
 # Roles
 def mng_create_role( name, code):
    return mngdb_create_role( name, code)
