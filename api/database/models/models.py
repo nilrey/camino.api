@@ -121,17 +121,17 @@ class Role(Base):
     name = Column(String(32), nullable=False, comment='имя роли')
 
 
-class User(Base):
-    __tablename__ = 'users'
-    __table_args__ = {'schema': 'common', 'comment': 'Список пользователей системы'}
+# class User(Base):
+#     __tablename__ = 'users'
+#     __table_args__ = {'schema': 'common', 'comment': 'Список пользователей системы'}
 
-    id = Column(UUID, primary_key=True, comment='ID пользователя')
-    name = Column(String(64), comment='имя пользователя')
-    role_code = Column(String(64), comment='код роли')
-    login = Column(String, comment='логин пользователя')
-    password = Column(String, comment='хэш пароля пользователя')
-    description = Column(Text, comment='описание пользователя')
-    is_deleted = Column(Boolean, comment='признак удаления пользователя')
+#     id = Column(UUID, primary_key=True, comment='ID пользователя')
+#     name = Column(String(64), comment='имя пользователя')
+#     role_code = Column(String(64), comment='код роли')
+#     login = Column(String, comment='логин пользователя')
+#     password = Column(String, comment='хэш пароля пользователя')
+#     description = Column(Text, comment='описание пользователя')
+#     is_deleted = Column(Boolean, comment='признак удаления пользователя')
 
 
 t_markups_chains = Table(

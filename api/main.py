@@ -18,7 +18,11 @@ async def api_create_user(name:str,
                           role:str,
                           description:str = None,
                           ):
-   return mng_create_user(name, login, password, role, description)
+   return mng_create_user({'name':name, 
+                          'login':login, 
+                          'password':password, 
+                          'role':role, 
+                          'description':description})
 
 # select one record by id        # fa33e1e7-0474-446c-9284-6ebda3f14fa0
 @app.get("/users/{userId}")
@@ -55,10 +59,49 @@ async def api_create_role(code:str = None,
                           ):
    return mng_create_role(name = name, code=code)
 
+
 # Projects
+@app.post("/projects/create")
+async def api_create_project(
+                              name:str = None, 
+                              type_id:str = None,
+                              description:str = None, 
+                              author_id:str = None, 
+                              dt_created:str = None, 
+                              is_deleted:str = None):
+   fields = {'name':name, 'type_id':type_id, 'description':description, 'author_id':author_id, 'dt_created':dt_created, 'is_deleted':is_deleted}
+   return mng_create_project(**fields)
 
 
-# Docker functions 
+# select one record by id 
+@app.get("/projects/{projectId}")
+async def api_single_project(projectId):
+   output = mng_single_project(projectId)
+   return output
+
+
+# delete record by id
+@app.delete("/projects/{projectId}")
+async def api_delete_project(projectId):
+   output = mng_delete_project(projectId)
+   return output
+
+
+# update record by id
+@app.put("/projects/{projectId}")
+async def api_update_project(projectId,
+                              name:str = None, 
+                              type_id:str = None,
+                              description:str = None, 
+                              author_id:str = None, 
+                              dt_created:str = None, 
+                              is_deleted:bool = None):
+   fields = {'name':name, 'type_id':type_id, 'description':description, 'author_id':author_id, 'dt_created':dt_created, 'is_deleted':is_deleted}
+   output = mng_update_project(projectId, **fields)
+   return output
+
+
+# Docker 
 @app.get("/docker/info")
 async def api_docker_get_info():
    return mng_docker_get_info()

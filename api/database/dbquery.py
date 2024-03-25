@@ -21,6 +21,7 @@ def db_conn():
 def getUuid():
    return str(uuid.uuid4())
 
+
 def parseDbException():
    resp = {
       "error" : True,
@@ -39,13 +40,13 @@ def records_count(ClassName, recordId):
    return len(all_rec)
 
 
-def insert_new(ClassName, newRecord, returnId = True):
+def insert_new(ClassName, newRecord, doReturnId = True):
    try:      
       with db_conn() as session:
          session.add(newRecord)
          session.commit()
          session.refresh(newRecord)
-      if returnId == True:
+      if doReturnId == True:
          resp = select_byid(ClassName, newRecord.id)
       else:
          resp = newRecord
