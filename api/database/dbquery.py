@@ -62,7 +62,6 @@ def select_all(ClassName):
 
 def update_record(ClassName, recId, **values):
    try:
-      logger.info(values)
       with db_conn() as session:
          stmt = update(ClassName).values(**values).filter_by(id=recId)
          session.execute(stmt)

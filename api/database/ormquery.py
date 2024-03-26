@@ -6,8 +6,8 @@ from api.database.dbquery import *
 # Users
 class CUser(User):
 
-    def mngdb_create_user( name, login, password, role, description):
-        newUser = insert_new (User, User( id=getUuid(), name = name, login=login, role_code=role, password=password, description=description, is_deleted=False) )
+    def mngdb_create_user( name, login, password, role_code, description):
+        newUser = insert_new (User, User( id=getUuid(), name = name, login=login, role_code=role_code, password=password, description=description, is_deleted=False) )
         return newUser
 
 

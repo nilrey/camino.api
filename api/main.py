@@ -16,7 +16,7 @@ async def api_create_user(request: Request,
                           name:str,
                           login:str,
                           password:str,
-                          role:str,
+                          role_code:str,
                           description:str = None,
                           ):
    return mng_create_user(**get_request_params(request))
@@ -36,17 +36,15 @@ async def api_delete_user(userId):
 
 # update record by id
 @app.put("/users/{userId}")
-async def api_update_user(userId, 
-                          name:str = None,
-                          login:str = None ,
-                          password:str = None ,
-                          role:str = None ,
+async def api_update_user(request: Request, 
+                          userId:str,
+                          name:str,
+                          login:str ,
+                          password:str ,
+                          role_code:str ,
                           description: str = None 
                           ):
-   fields = {'name':name, 'login':login, 'password':password, 'role_code':role, 'description':description }
-   logger.info(fields)
-   output = mng_update_user(userId, **fields)
-   return output
+   return mng_update_user(userId, **get_request_params(request, True, False))
 
 
 # Roles
