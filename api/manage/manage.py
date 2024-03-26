@@ -4,19 +4,19 @@ from api.docker.base import *
 
 # Users
 def mng_create_user( **kwargs):
-   return CUser.mngdb_create_user(**kwargs)
+   return mngdb_create_user(**kwargs)
 
 
 def mng_single_user( userId ):
-   return CUser.mngdb_single_user( userId )
+   return mngdb_single_user( userId )
 
 
 def mng_update_user(id, **kwargs):
-   return CUser.mngdb_update_user(id, **kwargs)
+   return mngdb_update_user(id, **kwargs)
 
 
 def mng_delete_user(id):
-   return CUser.mngdb_delete_user(id)
+   return mngdb_delete_user(id)
 
 
 # Projects

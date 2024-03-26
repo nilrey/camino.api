@@ -57,15 +57,14 @@ async def api_create_role(code:str = None,
 
 # Projects
 @app.post("/projects/create")
-async def api_create_project(
+async def api_create_project( request: Request, 
                               name:str, 
-                              type_id:str = None,
+                              type_id:int = 1,
                               description:str = None, 
-                              author_id:str = None, 
-                              dt_created:str = None, 
-                              is_deleted:str = None):
-   fields = {'name':name, 'type_id':type_id, 'description':description, 'author_id':author_id, 'dt_created':dt_created, 'is_deleted':is_deleted}
-   return mng_create_project(**fields)
+                              author_id:str = None):
+   # fields = {'name':name, 'type_id':type_id, 'description':description, 'author_id':author_id, 'dt_created':dt_created, 'is_deleted':is_deleted}
+   # return mng_create_project(**fields)
+   return mng_create_project(**get_request_params(request))
 
 
 # select one record by id 

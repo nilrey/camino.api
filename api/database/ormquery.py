@@ -1,34 +1,36 @@
 from api.database.models.models import *
-from api.database.models.User import User
+# from api.database.models.User import User
 from api.database.dbquery import *
+import uuid
+from datetime import datetime
 
 
 # Users
-class CUser(User):
 
-    def mngdb_create_user( name, login, password, role_code, description):
-        newUser = insert_new (User, User( id=getUuid(), name = name, login=login, role_code=role_code, password=password, description=description, is_deleted=False) )
-        return newUser
-
-
-    def mngdb_update_user( id, **kwargs):
-        updUser = update_record (User, id, **kwargs)
-        return updUser  
+def mngdb_create_user( name, login, password, role_code, description):
+    newUser = insert_new (User, User( id=getUuid(), name = name, login=login, role_code=role_code, password=password, description=description, is_deleted=False) )
+    return newUser
 
 
-    def mngdb_single_user(userId):
-        res = select_byid(User, userId)
-        return res
+def mngdb_update_user( id, **kwargs):
+    updUser = update_record (User, id, **kwargs)
+    return updUser  
 
 
-    def mngdb_delete_user(userId):
-        res = delete_record(User, userId)
-        return res
+def mngdb_single_user(userId):
+    res = select_byid(User, userId)
+    return res
+
+
+def mngdb_delete_user(userId):
+    res = delete_record(User, userId)
+    return res
 
 
 # Projects
-def mngdb_create_project( name, type_id, description, author_id, dt_created, is_deleted ):
-    newproject = insert_new (Project, Project( id=getUuid(), name=name, type_id=type_id, description=description, author_id=author_id, dt_created=dt_created, is_deleted=is_deleted) )
+def mngdb_create_project( **kwargs ):
+    newproject = insert_new (Project, Project( id=getUuid(), name=kwargs['name'], type_id=int(kwargs['type_id']), description=kwargs['description'], 
+                                              author_id=uuid.UUID(kwargs['author_id']).hex, dt_created=str(datetime.now().strftime('%Y-%m-%d %H:%M:%S')), is_deleted=False ) )
     return newproject
 
 
