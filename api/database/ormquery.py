@@ -27,8 +27,8 @@ class CUser(User):
 
 
 # Projects
-def mngdb_create_project( name, login, password, role, description):
-    newproject = insert_new (Project, Project( id=getUuid(), name = name, login=login, role_code=role, password=password, description=description, is_deleted=False) )
+def mngdb_create_project( name, type_id, description, author_id, dt_created, is_deleted ):
+    newproject = insert_new (Project, Project( id=getUuid(), name=name, type_id=type_id, description=description, author_id=author_id, dt_created=dt_created, is_deleted=is_deleted) )
     return newproject
 
 

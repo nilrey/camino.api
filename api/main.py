@@ -1,28 +1,25 @@
 #  # python3 -m venv venv
 #  source venv/bin/activate
 #  uvicorn app.main:app --reload
-from fastapi import FastAPI, Form, UploadFile
+from fastapi import FastAPI, Form, UploadFile, Request
+from api.lib.func_request import get_request_params
 from api.manage.manage import *
 from api.logg import *
-import json
 
 
-logger.info("Main is started")
 app = FastAPI()
+
 
 # Users 
 @app.post("/users/create")
-async def api_create_user(name:str,
+async def api_create_user(request: Request, 
+                          name:str,
                           login:str,
                           password:str,
                           role:str,
                           description:str = None,
                           ):
-   return mng_create_user({'name':name, 
-                          'login':login, 
-                          'password':password, 
-                          'role':role, 
-                          'description':description})
+   return mng_create_user(**get_request_params(request))
 
 # select one record by id        # fa33e1e7-0474-446c-9284-6ebda3f14fa0
 @app.get("/users/{userId}")
@@ -63,7 +60,7 @@ async def api_create_role(code:str = None,
 # Projects
 @app.post("/projects/create")
 async def api_create_project(
-                              name:str = None, 
+                              name:str, 
                               type_id:str = None,
                               description:str = None, 
                               author_id:str = None, 
@@ -105,3 +102,10 @@ async def api_update_project(projectId,
 @app.get("/docker/info")
 async def api_docker_get_info():
    return mng_docker_get_info()
+
+
+#TEST
+@app.post("/test/{id}")
+async def api_data(request: Request, id:str, name:str | None = None, desc:str | None = None):
+    params = get_request_params(request)
+    return (params)
