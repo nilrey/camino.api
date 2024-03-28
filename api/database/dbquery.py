@@ -7,7 +7,7 @@ from api.logg import *
 
 
 def make_session():
-   engine = create_engine('postgresql://postgres:postgres@127.0.0.1/camino_db1')
+   engine = create_engine('postgresql://postgres:postgres@127.0.0.1:5432/camino_db1')
    session_maker = sessionmaker(bind=engine)
    return session_maker
    

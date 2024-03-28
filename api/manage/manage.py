@@ -1,5 +1,5 @@
 from api.database.ormquery import *
-from api.docker.base import *
+# from api.docker.base import *
 
 
 # Users
@@ -41,6 +41,6 @@ def mng_create_role( name, code):
    return mngdb_create_role( name, code)
 
 
-# Docker
-def mng_docker_get_info():
-   return dck_get_info()
+# # Docker
+# def mng_docker_get_info():
+#    return dck_get_info()
