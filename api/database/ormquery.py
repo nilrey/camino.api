@@ -39,6 +39,11 @@ def mngdb_create_project( **kwargs ):
     return newproject
 
 
+def mngdb_all_projects():
+    res = select_all(Project)
+    return res
+
+
 def mngdb_update_project( id, **kwargs):
     updproject = update_record (Project, id, **kwargs)
     return updproject  

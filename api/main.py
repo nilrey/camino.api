@@ -121,6 +121,11 @@ async def api_create_role(code:str = None,
 
 
 # Projects
+@app.get("/projects", tags=["Проекты"], summary="Получение списка проектов")
+async def api_all_projects():
+   output = mng_all_projects()
+   return output
+
 @app.post("/projects/create", tags=["Проекты"], summary="Создание проекта")
 async def api_create_project( request: Request, 
                               name:str, 

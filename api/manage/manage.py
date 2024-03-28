@@ -28,6 +28,10 @@ def mng_create_project(**kwargs):
    return mngdb_create_project(**kwargs)
 
 
+def mng_all_projects():
+   return mngdb_all_projects()
+
+
 def mng_single_project( projectId ):
    return mngdb_single_project(projectId)
 
