@@ -7,6 +7,10 @@ def mng_create_user( **kwargs):
    return mngdb_create_user(**kwargs)
 
 
+def mng_all_users():
+   return mngdb_all_users()
+
+
 def mng_single_user( userId ):
    return mngdb_single_user( userId )
 

@@ -71,6 +71,12 @@ app = FastAPI(openapi_tags=tags_metadata)
 
 
 # Users 
+@app.get("/users", tags=["Пользователи"], summary="Получение списка пользователей")
+async def api_all_users():
+   output = mng_all_users()
+   return output
+
+
 @app.post("/users/create", tags=["Пользователи"], summary="Создание пользователя")
 async def api_create_user(request: Request, 
                           name:str,

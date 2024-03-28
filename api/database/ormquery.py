@@ -17,6 +17,11 @@ def mngdb_update_user( id, **kwargs):
     return updUser  
 
 
+def mngdb_all_users():
+    res = select_all(User)
+    return res
+
+
 def mngdb_single_user(userId):
     res = select_byid(User, userId)
     return res
