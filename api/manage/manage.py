@@ -36,6 +36,10 @@ def mng_single_project( projectId ):
    return mngdb_single_project(projectId)
 
 
+def mng_single_project_ext( projectId ):
+   return mngdb_single_project_ext(projectId)
+
+
 def mng_update_project(id, **kwargs):
    return mngdb_update_project(id, **kwargs)
 

@@ -54,6 +54,11 @@ def mngdb_single_project(projectId):
    return res
 
 
+def mngdb_single_project_ext(projectId):
+   res = q_project_select_by_project_id(projectId)
+   return res
+
+
 def mngdb_delete_project(projectId):
     res = delete_record(Project, projectId)
     return res

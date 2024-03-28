@@ -1,10 +1,10 @@
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine
 from sqlalchemy import text, insert, update, select, delete
-import uuid
+import uuid, json
 from typing import List
 from api.logg import *
-
+from sqlalchemy import bindparam, text
 
 def make_session():
    engine = create_engine('postgresql://postgres:postgres@127.0.0.1:5432/camino_db1')
@@ -69,7 +69,6 @@ def update_record(ClassName, recId, **values):
       resp = select_byid(ClassName, recId)
    except Exception as e:
       resp = {'error':True, 'message':str(e)}
-
    return resp
 
 
@@ -80,8 +79,32 @@ def delete_record(ClassName, recId):
          session.delete(record)
          session.commit()
       resp = {'id':recId, 'count': records_count(ClassName, recId)}
-
    except Exception as e:
       resp = {'error':True, 'message':str(e)}
+   return resp
 
+
+def select_wrapper(stmt, params={}):
+   resp = {}
+   with db_conn() as session:
+      resp = session.execute(stmt, params).mappings().all()
+   return resp
+
+
+
+def q_project_select_by_project_id(recId):
+   stmt = text("SELECT * FROM common.project_users pu \
+   JOIN common.projects p ON pu.project_id=p.id \
+   JOIN common.users u ON pu.user_id=u.id \
+   WHERE pu.project_id = :project_id")
+   resp = select_wrapper(stmt, {"project_id" : recId} )
+   return resp
+   
+
+def q_project_select_by_user_id(recId):
+   stmt = text("SELECT * FROM common.project_users pu \
+   JOIN common.projects p ON pu.project_id=p.id \
+   JOIN common.users u ON pu.user_id=u.id \
+   WHERE pu.user_id = :user_id")
+   resp = select_wrapper(stmt, {"user_id" : recId} )
    return resp

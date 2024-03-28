@@ -141,6 +141,12 @@ async def api_single_project(projectId):
    return output
 
 
+@app.get("/projects/ext/{projectId}", tags=["Проекты"], summary="Получение информации о проекте")
+async def api_single_project_ext(projectId:str):
+   output = mng_single_project_ext(projectId)
+   return output
+
+
 @app.put("/projects/{projectId}", tags=["Проекты"], summary="Обновление информации о проекте")
 async def api_update_project(projectId,
                               name:str = None, 
