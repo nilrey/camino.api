@@ -1,24 +1,29 @@
 #  # python3 -m venv venv
 #  source venv/bin/activate
 #  uvicorn app.main:app --reload
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, APIRouter
 from api.lib.func_request import get_request_params
 from api.sets.metadata_fastapi import *
 from api.manage.manage import *
 from api.logg import *
 
 
+users = APIRouter(
+   prefix="/users",
+   tags=["Пользователи"],
+)
+
 app = FastAPI(openapi_tags=tags_metadata)
 
 
 # Users 
-@app.get("/users", tags=["Пользователи"], summary="Получение списка пользователей")
+@users.get("", summary="Получение списка пользователей")
 async def api_all_users():
    output = mng_all_users()
    return output
 
 
-@app.post("/users/create", tags=["Пользователи"], summary="Создание пользователя")
+@users.post("/create", summary="Создание пользователя")
 async def api_create_user(request: Request, 
                           name:str,
                           login:str,
@@ -29,13 +34,13 @@ async def api_create_user(request: Request,
    return mng_create_user(**get_request_params(request))
 
 
-@app.get("/users/{userId}", tags=["Пользователи"], summary="Получение информации пользователя")
+@users.get("/{userId}", summary="Получение информации пользователя")
 async def api_single_user(userId):
    output = mng_single_user(userId)
    return output
 
 
-@app.put("/users/{userId}", tags=["Пользователи"], summary="Обновление информации пользователя")
+@users.put("/{userId}", summary="Обновление информации пользователя")
 async def api_update_user(request: Request,
                           userId:str,
                           name:str,
@@ -47,10 +52,13 @@ async def api_update_user(request: Request,
    return mng_update_user(userId, **get_request_params(request, True, False))
 
 
-@app.delete("/users/{userId}", tags=["Пользователи"], summary="Удаление пользователя")
+@users.delete("/{userId}", summary="Удаление пользователя")
 async def api_delete_user(userId):
    output = mng_delete_user(userId)
    return output
+
+
+app.include_router(users)
 
 
 # Roles
