@@ -1,71 +1,12 @@
 #  # python3 -m venv venv
 #  source venv/bin/activate
 #  uvicorn app.main:app --reload
-from fastapi import FastAPI, Form, UploadFile, Request
+from fastapi import FastAPI, Request
 from api.lib.func_request import get_request_params
+from api.sets.metadata_fastapi import *
 from api.manage.manage import *
 from api.logg import *
 
-
-
-tags_metadata = [
-    {
-        "name": "Аутентификация",
-        "description": "API для аутентификации",
-    },
-    {
-        "name": "Проекты",
-        "description": "API для работы с проектами",
-    },
-    {
-        "name": "Проект / Пользователи",
-        "description": "API для работы с пользователями проекта",
-    },
-    {
-        "name": "Проект / Датасеты",
-        "description": "API для работы с датасетами проекта",
-    },
-    {
-        "name": "Проект / Датасет / Файлы",
-        "description": "API для работы с файлами датасета проекта",
-    },
-    {
-        "name": "Проект / Датасет / Цепочки примитивов",
-        "description": "API для работы с цепочками примитивов",
-    },
-    {
-        "name": "Проект / Датасет / Примитивы",
-        "description": "API для работы с примитивами",
-    },
-    {
-        "name": "Проект / Датасет / ИНС",
-        "description": "API для работы с ИНС датасета проекта",
-    },
-    {
-        "name": "Пользователи",
-        "description": "API для работы с пользователями",
-    },
-    {
-        "name": "Роли",
-        "description": "API для работы с ролями пользователей",
-    },
-    {
-        "name": "Docker",
-        "description": "API для Docker",
-    },
-    {
-        "name": "Docker-реестр",
-        "description": "API для Docker-реестра",
-    },
-    {
-        "name": "Docker-образы",
-        "description": "API для работы Docker-образами",
-    },
-    {
-        "name": "Docker-контейнеры",
-        "description": "API для работы с Docker-контейнерами",
-    }
-]
 
 app = FastAPI(openapi_tags=tags_metadata)
 
@@ -83,7 +24,7 @@ async def api_create_user(request: Request,
                           login:str,
                           password:str,
                           role_code:str,
-                          description:str = None,
+                          description:str = None
                           ):
    return mng_create_user(**get_request_params(request))
 
@@ -95,13 +36,13 @@ async def api_single_user(userId):
 
 
 @app.put("/users/{userId}", tags=["Пользователи"], summary="Обновление информации пользователя")
-async def api_update_user(request: Request, 
+async def api_update_user(request: Request,
                           userId:str,
                           name:str,
-                          login:str ,
-                          password:str ,
-                          role_code:str ,
-                          description: str = None 
+                          login:str,
+                          password:str,
+                          role_code:str,
+                          description:str = None
                           ):
    return mng_update_user(userId, **get_request_params(request, True, False))
 

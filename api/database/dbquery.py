@@ -5,9 +5,32 @@ import uuid, json
 from typing import List
 from api.logg import *
 from sqlalchemy import bindparam, text
+from configparser import ConfigParser
+
+def load_config(filename='database.ini', section='postgresql'):
+    parser = ConfigParser()
+    parser.read(filename)
+    # get section, default to postgresql
+    config = {}
+    if parser.has_section(section):
+        params = parser.items(section)
+        for param in params:
+            config[param[0]] = param[1]
+    else:
+        raise Exception('Section {0} not found in the {1} file'.format(section, filename))
+
+    return config
+
+
+def get_connection_string():
+   config = load_config()
+   # cs = 'postgresql://postgres:postgres@127.0.0.1:5432/camino_db1'
+   cs = f"postgresql://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['database']}"
+   return cs
+
 
 def make_session():
-   engine = create_engine('postgresql://postgres:postgres@127.0.0.1:5432/camino_db1')
+   engine = create_engine(get_connection_string())
    session_maker = sessionmaker(bind=engine)
    return session_maker
    
@@ -99,7 +122,7 @@ def q_project_select_by_project_id(recId):
    WHERE pu.project_id = :project_id")
    resp = select_wrapper(stmt, {"project_id" : recId} )
    return resp
-   
+
 
 def q_project_select_by_user_id(recId):
    stmt = text("SELECT * FROM common.project_users pu \
@@ -108,3 +131,12 @@ def q_project_select_by_user_id(recId):
    WHERE pu.user_id = :user_id")
    resp = select_wrapper(stmt, {"user_id" : recId} )
    return resp
+
+
+
+   
+
+
+if(__name__ == "__main__"):
+   print(get_connection_string())
+   print("Ok")
