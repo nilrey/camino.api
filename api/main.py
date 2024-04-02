@@ -1,17 +1,13 @@
 #  # python3 -m venv venv
 #  source venv/bin/activate
 #  uvicorn app.main:app --reload
-from fastapi import FastAPI, Request, APIRouter
+from fastapi import FastAPI, Request
 from api.lib.func_request import get_request_params
 from api.sets.metadata_fastapi import *
 from api.manage.manage import *
 from api.logg import *
 
 
-users = APIRouter(
-   prefix="/users",
-   tags=["Пользователи"],
-)
 
 app = FastAPI(openapi_tags=tags_metadata)
 
@@ -58,11 +54,9 @@ async def api_delete_user(userId):
    return output
 
 
-app.include_router(users)
-
 
 # Roles
-@app.post("/roles/create", tags=["Роли"], summary="Создание роли")
+@roles.post("/create", tags=["Роли"], summary="Создание роли")
 async def api_create_role(code:str = None,
                           name:str = None
                           ):
@@ -126,3 +120,22 @@ async def api_delete_project(projectId):
 # async def api_data(request: Request, id:str, name:str | None = None, desc:str | None = None):
 #     params = get_request_params(request)
 #     return (params)
+
+
+
+
+
+app.include_router(auth)
+app.include_router(projects)
+app.include_router(proj_users)
+app.include_router(proj_datasets)
+app.include_router(proj_dts_files)
+app.include_router(proj_dts_primitives)
+app.include_router(proj_dts_prim_chains)
+app.include_router(proj_dts_ann)
+app.include_router(users)
+app.include_router(roles)
+app.include_router(docker)
+app.include_router(docker_registry)
+app.include_router(docker_images)
+app.include_router(docker_containers)
