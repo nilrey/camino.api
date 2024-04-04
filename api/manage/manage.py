@@ -3,7 +3,7 @@ from api.database.ormquery import *
 
 
 # Users
-def mng_create_user( **kwargs):
+def mng_create_user(**kwargs):
    return mngdb_create_user(**kwargs)
 
 
@@ -11,8 +11,8 @@ def mng_all_users():
    return mngdb_all_users()
 
 
-def mng_single_user( userId ):
-   return mngdb_single_user( userId )
+def mng_single_user(id):
+   return mngdb_single_user(id)
 
 
 def mng_update_user(id, **kwargs):
@@ -32,12 +32,12 @@ def mng_all_projects():
    return mngdb_all_projects()
 
 
-def mng_single_project( projectId ):
-   return mngdb_single_project(projectId)
+def mng_single_project(id):
+   return mngdb_single_project(id)
 
 
-def mng_single_project_ext( projectId ):
-   return mngdb_single_project_ext(projectId)
+def mng_single_project_ext(id):
+   return mngdb_single_project_ext(id)
 
 
 def mng_update_project(id, **kwargs):
@@ -49,8 +49,8 @@ def mng_delete_project(id):
 
 
 # Roles
-def mng_create_role( name, code):
-   return mngdb_create_role( name, code)
+def mng_create_role(name, code):
+   return mngdb_create_role(name, code)
 
 
 # # Docker

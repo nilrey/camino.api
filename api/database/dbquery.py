@@ -115,21 +115,20 @@ def select_wrapper(stmt, params={}):
 
 
 
-def q_project_select_by_project_id(recId):
-   stmt = text("SELECT * FROM common.project_users pu \
-   JOIN common.projects p ON pu.project_id=p.id \
+def q_project_select_by_project_id(id):
+   stmt = text("SELECT u.id, u.name FROM common.project_users pu \
    JOIN common.users u ON pu.user_id=u.id \
    WHERE pu.project_id = :project_id")
-   resp = select_wrapper(stmt, {"project_id" : recId} )
+   resp = select_wrapper(stmt, {"project_id" : id} )
    return resp
 
 
-def q_project_select_by_user_id(recId):
+def q_project_select_by_user_id(id):
    stmt = text("SELECT * FROM common.project_users pu \
    JOIN common.projects p ON pu.project_id=p.id \
    JOIN common.users u ON pu.user_id=u.id \
    WHERE pu.user_id = :user_id")
-   resp = select_wrapper(stmt, {"user_id" : recId} )
+   resp = select_wrapper(stmt, {"user_id" : id} )
    return resp
 
 
@@ -137,6 +136,6 @@ def q_project_select_by_user_id(recId):
    
 
 
-if(__name__ == "__main__"):
-   print(get_connection_string())
-   print("Ok")
+# if(__name__ == "__main__"):
+#    print(get_connection_string())
+#    print("Ok")
