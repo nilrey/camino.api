@@ -1,12 +1,11 @@
 #  # python3 -m venv venv
 #  source venv/bin/activate
-#  uvicorn app.main:app --reload
+#  uvicorn api.main:app --reload
 from fastapi import FastAPI, Request
 from api.lib.func_request import get_request_params
 from api.sets.metadata_fastapi import *
 from api.manage.manage import *
 from api.logg import *
-
 
 
 app = FastAPI(openapi_tags=tags_metadata)
@@ -69,6 +68,7 @@ async def api_all_projects():
    output = mng_all_projects()
    return output
 
+
 @app.post("/projects/create", tags=["Проекты"], summary="Создание проекта")
 async def api_create_project( request: Request, 
                               name:str, 
@@ -109,10 +109,23 @@ async def api_delete_project(projectId):
    return output
 
 
-# # Docker 
-# @app.get("/docker/info")
-# async def api_docker_get_info():
-#    return mng_docker_get_info()
+# Docker info
+@app.get("/docker/info")
+async def api_docker_get_info():
+   return mng_docker_get_info()
+
+
+
+# Create container from Docker image
+@app.get("/images/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
+async def api_docker_image_run(imageId):
+   return mng_docker_image_run(imageId)
+
+
+# Docker 
+@app.get("/containers/{containerId}/stats", tags=["Docker-контейнеры"], summary="Получение состояния Docker-контейнера на сервере")
+async def api_docker_container_stats(containerId):
+   return mng_docker_container_stats(containerId)
 
 
 # #TEST

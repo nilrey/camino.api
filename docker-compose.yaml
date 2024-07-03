@@ -1,0 +1,10 @@
+version: '3'
+services:
+  backend:
+    image: idockerapi
+    container_name: camino-back
+    build: .
+    volumes:
+      - /home/sadmin/Work/dockerpipe:/code/api/docker/hostpipe
+    ports:
+    - "8002:80"
