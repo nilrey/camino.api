@@ -55,10 +55,35 @@ def mng_create_role(name, code):
 
 # # Docker
 def mng_docker_get_info():
-   return dkr_get_info()
+   return dkr_docker_info()
 
-def mng_docker_image_run(imageId):
-   return dkr_image_run(imageId)
+def mng_docker_image_run(imageId, **kwargs):
+   return dkr_image_run(imageId, **kwargs)
 
-def mng_docker_container_stats(containerId):
+
+def mng_images():
+   return dkr_images()
+
+
+def mng_image(imageId):
+   return dkr_image(imageId)
+
+
+# def mng_image_run(imageId):
+#    return dkr_image_run(imageId)
+
+
+def mng_containers():
+   return dkr_containers()
+
+
+def mng_containers_stats():
+   return dkr_containers_stats()
+
+
+def mng_container(containerId):
+   return dkr_container(containerId)
+
+
+def mng_container_stats(containerId):
    return dkr_container_stats(containerId)
