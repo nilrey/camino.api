@@ -11,7 +11,9 @@ from api.logg import *
 app = FastAPI(openapi_tags=tags_metadata)
 
 
-# Users 
+# USERS
+
+
 @users.get("", summary="Получение списка пользователей")
 async def api_all_users():
    output = mng_all_users()
@@ -54,7 +56,9 @@ async def api_delete_user(userId):
 
 
 
-# Roles
+# ROLES
+
+
 @roles.post("/create", tags=["Роли"], summary="Создание роли")
 async def api_create_role(code:str = None,
                           name:str = None
@@ -62,7 +66,9 @@ async def api_create_role(code:str = None,
    return mng_create_role(name = name, code=code)
 
 
-# Projects
+# PROJECTS
+
+
 @app.get("/projects", tags=["Проекты"], summary="Получение списка проектов")
 async def api_all_projects():
    output = mng_all_projects()
@@ -109,18 +115,22 @@ async def api_delete_project(projectId):
    return output
 
 
-# Docker info
-@app.get("/docker", tags=["Docker"], summary="Получение информации о состоянии Docker")
+# DOCKER
+
+
+@docker.get("/", tags=["Docker"], summary="Получение информации о состоянии Docker")
 async def api_docker_get_info():
    return mng_docker_get_info()
 
+# IMAGES
 
-@app.get("/images", tags=["Docker-образы"], summary="Получение списка Docker-образов на сервере")
+
+@docker_images.get("/", tags=["Docker-образы"], summary="Получение списка Docker-образов на сервере")
 async def api_docker_images():
    return mng_images()
 
 
-@app.get("/images/{imageId}", tags=["Docker-образы"], summary="Получение информации о Docker-образе на сервере")
+@docker_images.get("/{imageId}", tags=["Docker-образы"], summary="Получение информации о Docker-образе на сервере")
 async def api_docker_image(imageId):
    return mng_image(imageId)
 
@@ -144,31 +154,24 @@ async def api_docker_image_run(request: Request,
    return mng_docker_image_run(imageId, **get_request_params(request, True, False))
 
 
-@app.get("/containers", tags=["Docker-контейнеры"], summary="Получение списка Docker-контейнеров на сервере")
+# CONTAINERS
+
+
+@docker_containers.get("/", tags=["Docker-контейнеры"], summary="Получение списка Docker-контейнеров на сервере")
 async def api_docker_containers():
    return mng_containers()
 
-@app.get("/containers/stats", tags=["Docker-контейнеры"], summary="Получение списка состояний Docker-контейнеров на сервере")
+@docker_containers.get("/stats", tags=["Docker-контейнеры"], summary="Получение списка состояний Docker-контейнеров на сервере")
 async def api_docker_containers_stats():
    return mng_containers_stats()
 
-@app.get("/containers/{containerId}", tags=["Docker-контейнеры"], summary="Получение информации о Docker-контейнере на сервере")
+@docker_containers.get("/{containerId}", tags=["Docker-контейнеры"], summary="Получение информации о Docker-контейнере на сервере")
 async def api_docker_container(containerId):
    return mng_container(containerId)
 
-@app.get("/containers/{containerId}/stats", tags=["Docker-контейнеры"], summary="Получение состояния Docker-контейнера на сервере")
+@docker_containers.get("/{containerId}/stats", tags=["Docker-контейнеры"], summary="Получение состояния Docker-контейнера на сервере")
 async def api_docker_container_stats(containerId):
    return mng_container_stats(containerId)
-
-
-# #TEST
-# @app.post("/test/{id}")
-# async def api_data(request: Request, id:str, name:str | None = None, desc:str | None = None):
-#     params = get_request_params(request)
-#     return (params)
-
-
-
 
 
 app.include_router(auth)
