@@ -132,7 +132,7 @@ async def api_docker_image(imageId):
 
 
 # Create container from Docker image
-@app.post("/images/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
+@docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
 async def api_docker_image_run(request: Request,
                           imageId:str,
                           name:str = None,
