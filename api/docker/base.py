@@ -1,4 +1,4 @@
-# import docker
+import docker
 import os
 import time
 import api.sets.const as C
@@ -58,18 +58,8 @@ def dkr_image_run(imageId, **kwargs):
             command += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
     command += f' {imageId}'
 
-    # data = execCommand(command)
-    return {'command':command}
-
-
-def dkr_image_run_old(imageId, **kwargs):
-    resp = False
-    with open(C.PATH_CONTAINER_HOSTPIPE+'/input/params.txt', 'w') as f:
-        f.write(imageId+" start cmockneuro")
-        resp = True
-    with open(C.PATH_CONTAINER_HOSTPIPE+'/output/image_run.txt', 'r') as file:
-        data = file.read()
-    return tojson.dkr_containers(data)
+    data = execCommand(command)
+    return {'id':data}
 
 
 def get_containers_from_docker():
@@ -93,8 +83,9 @@ def get_containers_from_docker():
     return output
     
 def dkr_containers():
-    resp =  get_containers_from_docker() #send_command('containers', 'containers_all')
-    return resp
+    # command = 'docker ps --format "{{.ID}},{{.Image}},{{.Command}},{{.CreatedAt}},{{.Status}},{{.Ports}},{{.Names}}" --no-trunc '
+    command = 'docker ps --no-trunc '
+    return tojson.dkr_containers(execCommand(command))
 
 
 def dkr_containers_stats():

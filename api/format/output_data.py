@@ -26,8 +26,14 @@ def dkr_image_run(data):
 
 
 def dkr_containers(data):
-    outjson='{"containers": [{"id": "583407a61900","image": {"id": "583407a61900","name": "library/ann","tag": "v1"},"command": "top","names": "ann","ports": "8080/tcp","created_at": "2024-07-04 10:33:15","status": "Up 1 hour"}]}'
-    return outjson
+    # outjson='{"containers": [{"id": "583407a61900","image": {"id": "583407a61900","name": "library/ann","tag": "v1"},"command": "top","names": "ann","ports": "8080/tcp","created_at": "2024-07-04 10:33:15","status": "Up 1 hour"}]}'
+    dictionary = []
+    for line in data:
+        # Id, Image, Command, CreatedAt, Status, Ports, Names = line.split(';')
+        keys = ['Id', 'Image', 'Command', 'CreatedAt', 'Status', 'Ports', 'Names']
+        values = line.split(';')
+        dictionary.append(dict(zip(keys, values)))
+    return dictionary
 
 
 def dkr_containers_stats(data):
