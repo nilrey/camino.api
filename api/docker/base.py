@@ -1,4 +1,4 @@
-import docker
+# import docker
 import os
 import time
 import api.sets.const as C
@@ -89,8 +89,8 @@ def dkr_containers():
 
 
 def dkr_containers_stats():
-    resp = send_command('containers_stats', 'containers_stats_all')
-    return tojson.dkr_containers_stats(resp)
+    command = 'docker container stats -a --no-stream '
+    return tojson.dkr_containers_stats(execCommand(command))
 
 
 def dkr_container(containerId):

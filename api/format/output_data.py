@@ -1,5 +1,12 @@
 import json
+import re
 
+def replaceSpaces(str):
+    replacements = {' / ': '/', ', ': ',', 'CONTAINER ID':'CONTAINER_ID', ' %':'%', ' I/O':'_I/O'}
+    for replaceFrom, replaceTo in replacements.items():
+        str = str.replace(replaceFrom, replaceTo)
+    output = re.sub(r'\s+', ' ', str)
+    return output
 
 def dkr_docker_info(data):
     outjson = json.loads('{"version": "string","containers": {"running": 0,"paused": 0,"stopped": 0,"total": 0},"images": 0,"cpus": 0,"mem": "string"}')
@@ -37,9 +44,13 @@ def dkr_containers(data):
 
 
 def dkr_containers_stats(data):
-    outjson='{"containers": [{"id": "583407a61900","state": "running","cpu": "0.15%","mem": "0.25%","mem_use": "25MiB","size": "1.07 GB"}]}'
-    return outjson
-
+    # outjson='{"containers": [{"id": "583407a61900","state": "running","cpu": "0.15%","mem": "0.25%","mem_use": "25MiB","size": "1.07 GB"}]}'
+    headers = replaceSpaces(data.pop(0)).split(' ')
+    dictionary = []
+    for line in data:
+        values = replaceSpaces(line).split(' ')
+        dictionary.append(dict(zip(headers, values)))
+    return dictionary
 
 def dkr_container(data):
     outjson='{"id": "583407a61900","image": {"id": "583407a61900","name": "library/ann","tag": "v1"},"command": "top","names": "ann","ports": "8080/tcp","created_at": "2024-07-04 10:33:15","status": "Up 1 hour"}'

@@ -18,7 +18,7 @@ COPY ./api /code/api
 
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "80"]
 
-VOLUME ["/var/run/docker.sock"]
+VOLUME ["/code/api/docker/hostpipe"]
 
 # CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
