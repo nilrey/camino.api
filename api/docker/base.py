@@ -28,8 +28,9 @@ def dkr_docker_info():
     return tojson.dkr_docker_info(resp)
 
 
-def dkr_images():
+def dkr_images(notrunc = True):
     command = 'docker images '
+    if( notrunc ): command += ' --no-trunc ' 
     return tojson.dkr_images(execCommand(command))
 
 
