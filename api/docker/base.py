@@ -58,7 +58,9 @@ def dkr_image_run(imageId, **kwargs):
             command += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
     command += f' {imageId}'
 
-    data = execCommand(command)
+    data = {'container_id': execCommand(command)}
+    # data['container_data'] = dkr_container(data['container_id'])
+    # data['image_data'] = dkr_container(data['container_id']['image_id'])
 
     return tojson.dkr_image_run(data)
 
@@ -70,7 +72,8 @@ def get_containers_from_docker():
     output = '{"status":"READY"}'
     out = {}
     try:
-        result = subprocess.run('docker ps --format "{{.ID}}: {{.Names}}" --no-trunc', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # result = subprocess.run('docker ps --format "{{.ID}}: {{.Names}}" --no-trunc', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        result = subprocess.run('docker ps --format "{{.ID}}: {{.Names}}" --no-trunc', shell=True)
         if result :
             for line in result.stdout.splitlines():
                 if ': ' in line:
@@ -94,13 +97,13 @@ def dkr_containers_stats():
     return tojson.dkr_containers_stats(execCommand(command))
 
 
-def dkr_container(containerId):
-    resp = send_command('container', containerId)
-    return tojson.dkr_container(resp)
+def dkr_container(container_id):
+    command = "docker ps --filter ''id=" + container_id + "'' " 
+    return tojson.dkr_container(execCommand(command))
 
 
-def dkr_container_stats(containerId):
-    resp = send_command('container_stats', containerId)
+def dkr_container_stats(container_id):
+    resp = send_command('container_stats', container_id)
     return tojson.dkr_container_stats(resp)
 
 # запуск шелл команды через сокет
