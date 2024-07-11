@@ -29,8 +29,8 @@ def dkr_docker_info():
 
 
 def dkr_images():
-    resp = send_command('images', 'images_all')
-    return tojson.dkr_images(resp)
+    command = 'docker images '
+    return tojson.dkr_images(execCommand(command))
 
 
 def dkr_image(imageId):

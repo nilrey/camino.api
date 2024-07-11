@@ -2,7 +2,8 @@ import json
 import re
 
 def replaceSpaces(str):
-    replacements = {' / ': '/', ', ': ',', 'CONTAINER ID':'CONTAINER_ID', ' %':'%', ' I/O':'_I/O'}
+    replacements = {' / ': '/', ', ': ',', 'CONTAINER ID':'CONTAINER_ID', ' %':'%', ' I/O':'_I/O', 'IMAGE ID':'IMAGE_ID', ' second ':'_second_', ' seconds ':'_seconds_', ' minutes ':'_minutes_', ' minute ':'_minute_'
+                   , ' hours ':'_hours_', ' day ':'_day_', ' days ':'_days_', ' week ':'_week_', ' weeks ':'_weeks_', ' month ':'_month_', ' months ':'_months_', ' year ':'_year_', ' years ':'_years_'}
     for replaceFrom, replaceTo in replacements.items():
         str = str.replace(replaceFrom, replaceTo)
     output = re.sub(r'\s+', ' ', str)
@@ -14,9 +15,13 @@ def dkr_docker_info(data):
 
 
 def dkr_images(data):
-    outjson=json.loads('{"images": [{"id": "583407a61900","name": "library/ann","tag": "v1","location": "registry","created_at": "2024-07-04 10:33:15","size": "1.07 GB","comment": "Added Apache to Fedora base image","is_archived": true}]}')
-    return outjson
-
+    # outjson=json.loads('{"images": [{"id": "583407a61900","name": "library/ann","tag": "v1","location": "registry","created_at": "2024-07-04 10:33:15","size": "1.07 GB","comment": "Added Apache to Fedora base image","is_archived": true}]}')
+    headers = replaceSpaces(data.pop(0)).split(' ')
+    dictionary = []
+    for line in data:
+        values = replaceSpaces(line).split(' ')
+        dictionary.append(dict(zip(headers, values)))
+    return dictionary
 
 def dkr_image(data):
     outjson=json.loads('{"id": "583407a61900","name": "library/ann","tag": "v1","location": "registry","created_at": "2024-07-04 10:33:15","size": "1.07 GB","comment": "Added Apache to Fedora base image","is_archived": true}')
