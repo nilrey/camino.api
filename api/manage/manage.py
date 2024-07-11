@@ -69,10 +69,6 @@ def mng_image(imageId):
    return dkr_image(imageId)
 
 
-# def mng_image_run(imageId):
-#    return dkr_image_run(imageId)
-
-
 def mng_containers():
    return dkr_containers()
 

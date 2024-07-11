@@ -9,7 +9,7 @@ def replaceSpaces(str):
     output = re.sub(r'\s+', ' ', str)
     return output
 
-def replaceHeaderTitles(headers, replacements):
+def replaceHeaderTitles(headers, replacements={}):
     newheaders = []
     for header in headers:
         if header in replacements.keys():
@@ -24,26 +24,32 @@ def dkr_docker_info(data):
     return outjson
 
 
-def dkr_images(data):
+def getItems(data, headers=[], extendValues = []):
     items = []
+    for line in data:
+        values = replaceSpaces(line).split(' ')
+        values.extend(extendValues)
+        items.append(dict(zip(headers, values)))
+    return items
+
+
+def getPagination(cnt):
+    return { "page": 1, "pageSize": cnt, "totalItems": cnt, "totalPages": 1}
+
+
+def dkr_images(data):
     replacements = {'IMAGE_ID':'id', 'REPOSITORY':'name', 'TAG':'tag', 'location':'location', 'CREATED':'created_at', 'SIZE':'size'}
     headers = replaceHeaderTitles( replaceSpaces(data.pop(0)).split(' ') , replacements)
     headers.extend(['location', 'comment', 'archive'])
-    for line in data:
-        values = replaceSpaces(line).split(' ')
-        values.extend(['registry', 'Added Apache to Fedora base image', 'string'])
-        items.append(dict(zip(headers, values)))
-    page = { "page": 1, "pageSize": len(items), "totalItems": len(items), "totalPages": 1}
-    return {'pagination':page, 'items':items}
+    extendValues = ['registry', 'Added Apache to Fedora base image', 'string']
+  
+    items = getItems(data, headers, extendValues)
+    return {'pagination':getPagination(len(items)), 'items':items}
 
 
 def dkr_image(data):
-    outjson=json.loads('{"id": "583407a61900","name": "library/ann","tag": "v1","location": "registry","created_at": "2024-07-04 10:33:15","size": "1.07 GB","comment": "Added Apache to Fedora base image","is_archived": true}')
-    return outjson
-
-def dkr_image_mock(data):
-    outjson=json.loads('{"id": "' + data[0] + '","name": "library/ann","tag": "v1","location": "registry","created_at": "2024-07-04 10:33:15","size": "1.07 GB","comment": "Added Apache to Fedora base image","is_archived": true}')
-    return outjson
+    images = dkr_images(data)
+    return images['items'][0]
 
 
 def dkr_image_run(data):

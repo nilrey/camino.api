@@ -35,9 +35,8 @@ def dkr_images(notrunc = True):
 
 
 def dkr_image(imageId):
-    # resp = send_command('image', imageId)
-    # return tojson.dkr_image(resp)
-    return tojson.dkr_image_mock([imageId] )
+    command = 'docker images ' + imageId
+    return tojson.dkr_image(execCommand(command))
 
 
 def dkr_image_run(imageId, **kwargs):
