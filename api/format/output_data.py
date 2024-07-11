@@ -26,7 +26,8 @@ def dkr_docker_info(data):
 
 def dkr_images(data):
     items = []
-    headers = replaceHeaderTitles( replaceSpaces(data.pop(0)).split(' ') )
+    replacements = {'IMAGE_ID':'id', 'REPOSITORY':'name', 'TAG':'tag', 'location':'location', 'CREATED':'created_at', 'SIZE':'size'}
+    headers = replaceHeaderTitles( replaceSpaces(data.pop(0)).split(' ') , replacements)
     headers.extend(['location', 'comment', 'archive'])
     for line in data:
         values = replaceSpaces(line).split(' ')
