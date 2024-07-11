@@ -9,8 +9,7 @@ def replaceSpaces(str):
     output = re.sub(r'\s+', ' ', str)
     return output
 
-def replaceHeaderTitles(headers):
-    replacements = {'IMAGE_ID':'id', 'REPOSITORY':'name', 'TAG':'tag', 'location':'location', 'CREATED':'created_at', 'SIZE':'size'}
+def replaceHeaderTitles(headers, replacements):
     newheaders = []
     for header in headers:
         if header in replacements.keys():
@@ -28,11 +27,14 @@ def dkr_docker_info(data):
 def dkr_images(data):
     items = []
     headers = replaceHeaderTitles( replaceSpaces(data.pop(0)).split(' ') )
+    headers.extend(['location', 'comment', 'archive'])
     for line in data:
         values = replaceSpaces(line).split(' ')
+        values.extend(['registry', 'Added Apache to Fedora base image', 'string'])
         items.append(dict(zip(headers, values)))
     page = { "page": 1, "pageSize": len(items), "totalItems": len(items), "totalPages": 1}
     return {'pagination':page, 'items':items}
+
 
 def dkr_image(data):
     outjson=json.loads('{"id": "583407a61900","name": "library/ann","tag": "v1","location": "registry","created_at": "2024-07-04 10:33:15","size": "1.07 GB","comment": "Added Apache to Fedora base image","is_archived": true}')
