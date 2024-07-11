@@ -27,8 +27,7 @@ def dkr_docker_info(data):
 
 def dkr_images(data):
     items = []
-    headers = replaceSpaces(data.pop(0)).split(' ')
-    headers = replaceHeaderTitles(headers)
+    headers = replaceHeaderTitles( replaceSpaces(data.pop(0)).split(' ') )
     for line in data:
         values = replaceSpaces(line).split(' ')
         items.append(dict(zip(headers, values)))
