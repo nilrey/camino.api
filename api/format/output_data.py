@@ -52,7 +52,22 @@ def dkr_image(data):
     return images['items'][0]
 
 
-def dkr_image_run(data):
+def dkr_image_run(containerId):
+# {
+#   "id": "583407a61900",
+#   "image": {
+#     "id": "583407a61900",
+#     "name": "library/ann",
+#     "tag": "v1"
+#   },
+#   "command": "top",
+#   "names": "ann",
+#   "ports": "8080/tcp",
+#   "created_at": "2023-12-26 15:00:00",
+#   "status": "Up 1 hour"
+# }    
+    #1 Получить данные о контейнере 
+    #2 ПОлучить данные об образе
     outjson='{"id": "583407a61900","image": {"id": "583407a61900","name": "library/ann","tag": "v1"},"command": "top","names": "ann","ports": "8080/tcp","created_at": "2024-07-04 10:33:15","status": "Up 1 hour"}'
     return outjson
 
@@ -60,6 +75,9 @@ def dkr_image_run(data):
 def dkr_containers(data):
     # outjson='{"containers": [{"id": "583407a61900","image": {"id": "583407a61900","name": "library/ann","tag": "v1"},"command": "top","names": "ann","ports": "8080/tcp","created_at": "2024-07-04 10:33:15","status": "Up 1 hour"}]}'
     dictionary = []
+    replacements = {'IMAGE_ID':'id', 'REPOSITORY':'name', 'TAG':'tag', 'location':'location', 'CREATED':'created_at', 'SIZE':'size'}
+    headers = replaceHeaderTitles( replaceSpaces(data.pop(0)).split(' ') , replacements)
+    
     for line in data:
         # Id, Image, Command, CreatedAt, Status, Ports, Names = line.split(';')
         keys = ['Id', 'Image', 'Command', 'CreatedAt', 'Status', 'Ports', 'Names']

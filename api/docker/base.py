@@ -59,7 +59,8 @@ def dkr_image_run(imageId, **kwargs):
     command += f' {imageId}'
 
     data = execCommand(command)
-    return {'id':data}
+
+    return tojson.dkr_image_run(data)
 
 
 def get_containers_from_docker():
