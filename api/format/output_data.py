@@ -9,6 +9,17 @@ def replaceSpaces(str):
     output = re.sub(r'\s+', ' ', str)
     return output
 
+def replaceHeaderTitles(headers):
+    replacements = {'IMAGE_ID':'id', 'REPOSITORY':'name', 'TAG':'tag', 'location':'location', 'CREATED':'created_at', 'SIZE':'size'}
+    newheaders = []
+    for header in headers:
+        if header in replacements.keys():
+            newheader = header.replace(header, replacements[header]) 
+            newheaders.append(newheader)
+        else:
+            newheaders.append(header)
+    return newheaders
+
 def dkr_docker_info(data):
     outjson = json.loads('{"version": "string","containers": {"running": 0,"paused": 0,"stopped": 0,"total": 0},"images": 0,"cpus": 0,"mem": "string"}')
     return outjson
@@ -17,6 +28,7 @@ def dkr_docker_info(data):
 def dkr_images(data):
     items = []
     headers = replaceSpaces(data.pop(0)).split(' ')
+    headers = replaceHeaderTitles(headers)
     for line in data:
         values = replaceSpaces(line).split(' ')
         items.append(dict(zip(headers, values)))
