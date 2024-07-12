@@ -167,6 +167,10 @@ async def api_docker_container(containerId):
 async def api_docker_container_stats(containerId):
    return mng_container_stats(containerId)
 
+@docker_containers.get("/{containerId}/monitor", tags=["Docker-контейнеры"], summary="Получение списка виджетов для мониторинга состояния Docker-контейнера")
+async def api_docker_container_monitor(containerId):
+   return mng_container_monitor(containerId)
+
 
 app.include_router(auth)
 app.include_router(projects)

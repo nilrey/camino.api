@@ -82,4 +82,8 @@ def mng_container(containerId):
 
 
 def mng_container_stats(containerId):
-   return dkr_container_stats(containerId)
+   return True #dkr_container_stats(containerId)
+
+
+def mng_container_monitor(containerId):
+   return dkr_container_monitor(containerId)

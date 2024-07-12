@@ -89,7 +89,9 @@ def get_containers_from_docker():
 def dkr_containers():
     # command = 'docker ps --format "{{.ID}},{{.Image}},{{.Command}},{{.CreatedAt}},{{.Status}},{{.Ports}},{{.Names}}" --no-trunc '
     command = 'docker ps --no-trunc '
-    return tojson.dkr_containers(execCommand(command))
+    containers = execCommand(command)
+    images = dkr_images()
+    return tojson.dkr_containers(containers, images['items'] )
 
 
 def dkr_containers_stats():
@@ -102,7 +104,7 @@ def dkr_container(container_id):
     return tojson.dkr_container(execCommand(command))
 
 
-def dkr_container_stats(container_id):
+def dkr_container_monitor(container_id):
     resp = send_command('container_stats', container_id)
     return tojson.dkr_container_stats(resp)
 
