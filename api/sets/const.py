@@ -4,3 +4,5 @@ PATH_CONTAINER_HOSTPIPE="/code/api/docker/hostpipe"
 CNTR_BASE_01_DIR_WEIGHTS="/code/buffer"
 CNTR_BASE_01_DIR_IN="/code/buffer"
 CNTR_BASE_01_DIR_OUT="/code/buffer"
+
+PARAM_FORMAT_JSON = " --format '{{json .}}' "

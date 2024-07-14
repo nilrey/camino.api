@@ -119,8 +119,8 @@ async def api_delete_project(projectId):
 
 
 @docker.get("/", tags=["Docker"], summary="Получение информации о состоянии Docker")
-async def api_docker_get_info():
-   return mng_docker_get_info()
+async def api_docker_info():
+   return mng_docker_info()
 
 # IMAGES
 

@@ -64,10 +64,10 @@ def dkr_containers(data, images):
     
     items = getItems(data, headers, extendValues)
     imagesIds = {}
-    for container in items:
-        for image in images:
-            if container['image'] == image["name"]:
-                container.
+    # for container in items:
+    #     for image in images:
+    #         if container['image'] == image["name"]:
+    #             container.
 
     return {'pagination':getPagination(len(items)), 'items':items, 'iamgesIds':imagesIds}
 

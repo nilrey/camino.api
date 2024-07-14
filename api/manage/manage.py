@@ -1,5 +1,9 @@
+import json
 from api.database.ormquery import *
-from api.docker.base import *
+import api.docker.base as dkr
+from api.docker.monitor import *
+import api.format.response_objects as ro # Response Objects
+import api.format.response_teplates as rt # Response Template
 
 
 # Users
@@ -53,37 +57,44 @@ def mng_create_role(name, code):
    return mngdb_create_role(name, code)
 
 
-# # Docker
-def mng_docker_get_info():
-   return dkr_docker_info()
+# Docker
+def mng_docker_info():
+   resp_cmd_json = dkr.dkr_docker_info()
+   response = ro.docker_info(json.loads(resp_cmd_json['response'])) if( not resp_cmd_json['error'] ) else resp_cmd_json['error_descr']
+   return response
+
 
 def mng_docker_image_run(imageId, **kwargs):
-   return dkr_image_run(imageId, **kwargs)
+   return dkr.dkr_image_run(imageId, **kwargs)
 
 
 def mng_images():
-   return dkr_images()
+   resp_cmd_json = dkr.dkr_images()
+   response = ro.docker_images(json.loads(resp_cmd_json['response'])) if( not resp_cmd_json['error'] ) else resp_cmd_json
+   return response
 
 
 def mng_image(imageId):
-   return dkr_image(imageId)
+   return dkr.dkr_image(imageId)
 
 
 def mng_containers():
-   return dkr_containers()
+   return dkr.dkr_containers()
 
 
 def mng_containers_stats():
-   return dkr_containers_stats()
+   return dkr.dkr_containers_stats()
 
 
 def mng_container(containerId):
-   return dkr_container(containerId)
+   return dkr.dkr_container(containerId)
 
 
 def mng_container_stats(containerId):
    return True #dkr_container_stats(containerId)
-
+   
 
 def mng_container_monitor(containerId):
-   return dkr_container_monitor(containerId)
+   monitor = Monitor()
+   result = monitor.create_json(containerId)
+   return result
