@@ -21,7 +21,9 @@ def docker_info(data):
 
 def docker_images(data):    
     resp = {
-        'pagination':getPagination(len(data))
-        #'items':type(data)
+        'pagination':getPagination(len(data['images'])),
+        'items':[]
     }
+    for line in data['images'].splitlines():
+        resp['items'].append(json.loads(line )  )
     return resp

@@ -70,7 +70,8 @@ def mng_docker_image_run(imageId, **kwargs):
 
 def mng_images():
    resp_cmd_json = dkr.dkr_images()
-   response = ro.docker_images(json.loads(resp_cmd_json['response'])) if( not resp_cmd_json['error'] ) else resp_cmd_json
+   data = {'images':resp_cmd_json['response']}
+   response = ro.docker_images(data) if( not resp_cmd_json['error'] ) else resp_cmd_json
    return response
 
 
