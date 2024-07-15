@@ -24,7 +24,7 @@ def docker_images(data):
     for line in data['images'].splitlines():
         lst = json.loads(line)
         formatted = {
-            "id":lst["ID"],
+            "id":lst["ID"].replace('sha256:',''),
             "name":lst["Repository"],
             "tag":lst["Tag"],
             "created_at":lst["CreatedAt"],
@@ -35,4 +35,17 @@ def docker_images(data):
         }
         resp['items'].append(formatted )
     resp['pagination'] = getPagination(len(resp['items']))
+    return resp
+
+def docker_image(data):    
+    resp = {
+        "id":data["ID"].replace('sha256:',''),
+        "name":data["Repository"],
+        "tag":data["Tag"],
+        "created_at":data["CreatedAt"],
+        "size":data["Size"],
+        "location":"",
+        "comment":"",
+        "archive":""
+    }
     return resp

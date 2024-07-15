@@ -60,7 +60,8 @@ def mng_create_role(name, code):
 # Docker
 def mng_docker_info():
    resp_cmd_json = dkr.dkr_docker_info()
-   response = ro.docker_info(json.loads(resp_cmd_json['response'])) if( not resp_cmd_json['error'] ) else resp_cmd_json['error_descr']
+   data = json.loads(resp_cmd_json['response'])
+   response = ro.docker_info(data) if( not resp_cmd_json['error'] ) else resp_cmd_json['error_descr']
    return response
 
 
@@ -76,7 +77,9 @@ def mng_images():
 
 
 def mng_image(imageId):
-   return dkr.dkr_image(imageId)
+   resp_cmd_json = dkr.dkr_image(imageId)
+   response = ro.docker_image(resp_cmd_json['response']) if( not resp_cmd_json['error'] ) else resp_cmd_json
+   return response
 
 
 def mng_containers():

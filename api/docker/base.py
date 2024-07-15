@@ -18,7 +18,7 @@ import api.format.response_teplates as rt # Response Template
 
 def exeCommand(command):
     resp = runCommand(command)
-    output = {'error':False, 'response': resp.stdout} if resp.returncode == 0 else {'error':True, 'error_descr': resp.stderr} 
+    output = {'error':False, 'response': resp.stdout, 'error_descr': resp.stderr} if resp.returncode == 0 else {'error':True, 'response': resp.stdout, 'error_descr': resp.stderr} 
     return output
 
 
@@ -37,8 +37,12 @@ def dkr_images():
 
 
 def dkr_image(imageId):
-    command = 'docker images ' + imageId
-    return rt.dkr_image(execCommand(command))
+    # command = "docker images --no-trunc  --format '{{json .}}'  | findstr '"+imageId+"'"
+    resp = {}
+    for line in dkr_images()['response'].splitlines():
+        values = json.loads(line)
+        if values['ID'] == 'sha256:'+imageId : resp = values
+    return  {'error':False, 'response':resp, 'error_descr': ''}
 
 
 def dkr_image_run(imageId, **kwargs):
