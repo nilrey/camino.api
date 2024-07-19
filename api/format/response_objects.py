@@ -58,14 +58,17 @@ def dkr_containers(data):
         img_info = {}
         for str_image in data['images'].splitlines():
             image = json.loads(str_image)
-            if(container['Image'] == image["Repository"] ):
+            # в данном месте image["Repository"] имеет вид "postgres" а container['Image'] = "postgres:16.1" , т.е. к названию добавлено значения Tag
+            # соответствено добавлена обработка, в выборку добавлено оригинальное значение Image
+            if(container['Image'].replace(':'+image['Tag'], '') == image["Repository"] ):
                 img_info = {
                     "id":removeSha256(image["ID"]),
                     "name":image["Repository"],
-                    "tag":image["Tag"],
+                    "tag":image["Tag"]
                 }
         resp['items'].append( {
             'id':container['ID'],
+            'img':container['Image'],
             'image' : img_info,
             'command' : container['Command'],
             'names' : container['Names'],
