@@ -71,13 +71,16 @@ def dkr_image_run(imageId, **kwargs):
     return rt.dkr_image_run(data)
 
 
-def dkr_containers():
+def dkr_containers_():
     # command = 'docker ps --format "{{.ID}},{{.Image}},{{.Command}},{{.CreatedAt}},{{.Status}},{{.Ports}},{{.Names}}" --no-trunc '
     command = 'docker ps --no-trunc '
     containers = execCommand(command)
     images = dkr_images()
     return rt.dkr_containers(containers, images['items'] )
 
+def dkr_containers():
+    command = addParamJSON("docker ps --no-trunc ")
+    return exeCommand(command)
 
 def dkr_containers_stats():
     command = 'docker container stats -a --no-stream '

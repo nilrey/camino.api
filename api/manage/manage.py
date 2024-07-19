@@ -83,7 +83,11 @@ def mng_image(imageId):
 
 
 def mng_containers():
-   return dkr.dkr_containers()
+   resp_cmd_json_cont = dkr.dkr_containers()
+   resp_cmd_json_img = dkr.dkr_images()
+   data = {'containers':resp_cmd_json_cont['response'], 'images':resp_cmd_json_img['response']}
+   response = ro.dkr_containers(data) if( not resp_cmd_json_cont['error'] ) else resp_cmd_json_cont
+   return response
 
 
 def mng_containers_stats():

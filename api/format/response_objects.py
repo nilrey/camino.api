@@ -49,3 +49,34 @@ def docker_image(data):
         "archive":""
     }
     return resp
+
+
+def dkr_containers(data):    
+    resp = {'pagination':{}, 'items':[] }
+    for str_container in data['containers'].splitlines():
+        container = json.loads(str_container)
+        img_info = {}
+        for str_image in data['images'].splitlines():
+            image = json.loads(str_image)
+            if(container['Image'] == image["Repository"] ):
+                img_info = {
+                    "id":removeSha256(image["ID"]),
+                    "name":image["Repository"],
+                    "tag":image["Tag"],
+                }
+        resp['items'].append( {
+            'id':container['ID'],
+            'image' : img_info,
+            'command' : container['Command'],
+            'names' : container['Names'],
+            'ports' : container['Ports'],
+            'created_at' : container['CreatedAt'],
+            'status' : container['Status']
+            } )
+
+    resp['pagination'] = getPagination(len(resp['items']))
+    return resp
+
+
+def removeSha256(str):
+    return str.replace('sha256:','')

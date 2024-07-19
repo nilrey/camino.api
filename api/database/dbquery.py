@@ -24,7 +24,6 @@ def load_config(filename='database.ini', section='postgresql'):
 
 def get_connection_string():
    config = load_config()
-   # cs = 'postgresql://postgres:postgres@127.0.0.1:5432/camino_db1'
    cs = f"postgresql://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['database']}"
    return cs
 
