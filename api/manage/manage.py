@@ -91,7 +91,9 @@ def mng_containers():
 
 
 def mng_containers_stats():
-   return dkr.dkr_containers_stats()
+   response = dkr.dkr_containers_stats()
+   if (not response['error']): response = ro.containers_stats(response['response'])
+   return response
 
 
 def mng_container(containerId):

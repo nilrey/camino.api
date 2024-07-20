@@ -7,37 +7,17 @@ import api.format.response_teplates as rt # Response Template
 # import string
 
 
-# def send_command(keyname, command, pause=5):
-#     output = '{}'
-#     with open(C.PATH_CONTAINER_HOSTPIPE+'/input/' + keyname + '.txt', 'w') as f:
-#         f.write(command)
-#     # time.sleep(pause)
-#     with open(C.PATH_CONTAINER_HOSTPIPE+'/output/' + keyname + '.txt', 'r') as file:
-#         data = file.read()
-#     return data
-
-def exeCommand(command):
-    resp = runCommand(command)
-    output = {'error':False, 'response': resp.stdout, 'error_descr': resp.stderr} if resp.returncode == 0 else {'error':True, 'response': resp.stdout, 'error_descr': resp.stderr} 
-    return output
-
-
-def addParamJSON(command_string):
-    return command_string + C.PARAM_FORMAT_JSON 
-
-
 def dkr_docker_info():
-    command = addParamJSON("docker info ")
-    return exeCommand(command)
+    return exeCommand(addJsonParam(" docker info "))
+
 
 
 def dkr_images():
-    command = addParamJSON("docker images --no-trunc ")
-    return exeCommand(command)
+    return exeCommand(addJsonParam("docker images --no-trunc "))
 
 
 def dkr_image(imageId):
-    # command = "docker images --no-trunc  --format '{{json .}}'  | findstr '"+imageId+"'"
+    # command = "docker images --no-trunc  --format '{{json .}}' | findstr '"+imageId+"'"
     resp = {}
     for line in dkr_images()['response'].splitlines():
         values = json.loads(line)
@@ -71,20 +51,12 @@ def dkr_image_run(imageId, **kwargs):
     return rt.dkr_image_run(data)
 
 
-def dkr_containers_():
-    # command = 'docker ps --format "{{.ID}},{{.Image}},{{.Command}},{{.CreatedAt}},{{.Status}},{{.Ports}},{{.Names}}" --no-trunc '
-    command = 'docker ps --no-trunc '
-    containers = execCommand(command)
-    images = dkr_images()
-    return rt.dkr_containers(containers, images['items'] )
-
 def dkr_containers():
-    command = addParamJSON("docker ps --no-trunc ")
-    return exeCommand(command)
+    return exeCommand(addJsonParam("docker ps --no-trunc "))
+
 
 def dkr_containers_stats():
-    command = 'docker container stats -a --no-stream '
-    return rt.dkr_containers_stats(execCommand(command))
+    return exeCommand(addJsonParam('docker stats -a --no-stream '))
 
 
 def dkr_container(container_id):
@@ -106,6 +78,37 @@ def execCommand(command):
     else:
         output = {'error':resp.stderr}
     return output
+
+
+def noFormatResponse(command):
+    return  exeCommand(command)
+
+
+def exeCommand(command):
+    resp = runCommand(command)
+    # cmd возвращает некорректный json (не хватает квадратных скобок и запятых в списке между элементами), в данной строке исправляем json
+    resp_stdout = resp.stdout
+    is_error = True
+    if resp.returncode == 0 and type(resp.stdout).__name__ == "str":
+        response_json = '['+ resp.stdout.replace('}\n{', '},\n{') + ']'
+        if( isJson(response_json)):
+            resp_stdout = response_json
+            is_error = False
+        else:
+            resp.stderr = "Формат не распознан. Убедитесь, что данные представлены в формате JSON"
+    output = {'error': is_error, 'response': resp_stdout, 'error_descr': resp.stderr} 
+    return output
+
+
+def addJsonParam(command_string):
+    return command_string + C.PARAM_FORMAT_JSON 
+
+def isJson(str):
+  try:
+    json.loads(str)
+  except ValueError as e:
+    return False
+  return True
 
 # def generate_code(length):
 #  all_symbols = string.ascii_uppercase + string.digits
