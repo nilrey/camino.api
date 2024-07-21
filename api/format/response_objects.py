@@ -3,51 +3,55 @@ import json
 def getPagination(cnt = 0):
     return { "page": 1, "pageSize": cnt, "totalItems": cnt, "totalPages": 1}
 
-def docker_info(data):
+def docker_info(data_json):
+    lst_items = json.loads(data_json)
     resp = {
-        "version": data["ServerVersion"],
+        "version": lst_items[0]["ServerVersion"],
         "containers": {
-            "running": data["ContainersRunning"],
-            "paused":  data["ContainersPaused"],
-            "stopped":  data["ContainersStopped"],
-            "total": data["Containers"]
+            "running": lst_items[0]["ContainersRunning"],
+            "paused":  lst_items[0]["ContainersPaused"],
+            "stopped":  lst_items[0]["ContainersStopped"],
+            "total": lst_items[0]["Containers"]
         },
-        "images": data["Images"],
-        "cpus": data["NCPU"],
-        "mem": data["MemTotal"]
+        "images": lst_items[0]["Images"],
+        "cpus": lst_items[0]["NCPU"],
+        "mem": lst_items[0]["MemTotal"]
     }
     return resp
 
 
-def docker_images(data):    
-    resp = {'pagination':{}, 'items':[] }
-    for line in data['images'].splitlines():
-        lst = json.loads(line)
-        formatted = {
-            "id":lst["ID"].replace('sha256:',''),
-            "name":lst["Repository"],
-            "tag":lst["Tag"],
-            "created_at":lst["CreatedAt"],
-            "size":lst["Size"],
+def docker_images(data_json):    
+    lst_items = json.loads(data_json)
+    items = []
+    for item in lst_items:
+        items.append(
+            {
+            "id":removeSha256(item["ID"]),
+            "name":item["Repository"],
+            "tag":item["Tag"],
+            "created_at":item["CreatedAt"],
+            "size":item["Size"],
             "location":"",
             "comment":"",
             "archive":""
-        }
-        resp['items'].append(formatted )
-    resp['pagination'] = getPagination(len(resp['items']))
-    return resp
+        })
+    return {'pagination':getPagination(len(items)), 'items':items }
 
-def docker_image(data):    
-    resp = {
-        "id":data["ID"].replace('sha256:',''),
-        "name":data["Repository"],
-        "tag":data["Tag"],
-        "created_at":data["CreatedAt"],
-        "size":data["Size"],
-        "location":"",
-        "comment":"",
-        "archive":""
-    }
+def docker_image(imageId, data_json):
+    lst_items = json.loads(data_json)
+    resp = {}
+    for item in lst_items:
+        if(removeSha256(item["ID"]) == imageId ):
+            resp = {
+                "id":removeSha256(item["ID"]),
+                "name":item["Repository"],
+                "tag":item["Tag"],
+                "created_at":item["CreatedAt"],
+                "size":item["Size"],
+                "location":"",
+                "comment":"",
+                "archive":""
+            }
     return resp
 
 
@@ -93,6 +97,28 @@ def containers_stats(data_json):
                 "mem": item['MemPerc'],
                 "mem_use": item['MemUsage'],
                 "size": ""
+            }
+        )
+    return {'pagination':getPagination(len(items)), 'items':items }
+
+
+def container(data_json):
+    lst_items = json.loads(data_json)
+    items = []
+    for item in lst_items:
+        items.append(
+            {
+                "id": item['ID'],
+                "image": {
+                    "id": "",
+                    "name": item['Image'],
+                    "tag": ""
+                },
+                "command": item['Command'],
+                "names": item['Names'],
+                "ports": item['Ports'],
+                "created_at": item['CreatedAt'],
+                "status": item['Status'],
             }
         )
     resp = {'pagination':getPagination(len(items)), 'items':items }

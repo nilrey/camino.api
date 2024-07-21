@@ -11,18 +11,8 @@ def dkr_docker_info():
     return exeCommand(addJsonParam(" docker info "))
 
 
-
 def dkr_images():
     return exeCommand(addJsonParam("docker images --no-trunc "))
-
-
-def dkr_image(imageId):
-    # command = "docker images --no-trunc  --format '{{json .}}' | findstr '"+imageId+"'"
-    resp = {}
-    for line in dkr_images()['response'].splitlines():
-        values = json.loads(line)
-        if values['ID'] == 'sha256:'+imageId : resp = values
-    return  {'error':False, 'response':resp, 'error_descr': ''}
 
 
 def dkr_image_run(imageId, **kwargs):
@@ -52,7 +42,7 @@ def dkr_image_run(imageId, **kwargs):
 
 
 def dkr_containers():
-    return exeCommand(addJsonParam("docker ps --no-trunc "))
+    return exeCommand(addJsonParam('docker ps --no-trunc '))
 
 
 def dkr_containers_stats():
@@ -60,16 +50,14 @@ def dkr_containers_stats():
 
 
 def dkr_container(container_id):
-    command = "docker ps --filter ''id=" + container_id + "'' " 
-    return rt.dkr_container(execCommand(command))
+    return exeCommand(addJsonParam(f'docker ps --filter "id={container_id}" --no-trunc '))
 
 
 # запуск шелл команды через сокет
 def runCommand(command):
 	return subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-	# return subprocess.run(command, shell=True)
 
-# 
+ 
 def execCommand(command):
     resp = runCommand(command)
     # опредлить единый формат вывода и обработки ошибки в т.ч. Internal Server Error
@@ -96,7 +84,7 @@ def exeCommand(command):
             is_error = False
         else:
             resp.stderr = "Формат не распознан. Убедитесь, что данные представлены в формате JSON"
-    output = {'error': is_error, 'response': resp_stdout, 'error_descr': resp.stderr} 
+    output = {'command':command, 'error': is_error, 'response': resp_stdout, 'error_descr': resp.stderr} 
     return output
 
 

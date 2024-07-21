@@ -59,9 +59,8 @@ def mng_create_role(name, code):
 
 # Docker
 def mng_docker_info():
-   resp_cmd_json = dkr.dkr_docker_info()
-   data = json.loads(resp_cmd_json['response'])
-   response = ro.docker_info(data) if( not resp_cmd_json['error'] ) else resp_cmd_json['error_descr']
+   response = dkr.dkr_docker_info()
+   if (not response['error']): response = ro.docker_info(response['response'])
    return response
 
 
@@ -70,15 +69,14 @@ def mng_docker_image_run(imageId, **kwargs):
 
 
 def mng_images():
-   resp_cmd_json = dkr.dkr_images()
-   data = {'images':resp_cmd_json['response']}
-   response = ro.docker_images(data) if( not resp_cmd_json['error'] ) else resp_cmd_json
+   response = dkr.dkr_images()
+   if (not response['error']): response = ro.docker_images(response['response'])
    return response
 
 
 def mng_image(imageId):
-   resp_cmd_json = dkr.dkr_image(imageId)
-   response = ro.docker_image(resp_cmd_json['response']) if( not resp_cmd_json['error'] ) else resp_cmd_json
+   response = dkr.dkr_images()
+   if (not response['error']): response = ro.docker_image(imageId, response['response'])
    return response
 
 
@@ -97,7 +95,9 @@ def mng_containers_stats():
 
 
 def mng_container(containerId):
-   return dkr.dkr_container(containerId)
+   response = dkr.dkr_container(containerId)
+   if (not response['error']): response = ro.container(response['response'])
+   return response
 
 
 def mng_container_stats(containerId):
