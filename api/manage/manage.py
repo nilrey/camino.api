@@ -103,7 +103,9 @@ def mng_container(containerId):
 
 
 def mng_container_stats(containerId):
-   return True #dkr_container_stats(containerId)
+   response = dkr.dkr_containers_stats()
+   if (not response['error']): response = ro.container_stats(containerId, response['response'])
+   return response
    
 
 def mng_container_monitor(containerId):

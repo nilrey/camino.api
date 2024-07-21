@@ -37,6 +37,7 @@ def docker_images(data_json):
         })
     return {'pagination':getPagination(len(items)), 'items':items }
 
+
 def docker_image(imageId, data_json):
     lst_items = json.loads(data_json)
     resp = {}
@@ -123,6 +124,25 @@ def container(data_json):
         )
     resp = {'pagination':getPagination(len(items)), 'items':items }
     return resp
+
+
+
+
+def container_stats(containerId, data_json):
+    lst_items = json.loads(data_json)
+    resp = {}
+    for item in lst_items:
+        if(removeSha256(item["ID"]) == containerId ):
+            resp = {
+                "id": item['ID'],
+                "state": "",
+                "cpu": item['CPUPerc'],
+                "mem": item['MemPerc'],
+                "mem_use": item['MemUsage'],
+                "size": ""
+            }
+    return resp
+
 
 
 def removeSha256(str):
