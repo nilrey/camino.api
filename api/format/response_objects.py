@@ -57,11 +57,11 @@ def docker_image(imageId, data_json):
 
 def dkr_containers(data):    
     resp = {'pagination':{}, 'items':[] }
-    for str_container in data['containers'].splitlines():
-        container = json.loads(str_container)
+    lst_container = json.loads(data['containers'])
+    for container in lst_container:
         img_info = {}
-        for str_image in data['images'].splitlines():
-            image = json.loads(str_image)
+        lst_images = json.loads(data['images'])
+        for image in lst_images:
             # в данном месте image["Repository"] имеет вид "postgres" а container['Image'] = "postgres:16.1" , т.е. к названию добавлено значения Tag
             # соответствено добавлена обработка, в выборку добавлено оригинальное значение Image для отладки
             if(container['Image'].replace(':'+image['Tag'], '') == image["Repository"] ):
