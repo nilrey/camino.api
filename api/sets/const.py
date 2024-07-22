@@ -5,4 +5,5 @@ CNTR_BASE_01_DIR_WEIGHTS="/code/buffer"
 CNTR_BASE_01_DIR_IN="/code/buffer"
 CNTR_BASE_01_DIR_OUT="/code/buffer"
 
-PARAM_FORMAT_JSON = " --format '{{json .}}' "
+PARAM_TO_JSON = " --format '{{json .}}' "
+PARAM_NO_TRUNC = " --no-trunc "

@@ -81,12 +81,9 @@ def mng_image(imageId):
 
 
 def mng_containers():
-   resp_cmd_json_cont = dkr.dkr_containers()
+   response = dkr.dkr_containers()
    resp_cmd_json_img = dkr.dkr_images()
-   data = {'containers':resp_cmd_json_cont['response'], 'images':resp_cmd_json_img['response']}
-   # response = ro.dkr_containers(data) if( not resp_cmd_json_cont['error'] ) else resp_cmd_json_cont
-   response = {}
-   if (not resp_cmd_json_cont['error']): response = ro.dkr_containers(data)
+   if (not response['error']): response = ro.dkr_containers({'containers':response['response'], 'images':resp_cmd_json_img['response']})
    return response
 
 
@@ -98,7 +95,8 @@ def mng_containers_stats():
 
 def mng_container(containerId):
    response = dkr.dkr_container(containerId)
-   if (not response['error']): response = ro.container(response['response'])
+   resp_cmd_json_img = dkr.dkr_images()
+   if (not response['error']): response = ro.container({'container': response['response'], 'images': resp_cmd_json_img['response']})
    return response
 
 

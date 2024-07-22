@@ -8,19 +8,16 @@ import api.format.response_teplates as rt # Response Template
 
 
 def dkr_docker_info():
-    return exeCommand(addJsonParam(" docker info "))
+    return exeCommand(' docker info '+ C.PARAM_TO_JSON )
 
 
 def dkr_images():
-    return exeCommand(addJsonParam("docker images --no-trunc "))
+    return exeCommand('docker images '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
 
 
 def dkr_image_run(imageId, **kwargs):
     command = 'docker run -d --rm '
-
-    # if( not 'name' in kwargs.items()):
-    #     command += ' --name '+generate_code(6)+' '
-  
+    # if( not 'name' in kwargs.items()): command += ' --name '+generate_code(6)+' '
     for param, value in kwargs.items():
         if(param == 'name' and value != '' ):
             command += f' --name {value} '
@@ -33,24 +30,22 @@ def dkr_image_run(imageId, **kwargs):
         if(param == 'out_dir' and value != '' ):
             command += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
     command += f' {imageId}'
-
     data = {'container_id': execCommand(command)}
     # data['container_data'] = dkr_container(data['container_id'])
     # data['image_data'] = dkr_container(data['container_id']['image_id'])
-
     return rt.dkr_image_run(data)
 
 
 def dkr_containers():
-    return exeCommand(addJsonParam('docker ps --no-trunc '))
+    return exeCommand('docker ps '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
 
 
 def dkr_containers_stats():
-    return exeCommand(addJsonParam('docker stats -a --no-stream '))
+    return exeCommand('docker stats -a --no-stream '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
 
 
 def dkr_container(container_id):
-    return exeCommand(addJsonParam(f'docker ps --filter "id={container_id}" --no-trunc '))
+    return exeCommand(f'docker ps --filter "id={container_id}" '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
 
 
 # запуск шелл команды через сокет
@@ -87,9 +82,6 @@ def exeCommand(command):
     output = {'command':command, 'error': is_error, 'response': resp_stdout, 'error_descr': resp.stderr} 
     return output
 
-
-def addJsonParam(command_string):
-    return command_string + C.PARAM_FORMAT_JSON 
 
 def isJson(str):
   try:

@@ -3,6 +3,7 @@ import json
 def getPagination(cnt = 0):
     return { "page": 1, "pageSize": cnt, "totalItems": cnt, "totalPages": 1}
 
+
 def docker_info(data_json):
     lst_items = json.loads(data_json)
     resp = {
@@ -56,9 +57,9 @@ def docker_image(imageId, data_json):
     return resp
 
 
-def dkr_containers(data):    
-    resp = {'pagination':{}, 'items':[] }
+def dkr_containers(data):
     lst_container = json.loads(data['containers'])
+    items = []
     for container in lst_container:
         img_info = {}
         lst_images = json.loads(data['images'])
@@ -71,7 +72,7 @@ def dkr_containers(data):
                     "name":image["Repository"],
                     "tag":image["Tag"]
                 }
-        resp['items'].append( {
+        items.append( {
             'id':container['ID'],
             'img':container['Image'],
             'image' : img_info,
@@ -82,8 +83,7 @@ def dkr_containers(data):
             'status' : container['Status']
             } )
 
-    resp['pagination'] = getPagination(len(resp['items']))
-    return resp
+    return {'pagination':getPagination(len(items)), 'items':items }
 
 
 def containers_stats(data_json):
@@ -100,21 +100,30 @@ def containers_stats(data_json):
                 "size": ""
             }
         )
-    return {'pagination':getPagination(len(items)), 'items':items }
+    return {'items':items }
 
 
-def container(data_json):
-    lst_items = json.loads(data_json)
+def container(data)->dict:
+    lst_items = json.loads(data['container'])
     items = []
     for item in lst_items:
+        image_info = {}
+        lst_images = json.loads(data['images'])
+        for image in lst_images:
+            # в данном месте image["Repository"] имеет вид "postgres" а container['Image'] = "postgres:16.1" , т.е. к названию добавлено значения Tag
+            # соответствено добавлена обработка, в выборку добавлено оригинальное значение Image для отладки
+            if(item['Image'].replace(':'+image['Tag'], '') == image["Repository"] ):
+                image_info = {
+                    "id":removeSha256(image["ID"]),
+                    "name":image["Repository"],
+                    "tag":image["Tag"]
+                }
+                break
         items.append(
             {
                 "id": item['ID'],
-                "image": {
-                    "id": "",
-                    "name": item['Image'],
-                    "tag": ""
-                },
+                'img':item['Image'],
+                "image": image_info,
                 "command": item['Command'],
                 "names": item['Names'],
                 "ports": item['Ports'],
@@ -122,10 +131,7 @@ def container(data_json):
                 "status": item['Status'],
             }
         )
-    resp = {'pagination':getPagination(len(items)), 'items':items }
-    return resp
-
-
+    return {'pagination':getPagination(len(items)), 'items':items }
 
 
 def container_stats(containerId, data_json):
@@ -142,7 +148,6 @@ def container_stats(containerId, data_json):
                 "size": ""
             }
     return resp
-
 
 
 def removeSha256(str):

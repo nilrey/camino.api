@@ -17,7 +17,7 @@ class Monitor():
                         "x": 0, 
 	                    "y": 0, 
 	                    "w": 3, 
-	                    "h": 2
+	                    "h": 3
                         }
         self.containers_names = ['grafana', 
                                 'node-exporter',
@@ -29,6 +29,11 @@ class Monitor():
                                 'camino-restapi',
                                 'camino-plugins',
                                 'camino-pgdb']
+        self.views = {  '1':'Время существоваия контейнера',
+                        '2':'Загрузка процессора',
+                        '3':'Оперативная память',
+                        '4':'Дисковое пространство',
+                        '5':'Сеть'}
             
     def get_containers_from_docker(self)->dict:
         '''Получение списка активных контейнеров от docker
@@ -50,19 +55,31 @@ class Monitor():
         template['title'] = name
         template['source'] = 'http://127.0.0.1:3000/d/b5f1b21e-35e1-4dc7-be5e-361d1bcb1bcf/docker-monitoring?orgId=1&var-id=%2Fsystem.slice%2Fdocker-{}.scope&from=now-5m&to=now'.format(id)
         return template
+
+    def create_json_part_vid(self, id, name, panel_num):
+        for key, value in self.views.items():
+            template = copy.deepcopy(self.template)
+            template['id'] = id
+            template['title'] = self.views[panel_num]
+            template['source'] = 'http://127.0.0.1:3000/d/b5f1b21e-35e1-4dc7-be5e-361d1bcb1bcf/docker-monitoring?orgId=1&var-id=%2Fsystem.slice%2Fdocker-{}.scope&var-name={}&viewPanel={}&from=now-5m&to=now'.format(id, name,panel_num)
+        return template
+        
         
     def create_json(self, id)->dict:
         ''' Метод для создания файлов отображения мониторинга
             Return: создается словарь со структурой template. Имя файла - id контейнера
         '''
         result = []
+        containers = self.get_containers_from_docker()
         if id != 'GRAFANA':
-            result.append(self.create_json_part(id))
+            name = containers.get(id,"")
+            for panel_num in self.views.keys():
+                result.append(self.create_json_part_vid(id, name, panel_num))
         else:
-            containers = self.get_containers_from_docker()
             for id, name in containers.items():
                 if name in self.containers_names:
-                    result.append(self.create_json_part(id,name))
+                    for panel_num in self.views.keys():
+                        result.append(self.create_json_part_vid(id, name, panel_num))
         return {'items':result}
 
 if __name__ == "__main__":
