@@ -48,6 +48,10 @@ def dkr_container(container_id):
     return exeCommand(f'docker ps --filter "id={container_id}" '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
 
 
+def dkr_container_start(container_id):
+    return runCommand(f'docker start {container_id} ' )
+
+
 # запуск шелл команды через сокет
 def runCommand(command):
 	return subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

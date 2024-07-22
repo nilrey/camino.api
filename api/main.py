@@ -155,22 +155,30 @@ async def api_docker_image_run(request: Request,
 async def api_docker_containers():
    return mng_containers()
 
+
 @docker_containers.get("/stats", tags=["Docker-контейнеры"], summary="Получение списка состояний Docker-контейнеров на сервере")
 async def api_docker_containers_stats():
    return mng_containers_stats()
+
 
 @docker_containers.get("/{containerId}", tags=["Docker-контейнеры"], summary="Получение информации о Docker-контейнере на сервере")
 async def api_docker_container(containerId):
    return mng_container(containerId)
 
+
 @docker_containers.get("/{containerId}/stats", tags=["Docker-контейнеры"], summary="Получение состояния Docker-контейнера на сервере")
 async def api_docker_container_stats(containerId):
    return mng_container_stats(containerId)
+
 
 @docker_containers.get("/{containerId}/monitor", tags=["Docker-контейнеры"], summary="Получение списка виджетов для мониторинга состояния Docker-контейнера")
 async def api_docker_container_monitor(containerId):
    return mng_container_monitor(containerId)
 
+
+@docker_containers.put("/{containerId}/start", tags=["Docker-контейнеры"], summary="Запуск Docker-контейнер на сервере")
+async def api_docker_container_start(containerId ):
+   return mng_docker_container_start(containerId)
 
 app.include_router(auth)
 app.include_router(projects)

@@ -110,3 +110,9 @@ def mng_container_monitor(containerId):
    monitor = Monitor()
    result = monitor.create_json(containerId)
    return result
+
+
+def mng_docker_container_start(containerId):
+   containerId = dkr.dkr_container_start(containerId) # UID as response 
+   if (not response['error']): response = ro.container_start(containerId, response['response'])
+   return response  
