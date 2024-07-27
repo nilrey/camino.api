@@ -52,6 +52,10 @@ def dkr_container_start(container_id):
     return runCommand(f'docker start {container_id} ' )
 
 
+def dkr_container_stop(container_id):
+    return runCommand(f'docker stop {container_id} ' )
+
+
 # запуск шелл команды через сокет
 def runCommand(command):
 	return subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

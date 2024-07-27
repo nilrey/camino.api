@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 RUN pip install fastapi uvicorn
 
-RUN pip install loguru
+# RUN pip install loguru
 
 RUN apt-get update && apt-get install -y docker.io
 
@@ -18,7 +18,7 @@ COPY ./api /code/api
 
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "80"]
 
-VOLUME ["/code/api/docker/hostpipe"]
+#VOLUME ["/code/api/docker/hostpipe"]
 
 # CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
 

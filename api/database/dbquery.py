@@ -3,7 +3,6 @@ from sqlalchemy import create_engine
 from sqlalchemy import text, insert, update, select, delete
 import uuid, json
 from typing import List
-from api.logg import *
 from sqlalchemy import bindparam, text
 from configparser import ConfigParser
 

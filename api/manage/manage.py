@@ -113,6 +113,12 @@ def mng_container_monitor(containerId):
 
 
 def mng_docker_container_start(containerId):
-   containerId = dkr.dkr_container_start(containerId) # UID as response 
-   if (not response['error']): response = ro.container_start(containerId, response['response'])
+   response = dkr.dkr_container_start(containerId) # UID as response 
+   # if (not response['error']): response = ro.container_start(containerId, response['response'])
+   return response
+
+
+def mng_docker_container_stop(containerId):
+   response = dkr.dkr_container_stop(containerId) # UID as response 
+   # if (not response['error']): response = ro.container_stop(containerId, response['response'])
    return response  

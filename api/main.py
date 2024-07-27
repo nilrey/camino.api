@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from api.lib.func_request import get_request_params
 from api.sets.metadata_fastapi import *
 from api.manage.manage import *
-from api.logg import *
+# from api.logg import *
 
 
 app = FastAPI(openapi_tags=tags_metadata)
@@ -179,6 +179,12 @@ async def api_docker_container_monitor(containerId):
 @docker_containers.put("/{containerId}/start", tags=["Docker-контейнеры"], summary="Запуск Docker-контейнер на сервере")
 async def api_docker_container_start(containerId ):
    return mng_docker_container_start(containerId)
+
+
+
+@docker_containers.put("/{containerId}/stop", tags=["Docker-контейнеры"], summary="Остановка Docker-контейнер на сервере")
+async def api_docker_container_stop(containerId ):
+   return mng_docker_container_stop(containerId)
 
 app.include_router(auth)
 app.include_router(projects)
