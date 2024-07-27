@@ -35,10 +35,10 @@ def dkr_image_run(imageId, **kwargs):
         -v /home/ubuntu/Documents/images/bytetracker/000/input:/input -it --name bytetracker bytetracker-image \
             --input_data \'{"datasets":[{"dataset_name": "video"}]}\''
     
-    # data = {'container_id': execCommand(command)}
+    data = {'container_id': execCommand(command)}
     # data['container_data'] = dkr_container(data['container_id'])
     # data['image_data'] = dkr_container(data['container_id']['image_id'])
-    return command
+    return data
 
 
 def dkr_containers():
