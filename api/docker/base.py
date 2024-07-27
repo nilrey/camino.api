@@ -30,10 +30,15 @@ def dkr_image_run(imageId, **kwargs):
         if(param == 'out_dir' and value != '' ):
             command += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
     command += f' {imageId}'
-    data = {'container_id': execCommand(command)}
+
+    command = 'docker run --rm -v /home/ubuntu/Documents/bytetracker/output:/output \
+        -v /home/ubuntu/Documents/bytetracker/input:/input -it --name bytetracker bytetracker-image \
+            --input_data \'{"datasets":[{"dataset_name": "video"}]}\''
+    
+    # data = {'container_id': execCommand(command)}
     # data['container_data'] = dkr_container(data['container_id'])
     # data['image_data'] = dkr_container(data['container_id']['image_id'])
-    return rt.dkr_image_run(data)
+    return command
 
 
 def dkr_containers():
