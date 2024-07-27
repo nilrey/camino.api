@@ -17,23 +17,22 @@ def dkr_images():
 
 def dkr_image_run(imageId, **kwargs):
     command = 'docker run -d --rm '
+    param_name = param_weights = param_hyper_params = param_input = param_output = ''
     # if( not 'name' in kwargs.items()): command += ' --name '+generate_code(6)+' '
     for param, value in kwargs.items():
         if(param == 'name' and value != '' ):
-            command += f' --name {value} '
+            param_name += f' --name {value} '
         if(param == 'weights' ):
-            command += f' -v {value}:{C.CNTR_BASE_01_DIR_WEIGHTS} '
+            param_weights += f' -v {value}:{C.CNTR_BASE_01_DIR_WEIGHTS} '
         if(param == 'hyper_params' and value != '' ):
-            command += ""
+            param_hyper_params += ""
         if(param == 'in_dir' and value != '' ):
-            command += f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
+            param_input += f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
         if(param == 'out_dir' and value != '' ):
-            command += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
-    command += f' {imageId}'
+            param_output += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
+    # command += f' {imageId}'
 
-    command = 'docker run -d --rm -v /home/ubuntu/Documents/images/bytetracker/000/output:/output \
-        -v /home/ubuntu/Documents/images/bytetracker/000/input:/input -it --name bytetracker bytetracker-image \
-            --input_data \'{"datasets":[{"dataset_name": "video"}]}\''
+    command = f'docker run -d --rm -v {param_output}:/output -v {param_input}:/input -it --name {param_name} {imageId} --input_data \'{"datasets":[{"dataset_name": "video"}]}\''
     
     data = {'container_id': execCommand(command)}
     # data['container_data'] = dkr_container(data['container_id'])
