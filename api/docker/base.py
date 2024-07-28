@@ -32,7 +32,7 @@ def dkr_image_run(imageId, **kwargs):
             param_output += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
     # command += f' {imageId}'
 
-    command = f'docker run -d --rm -v {param_output}:/output -v {param_input}:/input -it --name {param_name} {imageId} --input_data \'{"datasets":[{"dataset_name": "video"}]}\''
+    command = 'docker run -d --rm '+param_output+' '+param_input+' -it '+param_name +' ' +imageId+' --input_data \'{"datasets":[{"dataset_name": "video"}]}\''
     
     data = {'container_id': execCommand(command)}
     # data['container_data'] = dkr_container(data['container_id'])
