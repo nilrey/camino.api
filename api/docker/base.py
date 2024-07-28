@@ -17,7 +17,7 @@ def dkr_images():
 
 def dkr_image_run(imageId, **kwargs):
     command = 'docker run -d --rm '
-    param_name = param_weights = param_hyper_params = param_input = param_output = ''
+    param_name = param_weights = param_hyper_params = param_input = param_output = param_input_data = ''
     # if( not 'name' in kwargs.items()): command += ' --name '+generate_code(6)+' '
     for param, value in kwargs.items():
         if(param == 'name' and value != '' ):
@@ -28,11 +28,14 @@ def dkr_image_run(imageId, **kwargs):
             param_hyper_params += ""
         if(param == 'in_dir' and value != '' ):
             param_input += f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
+            param_input_data = '--input_data \'{"datasets":[{"dataset_name": "video"}]}\''
         if(param == 'out_dir' and value != '' ):
             param_output += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
     # command += f' {imageId}'
 
-    command = 'docker run -d --rm '+param_output+' '+param_input+' -it '+param_name +' ' +imageId+' --input_data \'{"datasets":[{"dataset_name": "video"}]}\''
+    command = 'docker run -d --rm '+param_output+' '+param_input+' -it '+param_name +' ' +imageId+' ' + param_input_data
+    #command = 'docker run -d --rm '+param_output+' '+param_input+' -it '+param_name +' ' +imageId+' --input_data \'{"datasets":[{"dataset_name": "video"}]}\''
+
     
     data = {'container_id': execCommand(command)}
     # data['container_data'] = dkr_container(data['container_id'])

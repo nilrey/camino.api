@@ -104,34 +104,19 @@ def containers_stats(data_json):
 
 
 def container(data)->dict:
-    lst_items = json.loads(data['container'])
-    items = []
-    for item in lst_items:
-        image_info = {}
-        lst_images = json.loads(data['images'])
-        for image in lst_images:
-            # в данном месте image["Repository"] имеет вид "postgres" а container['Image'] = "postgres:16.1" , т.е. к названию добавлено значения Tag
-            # соответствено добавлена обработка, в выборку добавлено оригинальное значение Image для отладки
-            if(item['Image'].replace(':'+image['Tag'], '') == image["Repository"] ):
-                image_info = {
-                    "id":removeSha256(image["ID"]),
-                    "name":image["Repository"],
-                    "tag":image["Tag"]
-                }
-                break
-        items.append(
-            {
-                "id": item['ID'],
-                'img':item['Image'],
-                "image": image_info,
-                "command": item['Command'],
-                "names": item['Names'],
-                "ports": item['Ports'],
-                "created_at": item['CreatedAt'],
-                "status": item['Status'],
-            }
-        )
-    return {'pagination':getPagination(len(items)), 'items':items }
+    item = json.loads(data['container'])[0]
+    image_info = findImageById( json.loads(data['images']), item['Image'] )
+    resp = {
+            "id": item['ID'],
+            'img':item['Image'],
+            "image": image_info,
+            "command": item['Command'],
+            "names": item['Names'],
+            "ports": item['Ports'],
+            "created_at": item['CreatedAt'],
+            "status": item['Status'],
+        }
+    return resp
 
 
 def container_stats(containerId, data_json):
@@ -152,3 +137,17 @@ def container_stats(containerId, data_json):
 
 def removeSha256(str):
     return str.replace('sha256:','')
+
+
+def findImageById(lst_images, imageName):
+    for image in lst_images:
+        # в данном месте image["Repository"] имеет вид "postgres" а imageName = "postgres:16.1" , т.е. к названию добавлено значения Tag
+        # соответствено добавлена обработка, также в выборку добавлено оригинальное значение Image для отладки
+        if(imageName.replace(':'+image['Tag'], '') == image["Repository"] ):
+            image_info = {
+                "id":removeSha256(image["ID"]),
+                "name":image["Repository"],
+                "tag":image["Tag"]
+            }
+            break
+    return image_info

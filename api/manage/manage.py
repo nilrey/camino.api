@@ -64,7 +64,7 @@ def mng_docker_info():
    return response
 
 
-def mng_docker_image_run(imageId, **kwargs):
+def mng_image_run(imageId, **kwargs):
    return dkr.dkr_image_run(imageId, **kwargs)
 
 

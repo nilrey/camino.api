@@ -145,7 +145,7 @@ async def api_docker_image_run(request: Request,
                           in_dir:str = None,
                           out_dir:str = None
                           ):
-   return mng_docker_image_run(imageId, **get_request_params(request, True, False))
+   return mng_image_run(imageId, **get_request_params(request, True, False))
 
 
 # CONTAINERS
