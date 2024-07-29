@@ -104,8 +104,19 @@ def containers_stats(data_json):
 
 
 def container(data)->dict:
-    item = json.loads(data['container'])[0]
-    image_info = findImageById( json.loads(data['images']), item['Image'] )
+
+    try:
+        tmp = json.loads(data['container'])
+        if len(tmp) > 0:
+          item = tmp[0]
+        else: 
+          return {'error':True, 'error_descr': 'Контейнер не найден'}
+        
+    except ValueError as e:
+        return {'error':True, 'error_descr': 'Контейнер не найден'}
+    
+    
+    image_info = findImageByName( json.loads(data['images']), item['Image'] )
     resp = {
             "id": item['ID'],
             'img':item['Image'],
@@ -139,15 +150,31 @@ def removeSha256(str):
     return str.replace('sha256:','')
 
 
-def findImageById(lst_images, imageName):
+def findImageByName(lst_images, imageName):
+    image_info = {}
     for image in lst_images:
         # в данном месте image["Repository"] имеет вид "postgres" а imageName = "postgres:16.1" , т.е. к названию добавлено значения Tag
         # соответствено добавлена обработка, также в выборку добавлено оригинальное значение Image для отладки
-        if(imageName.replace(':'+image['Tag'], '') == image["Repository"] ):
+        if(imageName.replace(':'+image['Tag'], '') == image["Repository"] 
+           #or imageName == image["ID"]
+           ):
             image_info = {
                 "id":removeSha256(image["ID"]),
                 "name":image["Repository"],
                 "tag":image["Tag"]
             }
             break
+    return image_info
+
+
+def getImageById(image_id, images):
+    lst_images = json.loads(images)
+    image_info = []
+    for image in lst_images:
+        if( removeSha256(image_id) == removeSha256(image["ID"]) ):
+            image_info = {
+                    "id": removeSha256(image["ID"]),
+                    "name":image["Repository"],
+                    "tag":image["Tag"]
+                }
     return image_info

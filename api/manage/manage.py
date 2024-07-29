@@ -64,19 +64,27 @@ def mng_docker_info():
    return response
 
 
-def mng_image_run(imageId, **kwargs):
-   return dkr.dkr_image_run(imageId, **kwargs)
-
-
 def mng_images():
    response = dkr.dkr_images()
    if (not response['error']): response = ro.docker_images(response['response'])
    return response
 
 
-def mng_image(imageId):
+def mng_image(image_id):
    response = dkr.dkr_images()
-   if (not response['error']): response = ro.docker_image(imageId, response['response'])
+   if (not response['error']): response = ro.docker_image(image_id, response['response'])
+   return response
+
+
+def mng_image_run(image_id, **kwargs):
+   resp_cmd_json_img = dkr.dkr_images()
+   image = ro.getImageById(image_id, resp_cmd_json_img['response'] )
+   if( image["name"] ):
+      response = dkr.dkr_image_run(image["name"], **kwargs)
+      if (not response['error']): response = mng_container(response['response'][0])
+   else: 
+      response['error'] = True
+      response['error_descr'] = 'По данному Id образ не найден'
    return response
 
 
@@ -93,32 +101,33 @@ def mng_containers_stats():
    return response
 
 
-def mng_container(containerId):
-   response = dkr.dkr_container(containerId)
+def mng_container(container_id):
+   response = dkr.dkr_container(container_id)
    resp_cmd_json_img = dkr.dkr_images()
    if (not response['error']): response = ro.container({'container': response['response'], 'images': resp_cmd_json_img['response']})
    return response
 
 
-def mng_container_stats(containerId):
+def mng_container_stats(container_id):
    response = dkr.dkr_containers_stats()
-   if (not response['error']): response = ro.container_stats(containerId, response['response'])
+   if (not response['error']): response = ro.container_stats(container_id, response['response'])
    return response
    
 
-def mng_container_monitor(containerId):
+def mng_container_monitor(container_id):
    monitor = Monitor()
-   result = monitor.create_json(containerId)
+   result = monitor.create_json(container_id)
    return result
 
 
-def mng_docker_container_start(containerId):
-   response = dkr.dkr_container_start(containerId) # UID as response 
-   # if (not response['error']): response = ro.container_start(containerId, response['response'])
+def mng_docker_container_start(container_id):
+   response = dkr.dkr_container_start(container_id) # UID as response 
+   if (not response['error']): response = mng_container(response['response'][0])
    return response
 
 
-def mng_docker_container_stop(containerId):
-   response = dkr.dkr_container_stop(containerId) # UID as response 
-   # if (not response['error']): response = ro.container_stop(containerId, response['response'])
+def mng_docker_container_stop(container_id):
+   response = dkr.dkr_container_stop(container_id) # UID as response 
+   if (not response['error']): response = mng_container(response['response'][0])
+   # if (not response['error']): response = ro.container_stop(container_id, response['response'])
    return response  

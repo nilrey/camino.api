@@ -3,6 +3,7 @@ import subprocess
 import json
 import api.sets.const as C
 import api.format.response_teplates as rt # Response Template
+import api.format.response_objects as ro # Response Objects
 # import random
 # import string
 
@@ -15,7 +16,7 @@ def dkr_images():
     return exeCommand('docker images '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
 
 
-def dkr_image_run(imageId, **kwargs):
+def dkr_image_run(image_name, **kwargs):
     command = 'docker run -d --rm '
     param_name = param_weights = param_hyper_params = param_input = param_output = param_input_data = ''
     # if( not 'name' in kwargs.items()): command += ' --name '+generate_code(6)+' '
@@ -33,14 +34,9 @@ def dkr_image_run(imageId, **kwargs):
             param_output += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
     # command += f' {imageId}'
 
-    command = 'docker run -d --rm '+param_output+' '+param_input+' -it '+param_name +' ' +imageId+' ' + param_input_data
+    command = 'docker run -d --rm '+param_output+' '+param_input+' -it '+param_name +' ' +image_name+' ' + param_input_data
     #command = 'docker run -d --rm '+param_output+' '+param_input+' -it '+param_name +' ' +imageId+' --input_data \'{"datasets":[{"dataset_name": "video"}]}\''
-
-    
-    data = {'container_id': execCommand(command)}
-    # data['container_data'] = dkr_container(data['container_id'])
-    # data['image_data'] = dkr_container(data['container_id']['image_id'])
-    return data
+    return execCommand(command)
 
 
 def dkr_containers():
@@ -52,15 +48,15 @@ def dkr_containers_stats():
 
 
 def dkr_container(container_id):
-    return exeCommand(f'docker ps --filter "id={container_id}" '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
+    return exeCommand(f'docker ps -a --filter "id={container_id}" '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
 
 
 def dkr_container_start(container_id):
-    return runCommand(f'docker start {container_id} ' )
+    return execCommand(f'docker start {container_id} ' )
 
 
 def dkr_container_stop(container_id):
-    return runCommand(f'docker stop {container_id} ' )
+    return execCommand(f'docker stop {container_id} ' )
 
 
 # запуск шелл команды через сокет
@@ -70,12 +66,13 @@ def runCommand(command):
  
 def execCommand(command):
     resp = runCommand(command)
+    is_error = True
     # опредлить единый формат вывода и обработки ошибки в т.ч. Internal Server Error
     if resp.returncode == 0:
-        output = resp.stdout.splitlines()
+        is_error = False
     else:
         output = {'error':resp.stderr}
-    return output
+    return {'command':command, 'error': is_error, 'response': resp.stdout.splitlines() if(type(resp.stdout).__name__ == "str") else resp.stdout , 'error_descr': resp.stderr} 
 
 
 def noFormatResponse(command):
@@ -104,6 +101,7 @@ def isJson(str):
   except ValueError as e:
     return False
   return True
+
 
 # def generate_code(length):
 #  all_symbols = string.ascii_uppercase + string.digits
