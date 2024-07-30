@@ -22,12 +22,12 @@ async def api_all_users():
 
 @users.post("/create", summary="Создание пользователя")
 async def api_create_user(request: Request, 
-                          name:str,
-                          login:str,
-                          password:str,
-                          role_code:str,
-                          description:str = None
-                          ):
+      name:str,
+      login:str,
+      password:str,
+      role_code:str,
+      description:str = None
+   ):
    return mng_create_user(**get_request_params(request))
 
 
@@ -39,13 +39,13 @@ async def api_single_user(userId):
 
 @users.put("/{userId}", summary="Обновление информации пользователя")
 async def api_update_user(request: Request,
-                          userId:str,
-                          name:str,
-                          login:str,
-                          password:str,
-                          role_code:str,
-                          description:str = None
-                          ):
+      userId:str,
+      name:str,
+      login:str,
+      password:str,
+      role_code:str,
+      description:str = None
+   ):
    return mng_update_user(userId, **get_request_params(request, True, False))
 
 
@@ -55,14 +55,13 @@ async def api_delete_user(userId):
    return output
 
 
-
 # ROLES
 
 
 @roles.post("/create", tags=["Роли"], summary="Создание роли")
 async def api_create_role(code:str = None,
-                          name:str = None
-                          ):
+      name:str = None
+   ):
    return mng_create_role(name = name, code=code)
 
 
@@ -77,10 +76,11 @@ async def api_all_projects():
 
 @app.post("/projects/create", tags=["Проекты"], summary="Создание проекта")
 async def api_create_project( request: Request, 
-                              name:str, 
-                              type_id:int = 1,
-                              description:str = None, 
-                              author_id:str = None):
+      name:str, 
+      type_id:int = 1,
+      description:str = None, 
+      author_id:str = None
+   ):
    return mng_create_project(**get_request_params(request))
 
 
@@ -98,12 +98,13 @@ async def api_single_project_ext(projectId:str):
 
 @app.put("/projects/{projectId}", tags=["Проекты"], summary="Обновление информации о проекте")
 async def api_update_project(projectId,
-                              name:str = None, 
-                              type_id:str = None,
-                              description:str = None, 
-                              author_id:str = None, 
-                              dt_created:str = None, 
-                              is_deleted:bool = None):
+      name:str = None, 
+      type_id:str = None,
+      description:str = None, 
+      author_id:str = None, 
+      dt_created:str = None, 
+      is_deleted:bool = None
+   ):
    fields = {'name':name, 'type_id':type_id, 'description':description, 'author_id':author_id, 'dt_created':dt_created, 'is_deleted':is_deleted}
    output = mng_update_project(projectId, **fields)
    return output
@@ -138,13 +139,13 @@ async def api_docker_image(imageId):
 # Create container from Docker image
 @docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
 async def api_docker_image_run(request: Request,
-                          imageId:str,
-                          name:str = None,
-                          weights:str = None,
-                          hyper_params:str = None,
-                          in_dir:str = None,
-                          out_dir:str = None
-                          ):
+      imageId:str,
+      name:str = None,
+      weights:str = None,
+      hyper_params:str = None,
+      in_dir:str = None,
+      out_dir:str = None
+   ):
    return mng_image_run(imageId, **get_request_params(request, True, False))
 
 

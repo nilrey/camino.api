@@ -74,7 +74,7 @@ def dkr_containers(data):
                 }
         items.append( {
             'id':container['ID'],
-            'img':container['Image'],
+            # 'img':container['Image'],
             'image' : img_info,
             'command' : container['Command'],
             'names' : container['Names'],
@@ -119,7 +119,7 @@ def container(data)->dict:
     image_info = findImageByName( json.loads(data['images']), item['Image'] )
     resp = {
             "id": item['ID'],
-            'img':item['Image'],
+            # 'img':item['Image'],
             "image": image_info,
             "command": item['Command'],
             "names": item['Names'],
