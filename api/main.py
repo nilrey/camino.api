@@ -1,14 +1,17 @@
 #  # python3 -m venv venv
 #  source venv/bin/activate
 #  uvicorn api.main:app --reload
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from api.lib.func_request import get_request_params
 from api.sets.metadata_fastapi import *
 from api.manage.manage import *
 # from api.logg import *
+from api.format.exceptions import http_exception_handler, NotFoundError
 
 
 app = FastAPI(openapi_tags=tags_metadata)
+
+app.add_exception_handler(HTTPException, http_exception_handler)
 
 
 # USERS

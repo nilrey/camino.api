@@ -7,3 +7,5 @@ CNTR_BASE_01_DIR_OUT="/output"
 
 PARAM_TO_JSON = " --format '{{json .}}' "
 PARAM_NO_TRUNC = " --no-trunc "
+
+WHITE_LIST = ["camino", "bytetracker"]

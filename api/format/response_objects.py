@@ -1,4 +1,7 @@
 import json
+import api.sets.const as C
+from fastapi import HTTPException
+from api.format.exceptions import http_exception_handler, NotFoundError
 
 def getPagination(cnt = 0):
     return { "page": 1, "pageSize": cnt, "totalItems": cnt, "totalPages": 1}
@@ -25,23 +28,23 @@ def docker_images(data_json):
     lst_items = json.loads(data_json)
     items = []
     for item in lst_items:
-        items.append(
-            {
-            "id":removeSha256(item["ID"]),
-            "name":item["Repository"],
-            "tag":item["Tag"],
-            "created_at":item["CreatedAt"],
-            "size":item["Size"],
-            "location":"",
-            "comment":"",
-            "archive":""
-        })
+        if(isWhiteList(item["Repository"])):
+            items.append(
+                {
+                "id":removeSha256(item["ID"]),
+                "name":item["Repository"],
+                "tag":item["Tag"],
+                "created_at":item["CreatedAt"],
+                "size":item["Size"],
+                "location":"",
+                "comment":"",
+                "archive":""
+            })
     return {'pagination':getPagination(len(items)), 'items':items }
 
 
 def docker_image(imageId, data_json):
     lst_items = json.loads(data_json)
-    resp = {}
     for item in lst_items:
         if(removeSha256(item["ID"]) == imageId ):
             resp = {
@@ -54,6 +57,8 @@ def docker_image(imageId, data_json):
                 "comment":"",
                 "archive":""
             }
+    if not "resp" in locals():
+        raise NotFoundError(detail="Bad Request")
     return resp
 
 
@@ -72,16 +77,17 @@ def dkr_containers(data):
                     "name":image["Repository"],
                     "tag":image["Tag"]
                 }
-        items.append( {
-            'id':container['ID'],
-            # 'img':container['Image'],
-            'image' : img_info,
-            'command' : container['Command'],
-            'names' : container['Names'],
-            'ports' : container['Ports'],
-            'created_at' : container['CreatedAt'],
-            'status' : container['Status']
-            } )
+        if( isWhiteList(img_info["name"])):
+            items.append( {
+                'id':container['ID'],
+                # 'img':container['Image'],
+                'image' : img_info,
+                'command' : container['Command'],
+                'names' : container['Names'],
+                'ports' : container['Ports'],
+                'created_at' : container['CreatedAt'],
+                'status' : container['Status']
+                } )
 
     return {'pagination':getPagination(len(items)), 'items':items }
 
@@ -178,3 +184,10 @@ def getImageById(image_id, images):
                     "tag":image["Tag"]
                 }
     return image_info
+
+
+def isWhiteList(image_name):
+    for wl_name in C.WHITE_LIST :
+        if image_name.startswith(wl_name):
+            return True
+    return False
