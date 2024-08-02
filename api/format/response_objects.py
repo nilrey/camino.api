@@ -1,7 +1,7 @@
 import json
 import api.sets.const as C
 from fastapi import HTTPException
-from api.format.exceptions import http_exception_handler, NotFoundError
+from api.format.exceptions import *
 
 def getPagination(cnt = 0):
     return { "page": 1, "pageSize": cnt, "totalItems": cnt, "totalPages": 1}
@@ -58,7 +58,7 @@ def docker_image(imageId, data_json):
                 "archive":""
             }
     if not "resp" in locals():
-        raise NotFoundError(detail="Bad Request")
+        raise BadRequestError(detail="Bad Request")
     return resp
 
 
