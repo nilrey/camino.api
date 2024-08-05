@@ -95,7 +95,7 @@ def containers_stats(data_json):
     lst_items = json.loads(data_json)
     items = []
     for item in lst_items:
-        if( not isBlockListContainers(container['Name'])):
+        if( not isBlockListContainers(item['Name'])):
             items.append(
                 {
                     "id": item['ID'],
