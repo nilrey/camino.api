@@ -95,16 +95,17 @@ def containers_stats(data_json):
     lst_items = json.loads(data_json)
     items = []
     for item in lst_items:
-        items.append(
-            {
-                "id": item['ID'],
-                "state": "",
-                "cpu": item['CPUPerc'],
-                "mem": item['MemPerc'],
-                "mem_use": item['MemUsage'],
-                "size": ""
-            }
-        )
+        if( not isBlockListContainers(container['Name'])):
+            items.append(
+                {
+                    "id": item['ID'],
+                    "state": "",
+                    "cpu": item['CPUPerc'],
+                    "mem": item['MemPerc'],
+                    "mem_use": item['MemUsage'],
+                    "size": ""
+                }
+            )
     return {'items':items }
 
 
