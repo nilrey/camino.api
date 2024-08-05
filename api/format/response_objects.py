@@ -1,6 +1,5 @@
 import json
 import api.sets.const as C
-from fastapi import HTTPException
 from api.format.exceptions import *
 
 def getPagination(cnt = 0):
@@ -28,7 +27,7 @@ def docker_images(data_json):
     lst_items = json.loads(data_json)
     items = []
     for item in lst_items:
-        if(isWhiteList(item["Repository"])):
+        if(not isBlockListImages(item["Repository"])):
             items.append(
                 {
                 "id":removeSha256(item["ID"]),
@@ -66,18 +65,18 @@ def dkr_containers(data):
     lst_container = json.loads(data['containers'])
     items = []
     for container in lst_container:
-        img_info = {}
-        lst_images = json.loads(data['images'])
-        for image in lst_images:
-            # в данном месте image["Repository"] имеет вид "postgres" а container['Image'] = "postgres:16.1" , т.е. к названию добавлено значения Tag
-            # соответствено добавлена обработка, в выборку добавлено оригинальное значение Image для отладки
-            if(container['Image'].replace(':'+image['Tag'], '') == image["Repository"] ):
-                img_info = {
-                    "id":removeSha256(image["ID"]),
-                    "name":image["Repository"],
-                    "tag":image["Tag"]
-                }
-        if( isWhiteList(img_info["name"])):
+        if( not isBlockListContainers(container['Names'])):
+            img_info = {}
+            lst_images = json.loads(data['images'])
+            for image in lst_images:
+                # в данном месте image["Repository"] имеет вид "postgres" а container['Image'] = "postgres:16.1" , т.е. к названию добавлено значения Tag
+                # соответствено добавлена обработка, в выборку добавлено оригинальное значение Image для отладки
+                if(container['Image'].replace(':'+image['Tag'], '') == image["Repository"] ):
+                    img_info = {
+                        "id":removeSha256(image["ID"]),
+                        "name":image["Repository"],
+                        "tag":image["Tag"]
+                    }
             items.append( {
                 'id':container['ID'],
                 # 'img':container['Image'],
@@ -186,8 +185,15 @@ def getImageById(image_id, images):
     return image_info
 
 
-def isWhiteList(image_name):
-    for wl_name in C.WHITE_LIST :
-        if image_name.startswith(wl_name):
+def isBlockListImages(name):
+    for block_name in C.BLOCK_LIST_IMAGES :
+        if name == block_name:
+            return True
+    return False
+
+
+def isBlockListContainers(name):
+    for block_name in C.BLOCK_LIST_CONTAINERS :
+        if name == block_name:
             return True
     return False
