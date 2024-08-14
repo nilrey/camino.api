@@ -76,11 +76,11 @@ def mng_image(image_id):
    return response
 
 
-def mng_image_run(image_id, **kwargs):
+def mng_image_run(image_id, params):
    resp_cmd_json_img = dkr.dkr_images()
    image = ro.getImageById(image_id, resp_cmd_json_img['response'] )
    if( image["name"] ):
-      response = dkr.dkr_image_run(image["name"], **kwargs)
+      response = dkr.dkr_image_run(image["name"], params)
       if (not response['error']): response = mng_container(response['response'][0])
    else: 
       response['error'] = True

@@ -6,6 +6,7 @@ from api.lib.func_request import get_request_params
 from api.sets.metadata_fastapi import *
 from api.manage.manage import *
 # from api.logg import *
+from api.lib.reqest_classes import *
 from api.format.exceptions import http_exception_handler, NotFoundError
 
 
@@ -139,17 +140,33 @@ async def api_docker_image(imageId):
    return mng_image(imageId)
 
 
+
 # Create container from Docker image
 @docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
 async def api_docker_image_run(request: Request,
       imageId:str,
-      name:str = None,
-      weights:str = None,
-      hyper_params:str = None,
-      in_dir:str = None,
-      out_dir:str = None
+      imrun: ImageRun
    ):
-   return mng_image_run(imageId, **get_request_params(request, True, False))
+   return mng_image_run(imageId, imrun.getAllParams() )
+
+
+# # Create container from Docker image
+# @docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
+# async def api_docker_image_run(request: Request,
+#       imageId:str,
+#       name:str = Field(default=""),
+#       weights:str = None,
+#       hyper_params:str = None,
+#       in_dir:str = None,
+#       out_dir:str = None
+#    ):
+#    return mng_image_run(imageId, **get_request_params(request, True, False))
+
+
+
+# @docker_images.put("/{imageId}/rmi", tags=["Docker-образы"], summary="Удаление Docker-образа на сервере")
+# async def api_docker_image_rmi(imageId ):
+#    return mng_docker_image_rmi(imageId)
 
 
 # CONTAINERS
@@ -185,10 +202,10 @@ async def api_docker_container_start(containerId ):
    return mng_docker_container_start(containerId)
 
 
-
 @docker_containers.put("/{containerId}/stop", tags=["Docker-контейнеры"], summary="Остановка Docker-контейнер на сервере")
 async def api_docker_container_stop(containerId ):
    return mng_docker_container_stop(containerId)
+
 
 app.include_router(auth)
 app.include_router(projects)

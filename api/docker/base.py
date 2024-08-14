@@ -16,10 +16,10 @@ def dkr_images():
     return exeCommand('docker images '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
 
 
-def dkr_image_run(image_name, **kwargs):
+def dkr_image_run(image_name, params):
     command = 'docker run -d --rm '
     param_name = param_weights = param_hyper_params = param_input = param_output = param_input_data = ''
-    for param, value in kwargs.items():
+    for param, value in params.items():
         if(param == 'name' and value != '' ):
             param_name += f' --name {value} '
         if(param == 'weights' ):
