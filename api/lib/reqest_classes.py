@@ -5,8 +5,8 @@ class ImageRun(BaseModel):
    name: str = Field(default="")
    weights:str = Field(default="")
    hyper_params:str = Field(default="")
-   in_dir:str  = Field(default="/home/sadmin/Documents/images/bytetracker/000/input")
-   out_dir:str = Field(default="/home/sadmin/Documents/images/bytetracker/000/output")
+   in_dir:str  = Field(default="/home/ubuntu/Documents/images/bytetracker/000/input")
+   out_dir:str = Field(default="/home/ubuntu/Documents/images/bytetracker/000/output")
 
    def getAllParams(self):
     return {'name': self.name, 
