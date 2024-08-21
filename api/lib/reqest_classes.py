@@ -15,3 +15,8 @@ class ImageRun(BaseModel):
             'in_dir': self.in_dir, 
             'out_dir': self.out_dir, 
             }
+   
+
+class ANNEventBeforeRun(BaseModel):
+    msg: str = Field(default="")
+    details: str = Field(default="")

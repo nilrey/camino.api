@@ -207,6 +207,14 @@ async def api_docker_container_stop(containerId ):
    return mng_docker_container_stop(containerId)
 
 
+#   event  before_start
+@app.post("/events/{containerId}/before_start", tags=["События в Docker-контейнере"], summary="Событие начала обработки данных")
+async def api_docker_events_before_start(request: Request,
+      containerId:str,
+      event: ANNEventBeforeRun
+   ):
+   return {"result":"ok", "conainerId":containerId}
+
 app.include_router(auth)
 app.include_router(projects)
 app.include_router(proj_users)
