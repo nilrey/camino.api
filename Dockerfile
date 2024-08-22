@@ -1,4 +1,4 @@
-# docker create --name cdockerapi -p 8002:80  -v /var/run/docker.sock:/var/run/docker.sock -v /home/sadmin/Work/dockermanager:/code/api/docker/hostpipe idockerapi
+# docker create --name cdockerapi -p 8002:80  -v /var/run/docker.sock:/var/run/docker.sock idockerapi
 
 FROM python:3.10.12
 
@@ -10,16 +10,8 @@ RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
 RUN pip install fastapi uvicorn
 
-# RUN pip install loguru
-
 RUN apt-get update && apt-get install -y docker.io
 
 COPY ./api /code/api
 
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "80"]
-
-#VOLUME ["/code/api/docker/hostpipe"]
-
-# CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-#CMD ["uvicorn", "api.main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "8001"]
