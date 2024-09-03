@@ -36,8 +36,8 @@ def dkr_image_run(image_name, params):
 def dkr_container_create(image_name, params):
     command = 'docker create --rm '
     param_name = param_weights = param_hyper_params = param_input = param_output = param_socket = param_host = param_input_data = ''
-    # param_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
-    # param_host = ' --network=camino-net '
+    param_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
+    param_host = ' --network=camino-net '
     for param, value in params.items():
         if( value ):
             if(param == 'name' ):
@@ -48,7 +48,7 @@ def dkr_container_create(image_name, params):
                 param_hyper_params += ""
             elif(param == 'in_dir' ):
                 param_input += f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
-                #param_input_data = ' --input_data \'{"datasets":[{"dataset_name": "video"}]}\' '
+                param_input_data = ' --input_data \'{"datasets":[{"dataset_name": "video"}]}\' '
             elif(param == 'out_dir' ):
                 param_output += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
 
