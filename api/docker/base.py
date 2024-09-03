@@ -4,8 +4,6 @@ import json
 import api.sets.const as C
 import api.format.response_teplates as rt # Response Template
 import api.format.response_objects as ro # Response Objects
-# import random
-# import string
 
 
 def dkr_docker_info():
@@ -32,6 +30,29 @@ def dkr_image_run(image_name, params):
         if(param == 'out_dir' and value != '' ):
             param_output += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
     command = 'docker run -d --rm '+param_output+' '+param_input+' -it '+param_name +' ' +image_name+' ' + param_input_data
+    return execCommand(command)
+
+
+def dkr_container_create(image_name, params):
+    command = 'docker create --rm '
+    param_name = param_weights = param_hyper_params = param_input = param_output = param_socket = param_host = param_input_data = ''
+    # param_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
+    # param_host = ' --network=camino-net '
+    for param, value in params.items():
+        if( value ):
+            if(param == 'name' ):
+                param_name += f' --name {value} '
+            elif(param == 'weights' ):
+                param_weights += f' -v {value}:{C.CNTR_BASE_01_DIR_WEIGHTS} '
+            elif(param == 'hyper_params'):
+                param_hyper_params += ""
+            elif(param == 'in_dir' ):
+                param_input += f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
+                #param_input_data = ' --input_data \'{"datasets":[{"dataset_name": "video"}]}\' '
+            elif(param == 'out_dir' ):
+                param_output += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
+
+    command = 'docker create --rm '+ param_host + ' ' +param_output+' '+param_input +' ' + param_weights +' ' + param_socket + ' -it '+param_name +' ' + image_name + ' ' + param_input_data
     return execCommand(command)
 
 
@@ -97,9 +118,3 @@ def isJson(str):
   except ValueError as e:
     return False
   return True
-
-
-# def generate_code(length):
-#  all_symbols = string.ascii_uppercase + string.digits
-#  result = ''.join(random.choice(all_symbols) for _ in range(length))
-#  return result
