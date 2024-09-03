@@ -76,15 +76,29 @@ def mng_image(image_id):
    return response
 
 
-def mng_image_run(image_id, params):
+def mng_container_create(image_id, params):
    resp_cmd_json_img = dkr.dkr_images()
    image = ro.getImageById(image_id, resp_cmd_json_img['response'] )
    if( image["name"] ):
-      response = dkr.dkr_image_run(image["name"], params)
-      if (not response['error']): response = mng_container(response['response'][0])
+      response = dkr.dkr_container_create(image["name"], params)
+      # if (not response['error']): response = mng_container(response['response'][0])
    else: 
       response['error'] = True
       response['error_descr'] = 'По данному Id образ не найден'
+   return response
+
+
+def mng_image_run(image_id, params):
+   response = mng_container_create(image_id, params)
+   if (not response['error']): response = mng_container_start(response['response'][0])
+   # resp_cmd_json_img = dkr.dkr_images()
+   # image = ro.getImageById(image_id, resp_cmd_json_img['response'] )
+   # if( image["name"] ):
+   #    response = dkr.dkr_image_run(image["name"], params)
+   #    if (not response['error']): response = mng_container(response['response'][0])
+   # else: 
+   #    response['error'] = True
+   #    response['error_descr'] = 'По данному Id образ не найден'
    return response
 
 
@@ -120,13 +134,13 @@ def mng_container_monitor(container_id):
    return result
 
 
-def mng_docker_container_start(container_id):
+def mng_container_start(container_id):
    response = dkr.dkr_container_start(container_id) # UID as response 
    if (not response['error']): response = mng_container(response['response'][0])
    return response
 
 
-def mng_docker_container_stop(container_id):
+def mng_container_stop(container_id):
    response = dkr.dkr_container_stop(container_id) # UID as response 
    if (not response['error']): response = mng_container(response['response'][0])
    # if (not response['error']): response = ro.container_stop(container_id, response['response'])
