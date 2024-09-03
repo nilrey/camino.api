@@ -207,13 +207,36 @@ async def api_docker_container_stop(containerId ):
    return mng_docker_container_stop(containerId)
 
 
-#   event  before_start
-@app.post("/events/{containerId}/before_start", tags=["События в Docker-контейнере"], summary="Событие начала обработки данных")
+
+# EVENTS
+
+
+@events.post("/{containerId}/before_start", summary="Мок-обработчик - Событие начала обработки данных")
 async def api_docker_events_before_start(request: Request,
       containerId:str,
       event: ANNEventBeforeRun
    ):
    return {"result":"ok", "conainerId":containerId}
+
+
+#   event  on_progress
+@events.post("/{containerId}/on_progress", summary="Мок-обработчик - Событие в процессе обработки данных")
+async def api_docker_events_on_progress(request: Request,
+      containerId:str,
+      event: ANNEventBeforeRun
+   ):
+   return {"result":"ok", "status":"on_progress", "conainerId":containerId}
+
+
+#   event  before_end
+@events.post("/{containerId}/before_end", summary="Мок-обработчик - Событие в конце обработки данных")
+async def api_docker_events_before_end(request: Request,
+      containerId:str,
+      event: ANNEventBeforeRun
+   ):
+   return {"result":"ok", "status":"before_end", "conainerId":containerId}
+
+
 
 app.include_router(auth)
 app.include_router(projects)
@@ -229,3 +252,4 @@ app.include_router(docker)
 app.include_router(docker_registry)
 app.include_router(docker_images)
 app.include_router(docker_containers)
+app.include_router(events)

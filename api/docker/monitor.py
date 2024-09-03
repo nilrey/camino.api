@@ -74,16 +74,15 @@ class Monitor():
         if id != 'GRAFANA':
             name = containers.get(id,"")
             for panel_num in self.views.keys():
-                result.append(self.create_json_part_vid(id, name, panel_num))
+                result.append(self.create_json_part_vid(id+panel_num, name, panel_num))
         else:
             for id, name in containers.items():
                 if name in self.containers_names:
                     for panel_num in self.views.keys():
-                        result.append(self.create_json_part_vid(id, name, panel_num))
+                        result.append(self.create_json_part_vid(id+panel_num, name, panel_num))
         return {'items':result}
 
 if __name__ == "__main__":
     monitor = Monitor()
     res = monitor.create_json('GRAFANA')
     print(res)
-
