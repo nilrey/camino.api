@@ -37,8 +37,8 @@ def dkr_container_create(image_name, params):
     command = 'docker create --rm '
     param_name = volume_weights = param_hyper_params = volume_input = volume_output = volume_socket = param_network = param_input_data = param_ann_mode = param_host_web = ''
     volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
-    volume_storage = ' -v /projects_data:/projects_data '
-    param_network = ' --network camino-net '
+    volume_storage = ''
+    param_network = ''
     for param, value in params.items():
         if( value ):
             if(param == 'name' ):
