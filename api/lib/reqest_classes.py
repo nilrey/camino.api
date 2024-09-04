@@ -9,8 +9,8 @@ class ImageRun(BaseModel):
    in_dir:str  = Field(default="")
    out_dir:str = Field(default="")
    video_storage:str = Field(default="")
-   network:str = Field(default="camino-net")
-   host_web:str = Field(default="http://camino-restapi")
+   network:str = Field(default="")
+   host_web:str = Field(default="")
    
 
    def getAllParams(self):
@@ -39,8 +39,8 @@ class ContainerCreate(BaseModel):
    in_dir:str  = Field(default="")
    out_dir:str = Field(default="")
    video_storage:str = Field(default="")
-   network:str = Field(default="camino-net")
-   host_web:str = Field(default="http://camino-restapi")
+   network:str = Field(default="")
+   host_web:str = Field(default="")
    
    
 
