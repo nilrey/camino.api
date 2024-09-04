@@ -63,7 +63,7 @@ def dkr_container_create(image_name, params):
                 param_host_web = f'--host_web \'{value}\' '
 
     command = 'docker create --rm ' + ' -it '+param_name + ' ' + volume_storage + ' '  + volume_output + ' '+volume_input + ' ' + volume_weights + ' ' + volume_socket + ' ' + param_network + ' ' + image_name + ' ' + param_input_data + ' ' + param_host_web + ' ' + param_ann_mode
-    return exeCommand(command)
+    return execCommand(command)
 
 
 def dkr_containers():
