@@ -16,7 +16,7 @@ def dkr_images():
 
 def dkr_image_run(image_name, params):
     command = 'docker run -d --rm '
-    param_name = volume_weights = param_hyper_params = volume_input = volume_output = volume_input_data = ''
+    param_name = volume_weights = param_hyper_params = volume_input = volume_output = param_input_data = ''
     for param, value in params.items():
         if(param == 'name' and value != '' ):
             param_name += f' --name {value} '
@@ -26,18 +26,18 @@ def dkr_image_run(image_name, params):
             param_hyper_params += ""
         if(param == 'in_dir' and value != '' ):
             volume_input += f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
-            volume_input_data = '--input_data \'{"datasets":[{"dataset_name": "video"}]}\''
+            param_input_data = '--input_data \'{"datasets":[{"dataset_name": "video"}]}\''
         if(param == 'out_dir' and value != '' ):
             volume_output += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
-    command = 'docker run -d --rm '+volume_output+' '+volume_input+' -it '+param_name +' ' +image_name+' ' + volume_input_data
+    command = 'docker run -d --rm '+volume_output+' '+volume_input+' -it '+param_name +' ' +image_name+' ' + param_input_data
     return execCommand(command)
 
 
 def dkr_container_create(image_name, params):
     command = 'docker create --rm '
-    param_name = volume_weights = param_hyper_params = volume_input = volume_output = volume_socket = param_network = volume_input_data = param_ann_mode = param_host_web = ''
+    param_name = volume_weights = param_hyper_params = volume_input = volume_output = volume_socket = param_network = param_input_data = param_ann_mode = param_host_web = ''
     volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
-    param_storage = ' -v /projects_data:/projects_data '
+    volume_storage = ' -v /projects_data:/projects_data '
     param_network = ' --network camino-net '
     for param, value in params.items():
         if( value ):
@@ -51,17 +51,17 @@ def dkr_container_create(image_name, params):
             #     param_hyper_params = ""
             elif(param == 'in_dir' ):
                 volume_input = f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
-                volume_input_data = ' --input_data \'{"path1":{}}\' '
+                param_input_data = ' --input_data \'{"path1":{}}\' '
             elif(param == 'out_dir' ):
                 volume_output = f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
             elif(param == 'video_storage'):
-                param_storage = f' -v {value}:/projects_data '
+                volume_storage = f' -v {value}:/projects_data '
             elif(param == 'network' ):
                 param_network = f' --network {value} '
             elif(param == 'host_web' ):
-                param_host_web = f'--host_web "{value}" '
+                param_host_web = f'--host_web \'{value}\' '
 
-    command = 'docker create --rm ' + ' -it '+param_name + ' ' + param_storage + ' '  + volume_output + ' '+volume_input + ' ' + volume_weights + ' ' + volume_socket + ' ' + param_network + ' ' + param_host_web + ' ' + param_ann_mode + ' ' + image_name + ' ' + volume_input_data
+    command = 'docker create --rm ' + ' -it '+param_name + ' ' + volume_storage + ' '  + volume_output + ' '+volume_input + ' ' + volume_weights + ' ' + volume_socket + ' ' + param_network + ' ' + image_name + ' ' + param_input_data + ' ' + param_host_web + ' ' + param_ann_mode
     return exeCommand(command)
 
 
