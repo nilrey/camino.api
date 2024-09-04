@@ -37,32 +37,32 @@ def dkr_container_create(image_name, params):
     command = 'docker create --rm '
     param_name = volume_weights = param_hyper_params = volume_input = volume_output = volume_socket = param_network = volume_input_data = param_ann_mode = param_host_web = ''
     volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
-    param_storage = ' -v ./projects_data:/projects_data '
+    param_storage = ' -v /projects_data:/projects_data '
     param_network = ' --network camino-net '
     for param, value in params.items():
         if( value ):
             if(param == 'name' ):
-                param_name += f' --name {value} '
+                param_name = f' --name {value} '
             elif(param == 'ann_mode' and value == 'teach'):
-                param_ann_mode += ' --work_format_training  '
+                param_ann_mode = ' --work_format_training  '
             elif(param == 'weights' ):
-                volume_weights += f' -v {value}:{C.CNTR_BASE_01_DIR_WEIGHTS} '
-            elif(param == 'hyper_params'):
-                param_hyper_params += ""
+                volume_weights = f' -v {value}:{C.CNTR_BASE_01_DIR_WEIGHTS} '
+            # elif(param == 'hyper_params'):
+            #     param_hyper_params = ""
             elif(param == 'in_dir' ):
-                volume_input += f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
+                volume_input = f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
                 volume_input_data = ' --input_data \'{"path1":{}}\' '
             elif(param == 'out_dir' ):
-                volume_output += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
+                volume_output = f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
             elif(param == 'video_storage'):
-                param_storage += f' -v {value}:/projects_data '
+                param_storage = f' -v {value}:/projects_data '
             elif(param == 'network' ):
-                param_network += f' --network {value} '
+                param_network = f' --network {value} '
             elif(param == 'host_web' ):
-                param_host_web += f'--host_web {value} '
+                param_host_web = f'--host_web "{value}" '
 
-    command = 'docker create --rm ' + ' -it '+param_name + ' ' + param_storage + ' '  + volume_output +' '+volume_input +' ' + volume_weights +' ' + volume_socket + ' ' + param_host_web + ' ' + param_network + ' ' + param_ann_mode +' ' + image_name + ' ' + volume_input_data
-    return (command)
+    command = 'docker create --rm ' + ' -it '+param_name + ' ' + param_storage + ' '  + volume_output + ' '+volume_input + ' ' + volume_weights + ' ' + volume_socket + ' ' + param_network + ' ' + param_host_web + ' ' + param_ann_mode + ' ' + image_name + ' ' + volume_input_data
+    return exeCommand(command)
 
 
 def dkr_containers():
