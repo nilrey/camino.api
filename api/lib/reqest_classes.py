@@ -8,10 +8,9 @@ class ImageRun(BaseModel):
    hyper_params:str = Field(default="")
    in_dir:str  = Field(default="")
    out_dir:str = Field(default="")
-   network:str = Field(default="")
    video_storage:str = Field(default="")
-   host_web:str = Field(default="camino-api")
-   work_time:str = Field(default="")
+   network:str = Field(default="camino-api")
+   host_web:str = Field(default="http://127.0.0.1:5555")
    
 
    def getAllParams(self):
@@ -21,10 +20,9 @@ class ImageRun(BaseModel):
             'hyper_params': self.hyper_params, 
             'in_dir': self.in_dir, 
             'out_dir': self.out_dir, 
-            'network': self.network, 
             'video_storage': self.video_storage, 
+            'network': self.network, 
             'host_web': self.host_web, 
-            'work_time': self.work_time, 
             }
    
 
@@ -42,8 +40,8 @@ class ContainerCreate(BaseModel):
    out_dir:str = Field(default="")
    network:str = Field(default="")
    video_storage:str = Field(default="")
-   host_web:str = Field(default="camino-api")
-   work_time:str = Field(default="")
+   network:str = Field(default="camino-api")
+   host_web:str = Field(default="http://127.0.0.1:5555")
    
    
 
@@ -54,9 +52,8 @@ class ContainerCreate(BaseModel):
             'hyper_params': self.hyper_params, 
             'in_dir': self.in_dir, 
             'out_dir': self.out_dir, 
-            'network': self.network, 
             'video_storage': self.video_storage, 
+            'network': self.network, 
             'host_web': self.host_web, 
-            'work_time': self.work_time, 
             }
    
