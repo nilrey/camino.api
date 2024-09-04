@@ -51,7 +51,8 @@ def dkr_container_create(image_name, params):
             #     param_hyper_params = ""
             elif(param == 'in_dir' ):
                 volume_input = f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
-                param_input_data = ' --input_data \'{"path1":{}}\' '
+                # param_input_data = ' --input_data \'{"path1":{}}\' '
+                param_input_data = ' --input_data \'{"datasets":[{"dataset_name": "video"}]}\' '
             elif(param == 'out_dir' ):
                 volume_output = f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
             elif(param == 'video_storage'):
