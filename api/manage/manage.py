@@ -91,14 +91,6 @@ def mng_container_create(image_id, params):
 def mng_image_run(image_id, params):
    response = mng_container_create(image_id, params)
    if (not response['error']): response = mng_container_start(response['response'][0])
-   # resp_cmd_json_img = dkr.dkr_images()
-   # image = ro.getImageById(image_id, resp_cmd_json_img['response'] )
-   # if( image["name"] ):
-   #    response = dkr.dkr_image_run(image["name"], params)
-   #    if (not response['error']): response = mng_container(response['response'][0])
-   # else: 
-   #    response['error'] = True
-   #    response['error_descr'] = 'По данному Id образ не найден'
    return response
 
 

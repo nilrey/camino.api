@@ -1,5 +1,5 @@
 # Настройки для конейнеров
-CNTR_BASE_01_DIR_WEIGHTS="/weights"
+CNTR_BASE_01_DIR_WEIGHTS="common/yolov5s.pt"
 CNTR_BASE_01_DIR_IN="/input"
 CNTR_BASE_01_DIR_OUT="/output"
 
