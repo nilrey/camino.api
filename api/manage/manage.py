@@ -5,7 +5,6 @@ from api.docker.monitor import *
 import api.format.response_objects as ro # Response Objects
 import api.format.response_teplates as rt # Response Template
 
-
 # Users
 def mng_create_user(**kwargs):
    return mngdb_create_user(**kwargs)
@@ -139,5 +138,7 @@ def mng_container_stop(container_id):
    return response  
 
 def mng_container_export(imageId, file_path):
-   response = dkr.dkr_container_export(imageId, file_path) # UID as response 
+   response = dkr.dkr_container_export(imageId, file_path)
+   if(response):
+      response = dkr.check_export_status(imageId)
    return response  

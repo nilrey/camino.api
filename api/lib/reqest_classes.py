@@ -41,8 +41,6 @@ class ContainerCreate(BaseModel):
    video_storage:str = Field(default="")
    network:str = Field(default="")
    host_web:str = Field(default="")
-   
-   
 
    def getAllParams(self):
     return {'name': self.name, 
@@ -55,4 +53,7 @@ class ContainerCreate(BaseModel):
             'network': self.network, 
             'host_web': self.host_web, 
             }
-   
+
+
+class ANNExport(BaseModel):
+   weights_path:str = Field(default="")

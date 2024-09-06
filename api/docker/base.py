@@ -1,9 +1,11 @@
 # import docker
 import subprocess
 import json
+import threading 
 import api.sets.const as C
 import api.format.response_teplates as rt # Response Template
 import api.format.response_objects as ro # Response Objects
+import time
 
 
 def dkr_docker_info():
@@ -68,7 +70,25 @@ def dkr_container_stop(container_id):
 
 
 def dkr_container_export(imageId, file_path):
-    return execCommand(f'docker save {imageId} > {file_path} ' )
+    command = f'docker save {imageId} > {file_path} ' 
+    t = threading.Thread(target=runCommand, args=[command])
+    t.start()
+    return True
+    # return execCommand(f'ps aux | grep "docker save {imageId}" ' )
+
+def check_export_status(imageId):
+    t = threading.Thread(target=request_export_status, args=[imageId])
+    t.start()
+    return True
+
+def request_export_status(imageId):
+    for i in range(5):
+        with open('/code/export/status.txt', "a") as file:
+            result = execCommand(f'ps aux | grep "docker save {imageId}" ' )
+            file.write("".join(result['response']) + '\n\n')
+            time.sleep(5)
+    execCommand(f'cd /code/export/ && tar -cf /code/export/arch.tar ann_save_1.tar status.txt ')
+    return True
 
 
 # запуск шелл команды через сокет

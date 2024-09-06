@@ -196,9 +196,11 @@ async def api_docker_container_stop(containerId ):
    return mng_container_stop(containerId)
 
 
-@docker_containers.post("/{imageId}/export", tags=["Docker-контейнеры"], summary="Экспорт Нейронной сети")
-async def api_docker_container_export(imageId ):
-   filepath = '/home/sadmin/Documents/images/export/ann_save_1.tar'
+@docker_containers.post("/{imageId}/export", tags=["Docker-контейнеры"], summary="Экспорт Нейронной сетки")
+async def api_docker_container_export(request: Request,
+      imageId:str,
+      event: ANNExport ):
+   filepath = '/code/export/ann_save_1.tar'
    return mng_container_export(imageId, filepath)
 
 
