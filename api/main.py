@@ -8,6 +8,7 @@ from api.manage.manage import *
 # from api.logg import *
 from api.lib.reqest_classes import *
 from api.format.exceptions import http_exception_handler, NotFoundError
+import datetime as dt
 
 
 app = FastAPI(openapi_tags=tags_metadata)
@@ -193,6 +194,12 @@ async def api_docker_container_start(containerId ):
 @docker_containers.put("/{containerId}/stop", tags=["Docker-контейнеры"], summary="Остановка Docker-контейнер на сервере")
 async def api_docker_container_stop(containerId ):
    return mng_container_stop(containerId)
+
+
+@docker_containers.post("/{imageId}/export", tags=["Docker-контейнеры"], summary="Экспорт Нейронной сети")
+async def api_docker_container_export(imageId ):
+   filepath = '/home/sadmin/Documents/images/export/ann_save_1.tar'
+   return mng_container_export(imageId, filepath)
 
 
 # EVENTS

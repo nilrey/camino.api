@@ -14,25 +14,6 @@ def dkr_images():
     return exeCommand('docker images '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
 
 
-def dkr_image_run(image_name, params):
-    command = 'docker run -d --rm '
-    param_name = volume_weights = param_hyper_params = volume_input = volume_output = param_input_data = ''
-    for param, value in params.items():
-        if(param == 'name' and value != '' ):
-            param_name += f' --name {value} '
-        if(param == 'weights' ):
-            volume_weights += f' -v {value}:{C.CNTR_BASE_01_DIR_WEIGHTS} '
-        if(param == 'hyper_params' and value != '' ):
-            param_hyper_params += ""
-        if(param == 'in_dir' and value != '' ):
-            volume_input += f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
-            param_input_data = '--input_data \'{"datasets":[{"dataset_name": "video"}]}\''
-        if(param == 'out_dir' and value != '' ):
-            volume_output += f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
-    command = 'docker run -d --rm '+volume_output+' '+volume_input+' -it '+param_name +' ' +image_name+' ' + param_input_data
-    return execCommand(command)
-
-
 def dkr_container_create(image_name, params):
     command = 'docker create --rm '
     param_name = volume_weights = param_hyper_params = volume_input = volume_output = volume_socket = param_network = param_input_data = param_ann_mode = param_host_web = ''
@@ -84,6 +65,10 @@ def dkr_container_start(container_id):
 
 def dkr_container_stop(container_id):
     return execCommand(f'docker stop {container_id} ' )
+
+
+def dkr_container_export(imageId, file_path):
+    return execCommand(f'docker save {imageId} > {file_path} ' )
 
 
 # запуск шелл команды через сокет

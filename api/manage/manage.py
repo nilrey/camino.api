@@ -137,3 +137,7 @@ def mng_container_stop(container_id):
    if (not response['error']): response = mng_container(response['response'][0])
    # if (not response['error']): response = ro.container_stop(container_id, response['response'])
    return response  
+
+def mng_container_export(imageId, file_path):
+   response = dkr.dkr_container_export(imageId, file_path) # UID as response 
+   return response  
