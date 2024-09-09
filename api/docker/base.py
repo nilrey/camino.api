@@ -94,18 +94,11 @@ def monitoring_status(imageId, export_file):
             # команда перейти в дир. экспорта, потом формируем архив из файла образа + файл весов + readme
                 command = f'cd {C.EXPORT_DIR} && tar -cf {C.EXPORT_DIR}/{export_file}.tar img_{export_file}.tar README.md'
                 logInfo(export_file, f'Команда на архивацию: {command}')
-                t = threading.Thread(target=runCommand, args=[command]) # запускаем в потоке чтобы отдать ответ сразу
+                t = threading.Thread(target=logRunCommand, args=[export_file, command]) # запускаем в потоке чтобы отдать ответ сразу
                 t.start()
-                time.sleep(2)
-                command = f'ps aux | grep "tar -cf " '
-                resp = runCommand(command )    
-                if resp.returncode == 0:
-                    is_running = True if resp.stdout.find(f'docker save {imageId} > ') > 0 else False
-                    proc_cnt  = len(resp.stdout.splitlines() )
-                    if(is_running):
-                        logInfo(export_file, f'Процесс запущен | {is_running=} | {proc_cnt=} | COMMAND: {command}')
-                    else:
-                        logInfo(export_file, resp.stderr)
+                # while C.EXPORT_ARCH_FINISHED in f.read() :
+                #     logInfo(export_file, f"Процесс архивирования запущен")
+                # logInfo(export_file, f"Процесс архивирования завершен")
             else:
                 logInfo(export_file, f'Файл образа {img_file} не обнаружен.')
     if os.path.isfile(f'{C.EXPORT_DIR}/{export_file}.tar'): # файл архива нейросетки сформирован 
@@ -145,6 +138,13 @@ def logInfo(export_file, mes):
     with open(f'{C.EXPORT_DIR}/{export_file}.log', "a") as file:
         file.write(f'{mes}\n')
 
+def logRunCommand(export_file, command):
+    try:
+        response = execCommand(command )
+    finally:
+        logInfo(export_file, C.EXPORT_ARCH_FINISHED)
+        
+    return True
 
 # запуск шелл команды через сокет
 def runCommand(command):
