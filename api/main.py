@@ -158,6 +158,13 @@ async def api_docker_image_run(request: Request,
    return mng_image_run(imageId, imrun.getAllParams() )
 
 
+@docker_images.post("/{imageId}/export", tags=["Docker-образы"], summary="Экспорт Нейронной сетки")
+async def api_docker_ann_export(request: Request,
+      imageId:str,
+      export: ANNExport ):
+   return mng_container_export(imageId, export.file_name)
+
+
 # CONTAINERS
 
 
@@ -194,14 +201,6 @@ async def api_docker_container_start(containerId ):
 @docker_containers.put("/{containerId}/stop", tags=["Docker-контейнеры"], summary="Остановка Docker-контейнер на сервере")
 async def api_docker_container_stop(containerId ):
    return mng_container_stop(containerId)
-
-
-@docker_containers.post("/{imageId}/export", tags=["Docker-контейнеры"], summary="Экспорт Нейронной сетки")
-async def api_docker_container_export(request: Request,
-      imageId:str,
-      event: ANNExport ):
-   filepath = '/code/export/ann_save_1.tar'
-   return mng_container_export(imageId, filepath)
 
 
 # EVENTS

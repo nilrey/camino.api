@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, field_validator, ValidationError
-
+import datetime as dt
 
 class ImageRun(BaseModel):
    name: str = Field(default="")
@@ -57,3 +57,4 @@ class ContainerCreate(BaseModel):
 
 class ANNExport(BaseModel):
    weights_path:str = Field(default="")
+   file_name:str = Field(default=f"ann_export_{dt.datetime.}" )
