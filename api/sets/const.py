@@ -3,9 +3,9 @@ CNTR_BASE_01_DIR_WEIGHTS="/common/yolov5s.pt"
 CNTR_BASE_01_DIR_IN="/input"
 CNTR_BASE_01_DIR_OUT="/output"
 
-EXPORT_DIR="/code/export/"
+EXPORT_DIR="/code/export"
 EXPORT_EXT="tar"
-
+EXPORT_IMAGE_SUCCESS = 'Image export success'
 
 PARAM_TO_JSON = " --format '{{json .}}' "
 PARAM_NO_TRUNC = " --no-trunc "

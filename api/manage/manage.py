@@ -4,6 +4,8 @@ import api.docker.base as dkr
 from api.docker.monitor import *
 import api.format.response_objects as ro # Response Objects
 import api.format.response_teplates as rt # Response Template
+import api.sets.const as C
+import time 
 
 # Users
 def mng_create_user(**kwargs):
@@ -137,8 +139,10 @@ def mng_container_stop(container_id):
    # if (not response['error']): response = ro.container_stop(container_id, response['response'])
    return response  
 
-def mng_container_export(imageId, export_name):
-   response = dkr.dkr_container_export(imageId, file_path)
+def mng_container_export(imageId, weights, export_name):
+   # export_file = f"{export_name}.{C.EXPORT_EXT}"
+   response = dkr.dkr_ann_export(imageId, f'{C.EXPORT_DIR}/img_{export_name}.tar')
    if(response):
-      response = dkr.check_export_status(imageId)
+      time.sleep(2) # процесс не сразу появляется в списке процессов
+      response = dkr.start_monitoring_status(imageId, export_name)
    return response  

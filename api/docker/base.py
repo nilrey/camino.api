@@ -1,5 +1,6 @@
 # import docker
 import subprocess
+import os.path
 import json
 import threading 
 import api.sets.const as C
@@ -68,27 +69,81 @@ def dkr_container_start(container_id):
 def dkr_container_stop(container_id):
     return execCommand(f'docker stop {container_id} ' )
 
-
-def dkr_container_export(imageId, file_path):
-    command = f'docker save {imageId} > {file_path} ' 
-    t = threading.Thread(target=runCommand, args=[command])
-    t.start()
-    return True
-    # return execCommand(f'ps aux | grep "docker save {imageId}" ' )
-
-def check_export_status(imageId):
-    t = threading.Thread(target=request_export_status, args=[imageId])
+# запуск экспорта 
+def dkr_ann_export(imageId, file_path):
+    command = f'docker save {imageId} > {file_path} ' # выгружаем образ из докера в файл 
+    t = threading.Thread(target=runCommand, args=[command]) # запускаем в потоке чтобы отдать ответ сразу
     t.start()
     return True
 
-def request_export_status(imageId):
-    for i in range(5):
-        with open('/code/export/status.txt', "a") as file:
-            result = execCommand(f'ps aux | grep "docker save {imageId}" ' )
-            file.write("".join(result['response']) + '\n\n')
-            time.sleep(5)
-    execCommand(f'cd /code/export/ && tar -cf /code/export/arch.tar ann_save_1.tar status.txt ')
+# запуск мониторинга текущего статуса в потоке
+def start_monitoring_status(imageId, export_file):
+    t = threading.Thread(target=monitoring_status, args=[imageId, export_file])
+    t.start()
     return True
+
+# мониторинг текущего статуса экспорта образа
+def monitoring_status(imageId, export_file):
+    while process_runs(imageId, export_file): # пока процесс висит в списке процессов - файл образа незакончен 
+        time.sleep(2)
+    # процесс завершен
+    with open(f'{C.EXPORT_DIR}/{export_file}.log') as f:      
+        if C.EXPORT_IMAGE_SUCCESS in f.read(): #проверяем лог, если процесс окончен успешно
+            img_file = f'{C.EXPORT_DIR}/img_{export_file}.tar'
+            if os.path.isfile(img_file):
+            # команда перейти в дир. экспорта, потом формируем архив из файла образа + файл весов + readme
+                command = f'cd {C.EXPORT_DIR} && tar -cf {C.EXPORT_DIR}/{export_file}.tar img_{export_file}.tar README.md'
+                logInfo(export_file, f'Команда на архивацию: {command}')
+                t = threading.Thread(target=runCommand, args=[command]) # запускаем в потоке чтобы отдать ответ сразу
+                t.start()
+                time.sleep(2)
+                command = f'ps aux | grep "tar -cf " '
+                resp = runCommand(command )    
+                if resp.returncode == 0:
+                    is_running = True if resp.stdout.find(f'docker save {imageId} > ') > 0 else False
+                    proc_cnt  = len(resp.stdout.splitlines() )
+                    if(is_running):
+                        logInfo(export_file, f'Процесс запущен | {is_running=} | {proc_cnt=} | COMMAND: {command}')
+                    else:
+                        logInfo(export_file, resp.stderr)
+            else:
+                logInfo(export_file, f'Файл образа {img_file} не обнаружен.')
+    if os.path.isfile(f'{C.EXPORT_DIR}/{export_file}.tar'): # файл архива нейросетки сформирован 
+        logInfo(export_file, "Экспорт нейросети завершен успешно")
+        os.unlink(f'{C.EXPORT_DIR}/img_{export_file}.tar')
+    else:
+        logInfo(export_file, "Файл архива нейросети не найден")
+
+
+    return True
+
+def process_runs(imageId, export_file):
+    command = f'ps aux | grep "docker save {imageId}" '
+    resp = runCommand(command )    
+    if resp.returncode == 0:
+        is_running = True if resp.stdout.find(f'docker save {imageId} > ') > 0 else False
+        proc_cnt  = len(resp.stdout.splitlines() )
+        if(is_running):
+            mes = f'Процесс запущен | {is_running=} | {proc_cnt=} | COMMAND: {command}\n'
+        else:
+            mes = f'Процесс экспорт образа {imageId} завершен. {C.EXPORT_IMAGE_SUCCESS}.'
+            if os.path.isfile(f'{C.EXPORT_DIR}/img_{export_file}.tar'):
+                mes = mes + f" Файл образа '{C.EXPORT_DIR}/img_{export_file}.tar'"
+            else:
+                mes = mes + " Файл не обнаружен"
+    else:
+        # set log error
+        is_running = False
+        proc_cnt = 0
+        mes = f'Процесс не запущен. Ошибка: {resp.stderr} | COMMAND: {command}'
+
+    logInfo(export_file, mes)
+
+    return is_running
+
+def logInfo(export_file, mes):
+    with open(f'{C.EXPORT_DIR}/{export_file}.log', "a") as file:
+        file.write(f'{mes}\n')
 
 
 # запуск шелл команды через сокет

@@ -162,7 +162,7 @@ async def api_docker_image_run(request: Request,
 async def api_docker_ann_export(request: Request,
       imageId:str,
       export: ANNExport ):
-   return mng_container_export(imageId, export.file_name)
+   return mng_container_export(imageId, export.weights, export.file_name)
 
 
 # CONTAINERS
