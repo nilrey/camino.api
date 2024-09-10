@@ -140,9 +140,7 @@ def mng_container_stop(container_id):
    return response  
 
 def mng_container_export(imageId, weights, export_name):
-   # export_file = f"{export_name}.{C.EXPORT_EXT}"
-   response = dkr.dkr_ann_export(imageId, f'{C.EXPORT_DIR}/img_{export_name}.tar')
+   response = dkr.dkr_ann_export(imageId, export_name)
    if(response):
-      time.sleep(2) # процесс не сразу появляется в списке процессов
-      response = dkr.start_monitoring_status(imageId, export_name)
+      response = dkr.prepare_archive(imageId, weights, export_name)
    return response  

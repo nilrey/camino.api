@@ -30,7 +30,7 @@ def dkr_container_create(image_name, params):
             elif(param == 'ann_mode' and value == 'teach'):
                 param_ann_mode = ' --work_format_training  '
             elif(param == 'weights' ):
-                volume_weights = f' -v {value}:{C.CNTR_BASE_01_DIR_WEIGHTS} '
+                volume_weights = f' -v {value}:{C.CNTR_BASE_01_DIR_WEIGHTS_FILE} '
             # elif(param == 'hyper_params'):
             #     param_hyper_params = ""
             elif(param == 'in_dir' ):
@@ -70,20 +70,21 @@ def dkr_container_stop(container_id):
     return execCommand(f'docker stop {container_id} ' )
 
 # запуск экспорта 
-def dkr_ann_export(imageId, file_path):
-    command = f'docker save {imageId} > {file_path} ' # выгружаем образ из докера в файл 
+def dkr_ann_export(imageId, export_name):
+    command = f'docker save {imageId} > {pathImgFile(export_name)} ' # выгружаем образ из докера в файл 
+    logInfo(export_name, f"Выгрузка образа из докера: {command}")
     t = threading.Thread(target=runCommand, args=[command]) # запускаем в потоке чтобы отдать ответ сразу
     t.start()
     return True
 
 # запуск мониторинга текущего статуса в потоке
-def start_monitoring_status(imageId, export_file):
-    t = threading.Thread(target=monitoring_status, args=[imageId, export_file])
+def prepare_archive(imageId, weights, export_file):
+    t = threading.Thread(target=process_archive, args=[imageId, weights, export_file])
     t.start()
     return True
 
 # мониторинг текущего статуса экспорта образа
-def monitoring_status(imageId, export_file):
+def process_archive(imageId, weights, export_file):
     logInfo(export_file, "Мониторинг экспорта временного файла образа запущен.")
     while process_runs(imageId, export_file): # пока процесс висит в списке процессов - формирование образа незакончено
         time.sleep(2)
@@ -92,9 +93,9 @@ def monitoring_status(imageId, export_file):
         if C.EXPORT_IMAGE_SUCCESS in f.read(): #проверяем лог, если процесс окончен успешно
             if os.path.isfile( pathImgFile(export_file) ): # если файл образа существует
             # команда перейти в дир. экспорта, потом формируем архив из файла образа + файл весов + readme
-                command = f'cd {C.EXPORT_DIR} && tar -cf {pathArchFile(export_file)} {pathImgFile(export_file)} README.md'
+                command = f'cd {C.EXPORT_DIR} && tar -cf {nameArchFile(export_file)} {nameImgFile(export_file)} {pathWeightsFile(weights)} README.md'
                 logInfo(export_file, f'Команда на архивацию: {command}')
-                t = threading.Thread(target=logRunCommand, args=[export_file, command]) # запускаем в потоке чтобы отдать ответ сразу
+                t = threading.Thread(target=logRunCommand, args=[export_file, command]) # запускаем в потоке чтобы перейти к мониторингу
                 t.start()
             else:
                 logInfo(export_file, f'Ошибка: Файл образа не найден: {pathImgFile(export_file)}')
@@ -102,7 +103,7 @@ def monitoring_status(imageId, export_file):
     while archive_runs(export_file):
         time.sleep(2)
     # процесс завершен
-    if os.path.isfile( pathArchFile(export_file) ): # файл архива нейросети сформирован 
+    if os.path.isfile( pathArchFile(export_file) ):
         logInfo(export_file, "Файл экспорта нейросети успешно сформирован")
         os.unlink(pathImgFile(export_file))
         if os.path.isfile( pathImgFile(export_file) ):
@@ -110,8 +111,7 @@ def monitoring_status(imageId, export_file):
         else:
             logInfo(export_file, "Временный файл образа удален")
     else:
-        logInfo(export_file, f"Ошибка: Файл архива нейросети не найден. {pathArchFile(export_file)} , \
-                IsFile: {os.path.isfile( pathArchFile(export_file) )}")
+        logInfo(export_file, f"Ошибка: Файл архива нейросети не найден. {pathArchFile(export_file)} , IsFile: {os.path.isfile( pathArchFile(export_file) )}")
 
     return True
 
@@ -133,7 +133,6 @@ def process_runs(imageId, export_file):
     resp = runCommand(command ) # ищем в списоке процессов запущенный процесс выгрузки
     if resp.returncode == 0:
         is_running = True if resp.stdout.find(f'docker save {imageId} > ') > 0 else False # в результатах ищем нужную подстроку 
-        proc_cnt  = len(resp.stdout.splitlines() )
         if(is_running):
             mes = f'Процесс экспорта образа запущен'
         else:
@@ -141,11 +140,8 @@ def process_runs(imageId, export_file):
     else:
         # set log error
         is_running = False
-        proc_cnt = 0
         mes = f'Процесс не запущен. Ошибка: {resp.stderr} | COMMAND: {command}'
-
     logInfo(export_file, mes)
-
     return is_running
 
 def logInfo(export_file, mes):
@@ -160,13 +156,25 @@ def logRunCommand(export_file, command):
     return True
 
 def pathLogFile(export_file):
-    return f'{C.EXPORT_DIR}/{export_file}.log'
+    return f'{C.EXPORT_DIR}/{nameLogFile(export_file)}'.replace('//', '/')
+
+def nameLogFile(export_file):
+    return f'{export_file}.log'
 
 def pathArchFile(export_file):
-    return f'{C.EXPORT_DIR}/{export_file}.tar'
+    return f'{C.EXPORT_DIR}/{nameArchFile(export_file)}'.replace('//', '/')
+
+def nameArchFile(export_file):
+    return f'{export_file}.tar'
 
 def pathImgFile(export_file):
-    return f'{C.EXPORT_DIR}/img_{export_file}.tar'
+    return f'{C.EXPORT_DIR}/{nameImgFile(export_file)}'.replace('//', '/')
+
+def nameImgFile(export_file):
+    return f'img_{export_file}.tar'
+
+def pathWeightsFile(weights):
+    return f'{C.WEIGHTS_DIR}/{weights}'.replace('//', '/')
 
 def getTimeNoMsec():
     return dt.datetime.now().replace(microsecond=0)

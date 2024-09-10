@@ -1,8 +1,9 @@
 # Настройки для конейнеров
-CNTR_BASE_01_DIR_WEIGHTS="/common/yolov5s.pt"
+CNTR_BASE_01_DIR_WEIGHTS_FILE="/common/yolov5s.pt"
 CNTR_BASE_01_DIR_IN="/input"
 CNTR_BASE_01_DIR_OUT="/output"
 
+WEIGHTS_DIR="/code/weights"
 EXPORT_DIR="/code/export"
 EXPORT_EXT="tar"
 EXPORT_IMAGE_SUCCESS = 'Image export success'

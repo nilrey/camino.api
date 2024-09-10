@@ -14,6 +14,6 @@ RUN apt-get update && apt-get install -y docker.io
 
 COPY ./api /code/api
 
-VOLUME [ "/code/export" ]
+VOLUME [ "/code/export", "/code/weights" ]
 
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "80"]
