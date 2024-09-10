@@ -6,7 +6,7 @@ import threading
 import api.sets.const as C
 import api.format.response_teplates as rt # Response Template
 import api.format.response_objects as ro # Response Objects
-import time
+import time, datetime as dt
 
 
 def dkr_docker_info():
@@ -84,30 +84,47 @@ def start_monitoring_status(imageId, export_file):
 
 # мониторинг текущего статуса экспорта образа
 def monitoring_status(imageId, export_file):
-    while process_runs(imageId, export_file): # пока процесс висит в списке процессов - файл образа незакончен 
+    while process_runs(imageId, export_file): # пока процесс висит в списке процессов - формирование образа незакончено
         time.sleep(2)
     # процесс завершен
-    with open(f'{C.EXPORT_DIR}/{export_file}.log') as f:      
+    with open( pathLogFile(export_file) ) as f:      
         if C.EXPORT_IMAGE_SUCCESS in f.read(): #проверяем лог, если процесс окончен успешно
-            img_file = f'{C.EXPORT_DIR}/img_{export_file}.tar'
-            if os.path.isfile(img_file):
+            if os.path.isfile( pathImgFile(export_file) ): # если файл образа существует
             # команда перейти в дир. экспорта, потом формируем архив из файла образа + файл весов + readme
-                command = f'cd {C.EXPORT_DIR} && tar -cf {C.EXPORT_DIR}/{export_file}.tar img_{export_file}.tar README.md'
+                command = f'cd {C.EXPORT_DIR} && tar -cf {pathArchFile(export_file)} {pathImgFile(export_file)} README.md'
                 logInfo(export_file, f'Команда на архивацию: {command}')
                 t = threading.Thread(target=logRunCommand, args=[export_file, command]) # запускаем в потоке чтобы отдать ответ сразу
                 t.start()
-                # while C.EXPORT_ARCH_FINISHED in f.read() :
-                #     logInfo(export_file, f"Процесс архивирования запущен")
-                # logInfo(export_file, f"Процесс архивирования завершен")
             else:
-                logInfo(export_file, f'Файл образа {img_file} не обнаружен.')
-    if os.path.isfile(f'{C.EXPORT_DIR}/{export_file}.tar'): # файл архива нейросетки сформирован 
+                logInfo(export_file, f'Ошибка: Файл образа не найден: {pathImgFile(export_file)}')
+    # мониторинг окончания архивации
+    while archive_runs(export_file):
+        time.sleep(2)
+    # процесс завершен
+    if os.path.isfile( pathArchFile(export_file) ): # файл архива нейросети сформирован 
         logInfo(export_file, "Экспорт нейросети завершен успешно")
-        os.unlink(f'{C.EXPORT_DIR}/img_{export_file}.tar')
+        os.unlink(pathImgFile(export_file))
+        if os.path.isfile( pathImgFile(export_file) ):
+            logInfo(export_file, "Ошибка: Временный файл образа удалить не удалось")
+        else:
+            logInfo(export_file, "Временный файл образа удален")
     else:
-        logInfo(export_file, "Файл архива нейросети не найден")
+        logInfo(export_file, f"Ошибка: Файл архива нейросети не найден. {pathArchFile(export_file)} , \
+                IsFile: {os.path.isfile( pathArchFile(export_file) )}")
 
+    return True
 
+def archive_runs(export_file):
+    log_file = pathLogFile(export_file)
+    if not os.path.isfile(log_file):
+        logInfo(export_file, f'Лог файл не найден. {log_file}' )
+        return False
+    
+    with open(log_file) as f:      
+        if C.EXPORT_ARCH_FINISHED in f.read(): #проверяем лог на наличие сигнала что процесс архивирования окончен
+            logInfo(export_file, f'Процесс архивирования окончен {dt.datetime.now().timestamp()}' )
+            return False
+    logInfo(export_file, f'Процесс архивирования запущен {dt.datetime.now().timestamp()}' )
     return True
 
 def process_runs(imageId, export_file):
@@ -120,8 +137,8 @@ def process_runs(imageId, export_file):
             mes = f'Процесс запущен | {is_running=} | {proc_cnt=} | COMMAND: {command}\n'
         else:
             mes = f'Процесс экспорт образа {imageId} завершен. {C.EXPORT_IMAGE_SUCCESS}.'
-            if os.path.isfile(f'{C.EXPORT_DIR}/img_{export_file}.tar'):
-                mes = mes + f" Файл образа '{C.EXPORT_DIR}/img_{export_file}.tar'"
+            if os.path.isfile( pathImgFile(export_file) ):
+                mes = mes + f" Файл образа '{pathImgFile(export_file)}'"
             else:
                 mes = mes + " Файл не обнаружен"
     else:
@@ -135,7 +152,7 @@ def process_runs(imageId, export_file):
     return is_running
 
 def logInfo(export_file, mes):
-    with open(f'{C.EXPORT_DIR}/{export_file}.log', "a") as file:
+    with open(pathLogFile(export_file), "a") as file:
         file.write(f'{mes}\n')
 
 def logRunCommand(export_file, command):
@@ -143,8 +160,16 @@ def logRunCommand(export_file, command):
         response = execCommand(command )
     finally:
         logInfo(export_file, C.EXPORT_ARCH_FINISHED)
-        
     return True
+
+def pathLogFile(export_file):
+    return f'{C.EXPORT_DIR}/{export_file}.log'
+
+def pathArchFile(export_file):
+    return f'{C.EXPORT_DIR}/{export_file}.tar'
+
+def pathImgFile(export_file):
+    return f'{C.EXPORT_DIR}/img_{export_file}.tar'
 
 # запуск шелл команды через сокет
 def runCommand(command):
