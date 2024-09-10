@@ -84,6 +84,7 @@ def start_monitoring_status(imageId, export_file):
 
 # мониторинг текущего статуса экспорта образа
 def monitoring_status(imageId, export_file):
+    logInfo(export_file, "Мониторинг экспорта временного файла образа запущен.")
     while process_runs(imageId, export_file): # пока процесс висит в списке процессов - формирование образа незакончено
         time.sleep(2)
     # процесс завершен
@@ -102,7 +103,7 @@ def monitoring_status(imageId, export_file):
         time.sleep(2)
     # процесс завершен
     if os.path.isfile( pathArchFile(export_file) ): # файл архива нейросети сформирован 
-        logInfo(export_file, "Экспорт нейросети завершен успешно")
+        logInfo(export_file, "Файл экспорта нейросети успешно сформирован")
         os.unlink(pathImgFile(export_file))
         if os.path.isfile( pathImgFile(export_file) ):
             logInfo(export_file, "Ошибка: Временный файл образа удалить не удалось")
@@ -122,25 +123,21 @@ def archive_runs(export_file):
     
     with open(log_file) as f:      
         if C.EXPORT_ARCH_FINISHED in f.read(): #проверяем лог на наличие сигнала что процесс архивирования окончен
-            logInfo(export_file, f'Процесс архивирования окончен {dt.datetime.now().timestamp()}' )
+            logInfo(export_file, f'Процесс архивирования окончен' )
             return False
-    logInfo(export_file, f'Процесс архивирования запущен {dt.datetime.now().timestamp()}' )
+    logInfo(export_file, f'Процесс архивирования запущен' )
     return True
 
 def process_runs(imageId, export_file):
     command = f'ps aux | grep "docker save {imageId}" '
-    resp = runCommand(command )    
+    resp = runCommand(command ) # ищем в списоке процессов запущенный процесс выгрузки
     if resp.returncode == 0:
-        is_running = True if resp.stdout.find(f'docker save {imageId} > ') > 0 else False
+        is_running = True if resp.stdout.find(f'docker save {imageId} > ') > 0 else False # в результатах ищем нужную подстроку 
         proc_cnt  = len(resp.stdout.splitlines() )
         if(is_running):
-            mes = f'Процесс запущен | {is_running=} | {proc_cnt=} | COMMAND: {command}\n'
+            mes = f'Процесс экспорта образа запущен'
         else:
-            mes = f'Процесс экспорт образа {imageId} завершен. {C.EXPORT_IMAGE_SUCCESS}.'
-            if os.path.isfile( pathImgFile(export_file) ):
-                mes = mes + f" Файл образа '{pathImgFile(export_file)}'"
-            else:
-                mes = mes + " Файл не обнаружен"
+            mes = f'Процесс экспорта образа {imageId} завершен. {C.EXPORT_IMAGE_SUCCESS}.' # Ставим метку об окончании процесса 
     else:
         # set log error
         is_running = False
@@ -153,7 +150,7 @@ def process_runs(imageId, export_file):
 
 def logInfo(export_file, mes):
     with open(pathLogFile(export_file), "a") as file:
-        file.write(f'{mes}\n')
+        file.write(f'{getTimeNoMsec()} {mes}\n')
 
 def logRunCommand(export_file, command):
     try:
@@ -170,6 +167,9 @@ def pathArchFile(export_file):
 
 def pathImgFile(export_file):
     return f'{C.EXPORT_DIR}/img_{export_file}.tar'
+
+def getTimeNoMsec():
+    return dt.datetime.now().replace(microsecond=0)
 
 # запуск шелл команды через сокет
 def runCommand(command):
