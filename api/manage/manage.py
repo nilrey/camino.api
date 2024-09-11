@@ -1,4 +1,4 @@
-import json
+import os.path, json
 from api.database.ormquery import *
 import api.docker.base as dkr
 from api.docker.monitor import *
@@ -139,7 +139,11 @@ def mng_container_stop(container_id):
    # if (not response['error']): response = ro.container_stop(container_id, response['response'])
    return response  
 
-def mng_ann_export(imageId, weights, export_name, annId):
+def mng_ann_export(imageId, weights, export, annId):
+   weights = weights.replace("/projects_data/weights/", "")
+   export = export.replace("/projects_data/export/", "")
+   export_name = os.path.basename(export).replace(".tar.gz", "")
+
    response = dkr.dkr_ann_export(imageId, export_name, annId)
    if(response):
       response = dkr.prepare_ann_archive(imageId, weights, export_name, annId)

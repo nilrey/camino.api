@@ -167,12 +167,6 @@ async def api_docker_ann_export(request: Request,
       export: ANNExport ):
    return mng_ann_export(export.image_id, export.weights, export.export, annId)
 
-@ann.post("/{annId}/on_save", tags=["ИНС"], summary="test")
-async def api_docker_ann_on_save(request: Request,
-      annId:str,
-      action:str = None):
-
-   return annId
 
 # CONTAINERS
 
