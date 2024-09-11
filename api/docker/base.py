@@ -89,7 +89,7 @@ def prepare_ann_archive(imageId, weights, export_file, annId):
     return True
 
 def send_ann_post(annId):
-    requests.post(f'http://camino-resapi/ann/{annId}/archive/on_save', json = {"action":"start"} )
+    requests.post(f'http://camino-restapi/ann/{annId}/archive/on_save', json = {"action":"start"} )
 
 # мониторинг текущего статуса экспорта образа
 def process_archive(imageId, weights, export_file, annId):
