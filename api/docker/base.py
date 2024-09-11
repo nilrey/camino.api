@@ -72,113 +72,108 @@ def dkr_container_stop(container_id):
     return execCommand(f'docker stop {container_id} ' )
 
 # запуск экспорта 
-def dkr_ann_export(imageId, export_name, annId):
-    command = f'docker save {imageId} > {pathImgFile(export_name)} ' # выгружаем образ из докера в файл 
-    logInfo(export_name, f"Выгрузка образа из докера: {command}")
+def dkr_ann_export(imageId, export_code, annId):
+    command = f'docker save {imageId} > {pathImgFile(export_code)} ' # выгружаем образ из докера в файл 
+    log_info(export_code, f"Выгрузка образа из докера: {command}")
     threading.Thread(target=runCommand, args=[command]).start() # запускаем в потоке чтобы отдать ответ сразу
     return True
 
+
 # запуск мониторинга текущего статуса в потоке
-def prepare_ann_archive(imageId, weights, export_file, annId):
-    t = threading.Thread(target=process_archive, args=[imageId, weights, export_file, annId])
+def prepare_ann_archive(imageId, weights, export_code, annId):
+    t = threading.Thread(target=process_archive, args=[imageId, weights, export_code, annId])
     t.start()
     return {"status":"running"}
 
-def send_arch_on_save(export_file, annId):
-    url = f'http://camino-restapi/ann/{annId}/archive/on_save'
-    try:
-        requests.post(url, json = {"action":"start"} )
-        mes = f"Сообщение отправлено. {url}"
-    except Exception:
-        mes = f"Ошибка: сообщение не отправлено. {url}"
-    finally:
-        logInfo(export_file, mes)
-
 
 # мониторинг текущего статуса экспорта образа
-def process_archive(imageId, weights, export_file, annId):
-    logInfo(export_file, "Мониторинг экспорта временного файла образа запущен.")
-    while process_runs(imageId, export_file): # пока процесс висит в списке процессов - формирование образа незакончено
+def process_archive(imageId, weights, export_code, annId):
+    log_info(export_code, "Мониторинг экспорта временного файла образа запущен.")
+    while process_runs(imageId, export_code, annId): # пока процесс висит в списке процессов - формирование образа незакончено
         time.sleep(2)
     # процесс завершен
-    with open( pathLogFile(export_file) ) as f:      
+    with open( pathLogFile(export_code) ) as f:      
         if C.EXPORT_IMAGE_SUCCESS in f.read(): #проверяем лог, если процесс окончен успешно
-            if os.path.isfile( pathImgFile(export_file) ): # если файл образа существует
+            if os.path.isfile( pathImgFile(export_code) ): # если файл образа существует
             # команда перейти в дир. экспорта, потом формируем архив из файла образа + файл весов + readme
-                command = f'cd {C.EXPORT_DIR} && tar -zcf {nameArchFile(export_file)} {nameImgFile(export_file)} {pathWeightsFile(weights)} {pathReadmeFile()}'
-                logInfo(export_file, f'Команда на архивацию: {command}')
-                threading.Thread(target=logRunCommand, args=[export_file, command]).start() # запускаем в потоке чтобы перейти к мониторингу
+                command = f'cd {C.EXPORT_DIR} && tar -zcf {nameArchFile(export_code)} {nameImgFile(export_code)} {pathWeightsFile(weights)} {pathReadmeFile()}'
+                log_info(export_code, f'Команда на архивацию: {command}')
+                threading.Thread(target=logRunCommand, args=[export_code, command]).start() # запускаем в потоке чтобы перейти к мониторингу
             else:
-                logInfo(export_file, f'Ошибка: Файл образа не найден: {pathImgFile(export_file)}')
+                msg = f'Ошибка: Файл образа не найден: {pathImgFile(export_code)}'
+                log_info(export_code, msg)
+                send_on_error(export_code, annId, msg)
     # мониторинг окончания архивации
-    while archive_runs(export_file):
+    while archive_runs(export_code):
         time.sleep(2)
     # процесс завершен
-    threading.Thread(target=send_arch_on_save, args=[export_file, annId]).start() # отправить сообщение о завершении работы
-    if os.path.isfile( pathArchFile(export_file) ):
-        logInfo(export_file, "Файл экспорта нейросети успешно сформирован")
-        os.unlink(pathImgFile(export_file))
-        if os.path.isfile( pathImgFile(export_file) ):
-            logInfo(export_file, "Ошибка: Временный файл образа удалить не удалось")
+    threading.Thread(target=send_arch_on_save, args=[export_code, annId]).start() # отправить сообщение о завершении работы
+    if os.path.isfile( pathArchFile(export_code) ):
+        log_info(export_code, "Файл экспорта нейросети успешно сформирован")
+        os.unlink(pathImgFile(export_code))
+        if os.path.isfile( pathImgFile(export_code) ):
+            log_info(export_code, "Ошибка: Временный файл образа удалить не удалось")
         else:
-            logInfo(export_file, "Временный файл образа удален")
+            log_info(export_code, "Временный файл образа удален")
     else:
-        logInfo(export_file, f"Ошибка: Файл архива нейросети не найден. {pathArchFile(export_file)} , IsFile: {os.path.isfile( pathArchFile(export_file) )}")
-
+        msg = f"Ошибка: Файл архива нейросети не найден. {pathArchFile(export_code)} , IsFile: {os.path.isfile( pathArchFile(export_code) )}"
+        log_info(export_code, msg)
+        send_on_error(export_code, annId, msg)
     return True
 
-def archive_runs(export_file):
-    with open(pathLogFile(export_file)) as f:      
+def archive_runs(export_code):
+    with open(pathLogFile(export_code)) as f:      
         if C.EXPORT_ARCH_FINISHED in f.read(): #проверяем лог на наличие сигнала что процесс архивирования окончен
-            logInfo(export_file, f'Процесс архивирования окончен' )
+            log_info(export_code, f'Процесс архивирования окончен' )
             return False
-    logInfo(export_file, f'Процесс архивирования запущен' )
+    log_info(export_code, f'Процесс архивирования запущен' )
     return True
 
-def process_runs(imageId, export_file):
+def process_runs(imageId, export_code, annId):
     command = f'ps aux | grep "docker save {imageId}" '
     resp = runCommand(command ) # ищем в списоке процессов запущенный процесс выгрузки
     if resp.returncode == 0:
         is_running = True if resp.stdout.find(f'docker save {imageId} > ') > 0 else False # в результатах ищем нужную подстроку 
         if(is_running):
-            mes = f'Процесс экспорта образа запущен'
+            msg = f'Процесс экспорта образа запущен'
         else:
-            mes = f'Процесс экспорта образа {imageId} завершен. {C.EXPORT_IMAGE_SUCCESS}.' # Ставим метку об окончании процесса 
+            msg = f'Процесс экспорта образа {imageId} завершен. {C.EXPORT_IMAGE_SUCCESS}.' # Ставим метку об окончании процесса 
     else:
         # set log error
         is_running = False
-        mes = f'Процесс не запущен. Ошибка: {resp.stderr} | COMMAND: {command}'
-    logInfo(export_file, mes)
+        msg = f'Процесс не запущен. Ошибка: {resp.stderr} | COMMAND: {command}'
+        send_on_error(export_code, annId, msg)
+    log_info(export_code, msg)
     return is_running
 
-def logInfo(export_file, mes):
-    with open(pathLogFile(export_file), "a") as file:
+def log_info(export_code, mes):
+    with open(pathLogFile(export_code), "a") as file:
         file.write(f'{getTimeNoMsec()} {mes}\n')
 
-def logRunCommand(export_file, command):
+def logRunCommand(export_code, command):
     try:
         response = execCommand(command )
     finally:
-        logInfo(export_file, C.EXPORT_ARCH_FINISHED)
+        log_info(export_code, C.EXPORT_ARCH_FINISHED)
     return True
 
-def pathLogFile(export_file):
-    return f'{C.EXPORT_DIR}/{nameLogFile(export_file)}'.replace('//', '/')
+def pathLogFile(export_code):
+    return f'{C.EXPORT_DIR}/logs/{nameLogFile(export_code)}'.replace('//', '/')
 
-def nameLogFile(export_file):
-    return f'{export_file}.log'
+def nameLogFile(export_code):
+    return f'{export_code}.log'
 
-def pathArchFile(export_file):
-    return f'{C.EXPORT_DIR}/{nameArchFile(export_file)}'.replace('//', '/')
+def pathArchFile(export_code):
+    return f'{C.EXPORT_DIR}/{nameArchFile(export_code)}'.replace('//', '/')
 
-def nameArchFile(export_file):
-    return f'{export_file}.tar.gz'
+def nameArchFile(export_code):
+    return f'{export_code}.tar.gz'
 
-def pathImgFile(export_file):
-    return f'{C.EXPORT_DIR}/{nameImgFile(export_file)}'.replace('//', '/')
+def pathImgFile(export_code):
+    return f'{C.EXPORT_DIR}/{nameImgFile(export_code)}'.replace('//', '/')
 
-def nameImgFile(export_file):
-    return f'img_{export_file}.tar'
+def nameImgFile(export_code):
+    return f'img_{export_code}.tar'
 
 def pathWeightsFile(weights):
     return f'{C.WEIGHTS_DIR}/{weights}'.replace('//', '/')
@@ -188,6 +183,26 @@ def pathReadmeFile():
 
 def getTimeNoMsec():
     return dt.datetime.now().replace(microsecond=0)
+
+def send_arch_on_save(export_code, annId):
+    url = f'http://camino-restapi/ann/{annId}/archive/on_save'
+    try:
+        requests.post(url, json = {"action":"start"} )
+        mes = f"Сообщение отправлено. {url}"
+    except Exception:
+        mes = f"Ошибка: сообщение не отправлено. {url}"
+    finally:
+        log_info(export_code, mes)
+
+def send_on_error(export_code, annId, msg):
+    url = f'http://camino-restapi/ann/{annId}/archive/on_error'
+    try:
+        requests.post(url, json = {"msg": msg} )
+        mes = f"Сообщение об ошибке отправлено: {msg}. {url}"
+    except Exception:
+        mes = f"Ошибка: сообщение не отправлено.{msg}. {url}"
+    finally:
+        log_info(export_code, mes)
 
 # запуск шелл команды через сокет
 def runCommand(command):
