@@ -14,17 +14,14 @@ import time, datetime as dt
 def dkr_docker_info():
     return exeCommand(' docker info '+ C.PARAM_TO_JSON )
 
-
 def dkr_images():
     return exeCommand('docker images '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
 
-
 def dkr_container_create(image_name, params):
     command = 'docker create --rm '
-    param_name = volume_weights = param_hyper_params = volume_input = volume_output = volume_socket = param_network = param_input_data = param_ann_mode = param_host_web = ''
+    volume_weights = volume_input = volume_output = volume_socket = volume_markups = volume_storage = ''
+    param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = ''
     volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
-    volume_storage = ''
-    param_network = ''
     for param, value in params.items():
         if( value ):
             if(param == 'name' ):
@@ -33,14 +30,14 @@ def dkr_container_create(image_name, params):
                 param_ann_mode = ' --work_format_training  '
             elif(param == 'weights' ):
                 volume_weights = f' -v {value}:{C.CNTR_BASE_01_DIR_WEIGHTS_FILE} '
-            # elif(param == 'hyper_params'):
-            #     param_hyper_params = ""
             elif(param == 'in_dir' ):
                 volume_input = f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
                 # param_input_data = ' --input_data \'{"path1":{}}\' '
                 param_input_data = ' --input_data \'{"datasets":[{"dataset_name": "video"}]}\' '
             elif(param == 'out_dir' ):
                 volume_output = f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
+            elif(param == 'markups'):
+                volume_markups = f' -v {value}:/markups '
             elif(param == 'video_storage'):
                 volume_storage = f' -v {value}:/projects_data '
             elif(param == 'network' ):
@@ -48,8 +45,9 @@ def dkr_container_create(image_name, params):
             elif(param == 'host_web' ):
                 param_host_web = f'--host_web \'{value}\' '
 
-    command = 'docker create --rm ' + ' -it '+param_name + ' ' + volume_storage + ' '  + volume_output + ' '+volume_input + ' ' + volume_weights + ' ' + volume_socket + ' ' + param_network + ' ' + image_name + ' ' + param_input_data + ' ' + param_host_web + ' ' + param_ann_mode
-    return execCommand(command)
+    command = f'docker create --rm -it {param_name} {volume_storage} {volume_output} {volume_input} {volume_weights} \
+        {volume_socket} {volume_markups} {param_network} {image_name} {param_input_data} {param_host_web} {param_ann_mode}'
+    return execCommand(command) 
 
 
 def dkr_containers():
@@ -148,13 +146,16 @@ def process_runs(imageId, export_code, annId):
 
 def log_info(export_code, mes):
     with open(pathLogFile(export_code), "a") as file:
-        file.write(f'{getTimeNoMsec()} {mes}\n')
+        file.write(f'{get_time_no_microsec()} {mes}\n')
 
 def logRunCommand(export_code, command):
     try:
         response = execCommand(command )
+    except Exception:
+        msg = f"Ошибка: Команда выполенена с ошибкой. {command}"
     finally:
         log_info(export_code, C.EXPORT_ARCH_FINISHED)
+        log_info(export_code, msg)
     return True
 
 def pathLogFile(export_code):
@@ -181,7 +182,7 @@ def pathWeightsFile(weights):
 def pathReadmeFile():
     return C.EXPORT_README
 
-def getTimeNoMsec():
+def get_time_no_microsec():
     return dt.datetime.now().replace(microsecond=0)
 
 def send_arch_on_save(export_code, annId):
