@@ -2,7 +2,9 @@
 import subprocess
 import os.path
 import json
-import threading 
+import threading
+
+import requests 
 import api.sets.const as C
 import api.format.response_teplates as rt # Response Template
 import api.format.response_objects as ro # Response Objects
@@ -70,21 +72,27 @@ def dkr_container_stop(container_id):
     return execCommand(f'docker stop {container_id} ' )
 
 # запуск экспорта 
-def dkr_ann_export(imageId, export_name):
+def dkr_ann_export(imageId, export_name, annId):
+    # отправить обращение о начале работы
+    t1 = threading.Thread(target=sendAnnPost, args=[annId])
+    t1.start()
     command = f'docker save {imageId} > {pathImgFile(export_name)} ' # выгружаем образ из докера в файл 
     logInfo(export_name, f"Выгрузка образа из докера: {command}")
-    t = threading.Thread(target=runCommand, args=[command]) # запускаем в потоке чтобы отдать ответ сразу
-    t.start()
+    t2 = threading.Thread(target=runCommand, args=[command]) # запускаем в потоке чтобы отдать ответ сразу
+    t2.start()
     return True
 
 # запуск мониторинга текущего статуса в потоке
-def prepare_archive(imageId, weights, export_file):
-    t = threading.Thread(target=process_archive, args=[imageId, weights, export_file])
+def prepare_ann_archive(imageId, weights, export_file, annId):
+    t = threading.Thread(target=process_archive, args=[imageId, weights, export_file, annId])
     t.start()
     return True
 
+def sendAnnPost(annId):
+    requests.post(f'http://camino-resapi/ann/{annId}/archive/on_save', json = {"action":"start"} )
+
 # мониторинг текущего статуса экспорта образа
-def process_archive(imageId, weights, export_file):
+def process_archive(imageId, weights, export_file, annId):
     logInfo(export_file, "Мониторинг экспорта временного файла образа запущен.")
     while process_runs(imageId, export_file): # пока процесс висит в списке процессов - формирование образа незакончено
         time.sleep(2)

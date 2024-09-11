@@ -56,5 +56,6 @@ class ContainerCreate(BaseModel):
 
 
 class ANNExport(BaseModel):
+   image_id:str = Field(default="") 
    weights:str = Field(default="") # path to weights file
-   file_name:str = Field(default=f"ann_export_{int(dt.datetime.now().timestamp())}" )
+   export:str = Field(default=f"ann_export_{int(dt.datetime.now().timestamp())}" )

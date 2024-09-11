@@ -158,12 +158,21 @@ async def api_docker_image_run(request: Request,
    return mng_image_run(imageId, imrun.getAllParams() )
 
 
-@docker_images.post("/{imageId}/export", tags=["Docker-образы"], summary="Экспорт Нейронной сетки")
-async def api_docker_ann_export(request: Request,
-      imageId:str,
-      export: ANNExport ):
-   return mng_container_export(imageId, export.weights, export.file_name)
+# ANN
 
+
+@ann.post("/{annId}/save", tags=["ИНС"], summary="Выгрузка ИНС (Docker-образа и файла весов) в архив")
+async def api_docker_ann_export(request: Request,
+      annId:str,
+      export: ANNExport ):
+   return mng_ann_export(export.image_id, export.weights, export.export, annId)
+
+@ann.post("/{annId}/on_save", tags=["ИНС"], summary="test")
+async def api_docker_ann_on_save(request: Request,
+      annId:str,
+      action:str = None):
+
+   return annId
 
 # CONTAINERS
 
@@ -247,3 +256,4 @@ app.include_router(docker_registry)
 app.include_router(docker_images)
 app.include_router(docker_containers)
 app.include_router(events)
+app.include_router(ann)

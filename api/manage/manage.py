@@ -139,8 +139,8 @@ def mng_container_stop(container_id):
    # if (not response['error']): response = ro.container_stop(container_id, response['response'])
    return response  
 
-def mng_container_export(imageId, weights, export_name):
-   response = dkr.dkr_ann_export(imageId, export_name)
+def mng_ann_export(imageId, weights, export_name, annId):
+   response = dkr.dkr_ann_export(imageId, export_name, annId)
    if(response):
-      response = dkr.prepare_archive(imageId, weights, export_name)
-   return response  
+      response = dkr.prepare_ann_archive(imageId, weights, export_name, annId)
+   return response

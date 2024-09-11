@@ -61,6 +61,10 @@ tags_metadata = [
     {
         "name": "События в Docker-контейнере",
         "description": "API для работы с событиями в Docker-контейнерах",
+    },
+    {
+        "name": "ИНС",
+        "description": "API для работы с ИНС",
     }
 ]
 
@@ -81,3 +85,4 @@ docker_registry = APIRouter( prefix="/registry", tags=["Docker-реестр"] )
 docker_images = APIRouter( prefix="/images", tags=["Docker-образы"] )
 docker_containers = APIRouter( prefix="/containers", tags=["Docker-контейнеры"] )
 events = APIRouter( prefix="/events", tags=["События в Docker-контейнере"] )
+ann = APIRouter( prefix="/ann", tags=["ИНС"] )
