@@ -161,7 +161,7 @@ async def api_docker_image_run(request: Request,
 # ANN
 
 
-@ann.post("/{annId}/save", tags=["ИНС"], summary="Выгрузка ИНС (Docker-образа и файла весов) в архив")
+@ann.post("/{annId}/archive/save", tags=["ИНС"], summary="Выгрузка ИНС (Docker-образа и файла весов) в архив")
 async def api_docker_ann_export(request: Request,
       annId:str,
       export: ANNExport ):
