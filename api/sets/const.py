@@ -1,10 +1,13 @@
 # Настройки для конейнеров
+ROOT = "/code"
+
 CNTR_BASE_01_DIR_WEIGHTS_FILE="/common/yolov5s.pt"
 CNTR_BASE_01_DIR_IN="/input"
 CNTR_BASE_01_DIR_OUT="/output"
 
-WEIGHTS_DIR="/code/weights"
-EXPORT_DIR="/code/export"
+WEIGHTS_DIR=ROOT+"/weights"
+EXPORT_DIR=ROOT+"/export"
+EXPORT_README=ROOT+"/api/docs/README.md"
 EXPORT_EXT="tar"
 EXPORT_IMAGE_SUCCESS = 'Image export success'
 EXPORT_ARCH_FINISHED = 'Archive process finished'

@@ -74,7 +74,7 @@ def dkr_container_stop(container_id):
 # запуск экспорта 
 def dkr_ann_export(imageId, export_name, annId):
     # отправить обращение о начале работы
-    t1 = threading.Thread(target=sendAnnPost, args=[annId])
+    t1 = threading.Thread(target=send_ann_post, args=[annId])
     t1.start()
     command = f'docker save {imageId} > {pathImgFile(export_name)} ' # выгружаем образ из докера в файл 
     logInfo(export_name, f"Выгрузка образа из докера: {command}")
@@ -88,7 +88,7 @@ def prepare_ann_archive(imageId, weights, export_file, annId):
     t.start()
     return True
 
-def sendAnnPost(annId):
+def send_ann_post(annId):
     requests.post(f'http://camino-resapi/ann/{annId}/archive/on_save', json = {"action":"start"} )
 
 # мониторинг текущего статуса экспорта образа
@@ -101,7 +101,7 @@ def process_archive(imageId, weights, export_file, annId):
         if C.EXPORT_IMAGE_SUCCESS in f.read(): #проверяем лог, если процесс окончен успешно
             if os.path.isfile( pathImgFile(export_file) ): # если файл образа существует
             # команда перейти в дир. экспорта, потом формируем архив из файла образа + файл весов + readme
-                command = f'cd {C.EXPORT_DIR} && tar -cf {nameArchFile(export_file)} {nameImgFile(export_file)} {pathWeightsFile(weights)} README.md'
+                command = f'cd {C.EXPORT_DIR} && tar -zcf {nameArchFile(export_file)} {nameImgFile(export_file)} {pathWeightsFile(weights)} {pathReadmeFile()}'
                 logInfo(export_file, f'Команда на архивацию: {command}')
                 t = threading.Thread(target=logRunCommand, args=[export_file, command]) # запускаем в потоке чтобы перейти к мониторингу
                 t.start()
@@ -124,12 +124,7 @@ def process_archive(imageId, weights, export_file, annId):
     return True
 
 def archive_runs(export_file):
-    log_file = pathLogFile(export_file)
-    if not os.path.isfile(log_file):
-        logInfo(export_file, f'Лог файл не найден. {log_file}' )
-        return False
-    
-    with open(log_file) as f:      
+    with open(pathLogFile(export_file)) as f:      
         if C.EXPORT_ARCH_FINISHED in f.read(): #проверяем лог на наличие сигнала что процесс архивирования окончен
             logInfo(export_file, f'Процесс архивирования окончен' )
             return False
@@ -173,7 +168,7 @@ def pathArchFile(export_file):
     return f'{C.EXPORT_DIR}/{nameArchFile(export_file)}'.replace('//', '/')
 
 def nameArchFile(export_file):
-    return f'{export_file}.tar'
+    return f'{export_file}.tar.gz'
 
 def pathImgFile(export_file):
     return f'{C.EXPORT_DIR}/{nameImgFile(export_file)}'.replace('//', '/')
@@ -183,6 +178,9 @@ def nameImgFile(export_file):
 
 def pathWeightsFile(weights):
     return f'{C.WEIGHTS_DIR}/{weights}'.replace('//', '/')
+
+def pathReadmeFile():
+    return C.EXPORT_README
 
 def getTimeNoMsec():
     return dt.datetime.now().replace(microsecond=0)
