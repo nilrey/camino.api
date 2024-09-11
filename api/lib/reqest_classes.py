@@ -8,6 +8,7 @@ class ImageRun(BaseModel):
    hyper_params:str = Field(default="")
    in_dir:str  = Field(default="")
    out_dir:str = Field(default="")
+   markups:str = Field(default="")
    video_storage:str = Field(default="")
    network:str = Field(default="")
    host_web:str = Field(default="")
@@ -20,6 +21,7 @@ class ImageRun(BaseModel):
             'hyper_params': self.hyper_params, 
             'in_dir': self.in_dir, 
             'out_dir': self.out_dir, 
+            'markups': self.markups, 
             'video_storage': self.video_storage, 
             'network': self.network, 
             'host_web': self.host_web, 
