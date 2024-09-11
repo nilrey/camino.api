@@ -73,23 +73,27 @@ def dkr_container_stop(container_id):
 
 # запуск экспорта 
 def dkr_ann_export(imageId, export_name, annId):
-    # отправить обращение о начале работы
-    t1 = threading.Thread(target=send_ann_post, args=[annId])
-    t1.start()
     command = f'docker save {imageId} > {pathImgFile(export_name)} ' # выгружаем образ из докера в файл 
     logInfo(export_name, f"Выгрузка образа из докера: {command}")
-    t2 = threading.Thread(target=runCommand, args=[command]) # запускаем в потоке чтобы отдать ответ сразу
-    t2.start()
+    threading.Thread(target=runCommand, args=[command]).start() # запускаем в потоке чтобы отдать ответ сразу
     return True
 
 # запуск мониторинга текущего статуса в потоке
 def prepare_ann_archive(imageId, weights, export_file, annId):
     t = threading.Thread(target=process_archive, args=[imageId, weights, export_file, annId])
     t.start()
-    return True
+    return {"status":"running"}
 
-def send_ann_post(annId):
-    requests.post(f'http://camino-restapi/ann/{annId}/archive/on_save', json = {"action":"start"} )
+def send_arch_on_save(export_file, annId):
+    url = f'http://camino-restapi/ann/{annId}/archive/on_save'
+    try:
+        requests.post(url, json = {"action":"start"} )
+        mes = f"Сообщение отправлено. {url}"
+    except Exception:
+        mes = f"Ошибка: сообщение не отправлено. {url}"
+    finally:
+        logInfo(export_file, mes)
+
 
 # мониторинг текущего статуса экспорта образа
 def process_archive(imageId, weights, export_file, annId):
@@ -103,14 +107,14 @@ def process_archive(imageId, weights, export_file, annId):
             # команда перейти в дир. экспорта, потом формируем архив из файла образа + файл весов + readme
                 command = f'cd {C.EXPORT_DIR} && tar -zcf {nameArchFile(export_file)} {nameImgFile(export_file)} {pathWeightsFile(weights)} {pathReadmeFile()}'
                 logInfo(export_file, f'Команда на архивацию: {command}')
-                t = threading.Thread(target=logRunCommand, args=[export_file, command]) # запускаем в потоке чтобы перейти к мониторингу
-                t.start()
+                threading.Thread(target=logRunCommand, args=[export_file, command]).start() # запускаем в потоке чтобы перейти к мониторингу
             else:
                 logInfo(export_file, f'Ошибка: Файл образа не найден: {pathImgFile(export_file)}')
     # мониторинг окончания архивации
     while archive_runs(export_file):
         time.sleep(2)
     # процесс завершен
+    threading.Thread(target=send_arch_on_save, args=[export_file, annId]).start() # отправить сообщение о завершении работы
     if os.path.isfile( pathArchFile(export_file) ):
         logInfo(export_file, "Файл экспорта нейросети успешно сформирован")
         os.unlink(pathImgFile(export_file))
