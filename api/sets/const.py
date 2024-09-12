@@ -5,9 +5,10 @@ CNTR_BASE_01_DIR_WEIGHTS_FILE="/common/yolov5s.pt"
 CNTR_BASE_01_DIR_IN="/input"
 CNTR_BASE_01_DIR_OUT="/output"
 
-WEIGHTS_DIR=ROOT+"/weights"
-EXPORT_DIR=ROOT+"/export"
-EXPORT_README=ROOT+"/api/docs/README.md"
+WEIGHTS_DIR = ROOT+"/weights"
+EXPORT_DIR = ROOT+"/export"
+EXPORT_README_PATH = ROOT+"/api/docs"
+EXPORT_README_FNAME = "README.md"
 EXPORT_EXT="tar"
 EXPORT_IMAGE_SUCCESS = 'Image export success'
 EXPORT_ARCH_FINISHED = 'Archive process finished'

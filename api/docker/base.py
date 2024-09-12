@@ -1,4 +1,5 @@
 # import docker
+import shutil
 import subprocess
 import os.path
 import json
@@ -71,7 +72,8 @@ def dkr_container_stop(container_id):
 
 # запуск экспорта 
 def dkr_ann_export(imageId, export_code, annId):
-    command = f'docker save {imageId} > {pathImgFile(export_code)} ' # выгружаем образ из докера в файл 
+    execCommand(f'mkdir {C.EXPORT_DIR}/tmp_{export_code}')
+    command = f'docker save {imageId} > {img_file_path(export_code)} ' # выгружаем образ из докера в файл 
     log_info(export_code, f"Выгрузка образа из докера: {command}")
     threading.Thread(target=runCommand, args=[command]).start() # запускаем в потоке чтобы отдать ответ сразу
     return True
@@ -90,15 +92,15 @@ def process_archive(imageId, weights, export_code, annId):
     while process_runs(imageId, export_code, annId): # пока процесс висит в списке процессов - формирование образа незакончено
         time.sleep(2)
     # процесс завершен
-    with open( pathLogFile(export_code) ) as f:      
+    with open( log_file_path(export_code) ) as f:      
         if C.EXPORT_IMAGE_SUCCESS in f.read(): #проверяем лог, если процесс окончен успешно
-            if os.path.isfile( pathImgFile(export_code) ): # если файл образа существует
+            if os.path.isfile( img_file_path(export_code) ): # если файл образа существует
             # команда перейти в дир. экспорта, потом формируем архив из файла образа + файл весов + readme
-                command = f'cd {C.EXPORT_DIR} && tar -zcf {nameArchFile(export_code)} {nameImgFile(export_code)} {pathWeightsFile(weights)} {pathReadmeFile()}'
+                command = f'cd {C.EXPORT_DIR} && tar -zcf {arch_file_path(export_code)} {tar_img_file(export_code)} {tar_weights_file(weights)} {tar_readme_file()}'
                 log_info(export_code, f'Команда на архивацию: {command}')
-                threading.Thread(target=logRunCommand, args=[export_code, command]).start() # запускаем в потоке чтобы перейти к мониторингу
+                threading.Thread(target=run_command_with_finally, args=[export_code, command]).start() # запускаем в потоке чтобы перейти к мониторингу
             else:
-                msg = f'Ошибка: Файл образа не найден: {pathImgFile(export_code)}'
+                msg = f'Ошибка: Файл образа не найден: {img_file_path(export_code)}'
                 log_info(export_code, msg)
                 send_on_error(export_code, annId, msg)
     # мониторинг окончания архивации
@@ -106,21 +108,21 @@ def process_archive(imageId, weights, export_code, annId):
         time.sleep(2)
     # процесс завершен
     threading.Thread(target=send_arch_on_save, args=[export_code, annId]).start() # отправить сообщение о завершении работы
-    if os.path.isfile( pathArchFile(export_code) ):
+    if os.path.isfile( arch_file_path(export_code) ):
         log_info(export_code, "Файл экспорта нейросети успешно сформирован")
-        os.unlink(pathImgFile(export_code))
-        if os.path.isfile( pathImgFile(export_code) ):
+        shutil.rmtree(img_path(export_code))
+        if os.path.isfile( img_file_path(export_code) ):
             log_info(export_code, "Ошибка: Временный файл образа удалить не удалось")
         else:
             log_info(export_code, "Временный файл образа удален")
     else:
-        msg = f"Ошибка: Файл архива нейросети не найден. {pathArchFile(export_code)} , IsFile: {os.path.isfile( pathArchFile(export_code) )}"
+        msg = f"Ошибка: Файл архива нейросети не найден. {arch_file_path(export_code)} , IsFile: {os.path.isfile( arch_file_path(export_code) )}"
         log_info(export_code, msg)
         send_on_error(export_code, annId, msg)
     return True
 
 def archive_runs(export_code):
-    with open(pathLogFile(export_code)) as f:      
+    with open(log_file_path(export_code)) as f:      
         if C.EXPORT_ARCH_FINISHED in f.read(): #проверяем лог на наличие сигнала что процесс архивирования окончен
             log_info(export_code, f'Процесс архивирования окончен' )
             return False
@@ -145,12 +147,12 @@ def process_runs(imageId, export_code, annId):
     return is_running
 
 def log_info(export_code, mes):
-    with open(pathLogFile(export_code), "a") as file:
+    with open(log_file_path(export_code), "a") as file:
         file.write(f'{get_time_no_microsec()} {mes}\n')
 
-def logRunCommand(export_code, command):
+def run_command_with_finally(export_code, command):
     try:
-        response = execCommand(command )
+        execCommand(command )
     except Exception:
         msg = f"Ошибка: Команда выполенена с ошибкой. {command}"
     finally:
@@ -158,29 +160,36 @@ def logRunCommand(export_code, command):
         log_info(export_code, msg)
     return True
 
-def pathLogFile(export_code):
-    return f'{C.EXPORT_DIR}/logs/{nameLogFile(export_code)}'.replace('//', '/')
+def log_file_path(export_code):
+    dir = f'{C.EXPORT_DIR}/logs' if(os.path.isdir(f'{C.EXPORT_DIR}/logs')) else C.EXPORT_DIR # если сущ. директория для логов
+    return f'{dir}/{log_fname(export_code)}'
 
-def nameLogFile(export_code):
+def log_fname(export_code):
     return f'{export_code}.log'
 
-def pathArchFile(export_code):
-    return f'{C.EXPORT_DIR}/{nameArchFile(export_code)}'.replace('//', '/')
+def arch_file_path(export_code):
+    return f'{C.EXPORT_DIR}/{arch_fname(export_code)}'
 
-def nameArchFile(export_code):
+def arch_fname(export_code):
     return f'{export_code}.tar.gz'
 
-def pathImgFile(export_code):
-    return f'{C.EXPORT_DIR}/{nameImgFile(export_code)}'.replace('//', '/')
+def img_file_path(export_code):
+    return f'{img_path(export_code)}/{img_fname(export_code)}'
 
-def nameImgFile(export_code):
+def img_path(export_code):
+    return f'{C.EXPORT_DIR}/tmp_{export_code}' if(os.path.isdir(f'{C.EXPORT_DIR}/tmp_{export_code}')) else C.EXPORT_DIR 
+
+def tar_img_file(export_code):
+    return f' -C {C.EXPORT_DIR}/tmp_{export_code} {img_fname(export_code)} '
+
+def img_fname(export_code):
     return f'img_{export_code}.tar'
 
-def pathWeightsFile(weights):
-    return f'{C.WEIGHTS_DIR}/{weights}'.replace('//', '/')
+def tar_weights_file(weights):
+    return f' -C {C.WEIGHTS_DIR} {weights} '
 
-def pathReadmeFile():
-    return C.EXPORT_README
+def tar_readme_file():
+    return f' -C {C.EXPORT_README_PATH} {C.EXPORT_README_FNAME} '
 
 def get_time_no_microsec():
     return dt.datetime.now().replace(microsecond=0)
