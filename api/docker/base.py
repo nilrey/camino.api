@@ -23,6 +23,7 @@ def dkr_container_create(image_name, params):
     volume_weights = volume_input = volume_output = volume_socket = volume_markups = volume_storage = ''
     param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = ''
     volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
+    param_host_web = f' --host_web \'http://camino-resapi\' '
     for param, value in params.items():
         if( value ):
             if(param == 'name' ):
@@ -43,8 +44,8 @@ def dkr_container_create(image_name, params):
                 volume_storage = f' -v {value}:/projects_data '
             elif(param == 'network' ):
                 param_network = f' --network {value} '
-            elif(param == 'host_web' ):
-                param_host_web = f'--host_web \'{value}\' '
+            # elif(param == 'host_web' ):
+            #     param_host_web = f'--host_web \'{value}\' '
 
     command = f'docker create --rm -it {param_name} {volume_storage} {volume_output} {volume_input} {volume_weights} \
         {volume_socket} {volume_markups} {param_network} {image_name} {param_input_data} {param_host_web} {param_ann_mode}'
