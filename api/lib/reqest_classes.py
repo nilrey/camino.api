@@ -11,7 +11,7 @@ class ImageRun(BaseModel):
    markups:str = Field(default="")
    video_storage:str = Field(default="")
    network:str = Field(default="")
-   host_web:str = Field(default="")
+   # host_web:str = Field(default="")
    
 
    def getAllParams(self):
@@ -24,7 +24,7 @@ class ImageRun(BaseModel):
             'markups': self.markups, 
             'video_storage': self.video_storage, 
             'network': self.network, 
-            'host_web': self.host_web, 
+            # 'host_web': self.host_web, 
             }
    
 
@@ -43,7 +43,7 @@ class ContainerCreate(BaseModel):
    markups:str = Field(default="")
    video_storage:str = Field(default="")
    network:str = Field(default="")
-   host_web:str = Field(default="")
+   # host_web:str = Field(default="")
 
    def getAllParams(self):
     return {'name': self.name, 
@@ -55,7 +55,7 @@ class ContainerCreate(BaseModel):
             'markups': self.markups, 
             'video_storage': self.video_storage, 
             'network': self.network, 
-            'host_web': self.host_web, 
+            # 'host_web': self.host_web, 
             }
 
 

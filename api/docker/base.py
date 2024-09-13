@@ -35,7 +35,7 @@ def dkr_container_create(image_name, params):
             elif(param == 'in_dir' ):
                 volume_input = f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
                 # param_input_data = ' --input_data \'{"path1":{}}\' '
-                param_input_data = ' --input_data \'{"datasets":[{"dataset_name": "video"}]}\' '
+                # param_input_data = ' --input_data \'{"datasets":[{"dataset_name": "video"}]}\' '
             elif(param == 'out_dir' ):
                 volume_output = f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
             elif(param == 'markups'):
@@ -49,6 +49,7 @@ def dkr_container_create(image_name, params):
 
     command = f'docker create --rm -it {param_name} {volume_storage} {volume_output} {volume_input} {volume_weights} \
         {volume_socket} {volume_markups} {param_network} {image_name} {param_input_data} {param_host_web} {param_ann_mode}'
+    log_info(get_time_no_microsec(), command)
     return execCommand(command) 
 
 
