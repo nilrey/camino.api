@@ -23,7 +23,7 @@ def dkr_container_create(image_name, params):
     volume_weights = volume_input = volume_output = volume_socket = volume_markups = volume_storage = ''
     param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = ''
     volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
-    param_host_web = f' --host_web \'http://camino-resapi\' '
+    param_host_web = f' --host_web \'http://camino-restapi\' '
     for param, value in params.items():
         if( value ):
             if(param == 'name' ):
