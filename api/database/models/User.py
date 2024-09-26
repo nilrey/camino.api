@@ -9,7 +9,7 @@ metadata = Base.metadata
 
 class User(Base):
     __tablename__ = 'users'
-    __table_args__ = {'schema': 'common', 'comment': 'Список пользователей системы'}
+    __table_args__ = {'schema': 'public', 'comment': 'Список пользователей системы'}
 
     id = Column(UUID, primary_key=True, comment='ID пользователя')
     name = Column(String(64), comment='имя пользователя')

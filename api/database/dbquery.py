@@ -114,17 +114,17 @@ def select_wrapper(stmt, params={}):
 
 
 def q_project_select_by_project_id(id):
-   stmt = text("SELECT u.id, u.name FROM common.project_users pu \
-   JOIN common.users u ON pu.user_id=u.id \
+   stmt = text("SELECT u.id, u.name FROM project_users pu \
+   JOIN users u ON pu.user_id=u.id \
    WHERE pu.project_id = :project_id")
    resp = select_wrapper(stmt, {"project_id" : id} )
    return resp
 
 
 def q_project_select_by_user_id(id):
-   stmt = text("SELECT * FROM common.project_users pu \
-   JOIN common.projects p ON pu.project_id=p.id \
-   JOIN common.users u ON pu.user_id=u.id \
+   stmt = text("SELECT * FROM project_users pu \
+   JOIN projects p ON pu.project_id=p.id \
+   JOIN users u ON pu.user_id=u.id \
    WHERE pu.user_id = :user_id")
    resp = select_wrapper(stmt, {"user_id" : id} )
    return resp

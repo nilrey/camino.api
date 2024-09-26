@@ -10,7 +10,7 @@ metadata = Base.metadata
 
 class Chain(Base):
     __tablename__ = 'chains'
-    __table_args__ = {'schema': 'common', 'comment': 'список цепочек примитивов датасетов'}
+    __table_args__ = {'schema': 'public', 'comment': 'список цепочек примитивов датасетов'}
 
     id = Column(UUID, primary_key=True, comment='ID цепочки')
     name = Column(String(64), comment='наименование цепочки')
@@ -24,7 +24,7 @@ class Chain(Base):
 
 class Dataset(Base):
     __tablename__ = 'datasets'
-    __table_args__ = {'schema': 'common', 'comment': 'Список датасетов проектов'}
+    __table_args__ = {'schema': 'public', 'comment': 'Список датасетов проектов'}
 
     id = Column(UUID, primary_key=True, comment='ID датасета')
     name = Column(String(64), comment='наименование датасета')
@@ -45,7 +45,7 @@ class Dataset(Base):
 
 class File(Base):
     __tablename__ = 'files'
-    __table_args__ = {'schema': 'common', 'comment': 'список файлов датасетов проектов'}
+    __table_args__ = {'schema': 'public', 'comment': 'список файлов датасетов проектов'}
 
     id = Column(UUID, primary_key=True, comment='ID датасета')
     name = Column(String(64), comment='наименование файла')
@@ -63,7 +63,7 @@ class File(Base):
 
 class Markup(Base):
     __tablename__ = 'markups'
-    __table_args__ = {'schema': 'common', 'comment': 'Список примитивов датасетов'}
+    __table_args__ = {'schema': 'public', 'comment': 'Список примитивов датасетов'}
 
     id = Column(UUID, primary_key=True, comment='ID примитива')
     previous_id = Column(UUID, comment='ID исходного примитива, заполняется для скорректированного примитива')
@@ -81,26 +81,26 @@ class Markup(Base):
 
 class Privilege(Base):
     __tablename__ = 'privileges'
-    __table_args__ = {'schema': 'common', 'comment': 'список прав пользователей системы'}
+    __table_args__ = {'schema': 'public', 'comment': 'список прав пользователей системы'}
 
     code = Column(String(32), primary_key=True, comment='код права (используется в скриптах бэкенда)')
     name = Column(String(255), comment='имя права')
 
-    roles = relationship('Role', secondary='common.roles_privileges')
+    roles = relationship('Role', secondary='public.roles_privileges')
 
 
 t_project_tags = Table(
     'project_tags', metadata,
     Column('project_id', UUID, nullable=False, comment='ID проекта'),
     Column('tag', String(64), comment='Тэг'),
-    schema='common',
+    schema='public',
     comment='Список тегов проектов (опционально, для систематизации проектов)'
 )
 
 
 class Project(Base):
     __tablename__ = 'projects'
-    __table_args__ = {'schema': 'common', 'comment': 'Список проектов'}
+    __table_args__ = {'schema': 'public', 'comment': 'Список проектов'}
 
     id = Column(UUID, primary_key=True, comment='ID проекта')
     name = Column(String(255), comment='наименование проекта')
@@ -110,12 +110,12 @@ class Project(Base):
     dt_created = Column(DateTime, comment='дата и время создания проекта')
     is_deleted = Column(Boolean, comment='признак удаления проекта')
 
-    users = relationship('User', secondary='common.project_users')
+    users = relationship('User', secondary='public.project_users')
 
 
 class Role(Base):
     __tablename__ = 'roles'
-    __table_args__ = {'schema': 'common', 'comment': 'Список ролей пользователей системы'}
+    __table_args__ = {'schema': 'public', 'comment': 'Список ролей пользователей системы'}
 
     code = Column(String(16), primary_key=True, comment='код роли')
     name = Column(String(32), nullable=False, comment='имя роли')
@@ -123,7 +123,7 @@ class Role(Base):
 
 class User(Base):
     __tablename__ = 'users'
-    __table_args__ = {'schema': 'common', 'comment': 'Список пользователей системы'}
+    __table_args__ = {'schema': 'public', 'comment': 'Список пользователей системы'}
 
     id = Column(UUID, primary_key=True, comment='ID пользователя')
     name = Column(String(64), comment='имя пользователя')
@@ -136,37 +136,37 @@ class User(Base):
 
 t_markups_chains = Table(
     'markups_chains', metadata,
-    Column('chain_id', ForeignKey('common.chains.id'), comment='ID цепочки'),
-    Column('markup_id', ForeignKey('common.markups.id'), comment='ID примитива (при коррекции примитива его ID в цепочке должен подменяться)'),
+    Column('chain_id', ForeignKey('public.chains.id'), comment='ID цепочки'),
+    Column('markup_id', ForeignKey('public.markups.id'), comment='ID примитива (при коррекции примитива его ID в цепочке должен подменяться)'),
     Column('npp', Integer, comment='порядковый номер примитива в цепочке'),
-    schema='common'
+    schema='public'
 )
 
 
 t_project_users = Table(
     'project_users', metadata,
-    Column('project_id', ForeignKey('common.projects.id')),
-    Column('user_id', ForeignKey('common.users.id')),
-    schema='common',
+    Column('project_id', ForeignKey('public.projects.id')),
+    Column('user_id', ForeignKey('public.users.id')),
+    schema='public',
     comment='Список пользователей системы'
 )
 
 
 t_roles_privileges = Table(
     'roles_privileges', metadata,
-    Column('role_code', ForeignKey('common.roles.code'), nullable=False, comment='Код роли'),
-    Column('privilege_code', ForeignKey('common.privileges.code'), nullable=False, comment='Код права'),
-    schema='common',
+    Column('role_code', ForeignKey('public.roles.code'), nullable=False, comment='Код роли'),
+    Column('privilege_code', ForeignKey('public.privileges.code'), nullable=False, comment='Код права'),
+    schema='public',
     comment='Список привязок прав к ролям пользователей'
 )
 
 
 t_sessions = Table(
     'sessions', metadata,
-    Column('user_id', ForeignKey('common.users.id'), comment='ID пользователя'),
+    Column('user_id', ForeignKey('public.users.id'), comment='ID пользователя'),
     Column('token', String(256), comment='токен сессии пользователя'),
     Column('dt_start', DateTime, comment='начало сессии'),
     Column('life', Integer, comment='длительность сессии, минут'),
     Column('is_ended', Boolean, comment='признак конца действия токена'),
-    schema='common'
+    schema='public'
 )
