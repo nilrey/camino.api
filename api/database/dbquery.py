@@ -6,7 +6,7 @@ from typing import List
 from sqlalchemy import bindparam, text
 from configparser import ConfigParser
 
-def load_config(filename='database.ini', section='postgresql'):
+def load_config(filename='/code/api/database/database.ini', section='postgresql'):
     parser = ConfigParser()
     parser.read(filename)
     # get section, default to postgresql
