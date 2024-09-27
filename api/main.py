@@ -73,13 +73,13 @@ async def api_create_role(code:str = None,
 # PROJECTS
 
 
-@app.get("/projects", tags=["Проекты"], summary="Получение списка проектов")
+@projects.get("/", tags=["Проекты"], summary="Получение списка проектов")
 async def api_all_projects():
    output = mng_all_projects()
    return output
 
 
-@app.post("/projects/create", tags=["Проекты"], summary="Создание проекта")
+@projects.post("/create", tags=["Проекты"], summary="Создание проекта")
 async def api_create_project( request: Request, 
       name:str, 
       type_id:int = 1,
@@ -89,19 +89,19 @@ async def api_create_project( request: Request,
    return mng_create_project(**get_request_params(request))
 
 
-@app.get("/projects/{projectId}", tags=["Проекты"], summary="Получение информации о проекте")
+@projects.get("/{projectId}", tags=["Проекты"], summary="Получение информации о проекте")
 async def api_single_project(projectId):
    output = mng_single_project(projectId)
    return output
 
 
-@app.get("/projects/ext/{projectId}", tags=["Проекты"], summary="Получение информации о проекте")
+@projects.get("/ext/{projectId}", tags=["Проекты"], summary="Получение информации о проекте")
 async def api_single_project_ext(projectId:str):
    output = mng_single_project_ext(projectId)
    return output
 
 
-@app.put("/projects/{projectId}", tags=["Проекты"], summary="Обновление информации о проекте")
+@projects.put("/{projectId}", tags=["Проекты"], summary="Обновление информации о проекте")
 async def api_update_project(projectId,
       name:str = None, 
       type_id:str = None,
@@ -115,10 +115,19 @@ async def api_update_project(projectId,
    return output
 
 
-@app.delete("/projects/{projectId}", tags=["Проекты"], summary="Удаление проекта")
+@projects.delete("/{projectId}", tags=["Проекты"], summary="Удаление проекта")
 async def api_delete_project(projectId):
    output = mng_delete_project(projectId)
    return output
+
+
+@projects.post("/{projectId}/datasets/{datasetId}/export", summary="Выгрузка датасета в JSON файлы")
+async def api_parse_output(request: Request,
+      projectId:str,
+      datasetId:str,
+      target_dir:str = None
+   ):
+   return {}
 
 
 # DOCKER
