@@ -29,8 +29,12 @@ class ImageRun(BaseModel):
    
 
 class ANNEventBeforeRun(BaseModel):
-    msg: str = Field(default="")
-    details: str = Field(default="")
+   msg: str = Field(default="")
+   details: str = Field(default="")
+   
+
+class ANNParseOutput(BaseModel):
+   target_dir: str = Field(default="")
 
 
 class ContainerCreate(BaseModel):
@@ -46,7 +50,7 @@ class ContainerCreate(BaseModel):
    # host_web:str = Field(default="")
 
    def getAllParams(self):
-    return {'name': self.name, 
+      return {'name': self.name, 
             'ann_mode': self.ann_mode, 
             'weights': self.weights, 
             'hyper_params': self.hyper_params, 

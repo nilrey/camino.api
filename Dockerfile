@@ -8,14 +8,12 @@ COPY ./requirements.txt /code/requirements.txt
 
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
-# RUN pip install psycopg2
-
 RUN pip install fastapi uvicorn
 
 RUN apt-get update && apt-get install -y docker.io
 
 COPY ./api /code/api
 
-VOLUME [ "/code/export", "/code/weights" ]
+#VOLUME [ "/code/export", "/code/weights" ]
 
 CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "80"]

@@ -6,6 +6,9 @@ services:
     build: .
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      #- /home/sadmin/Work/dockerpipe:/code/api/docker/hostpipe
+      - /home/sadmin/Work/mounts/export:/code/export
+      - /home/sadmin/Work/mounts/weights:/code/weights
     ports:
-    - "8002:80"
+      - "8002:80"
+    networks:
+      - camino-net

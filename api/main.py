@@ -125,9 +125,9 @@ async def api_delete_project(projectId):
 async def api_parse_output(request: Request,
       projectId:str,
       datasetId:str,
-      target_dir:str = None
+      parse_data:ANNParseOutput
    ):
-   return {}
+   return mng_parse_ann_output(parse_data.target_dir)
 
 
 # DOCKER

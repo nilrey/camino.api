@@ -6,6 +6,8 @@ import api.format.response_objects as ro # Response Objects
 import api.format.response_teplates as rt # Response Template
 import api.sets.const as C
 import time 
+from api.lib.func_ann_out_db_save import ann_out_db_save as save_output
+import api.lib.func_utils as fu
 
 # Users
 def mng_create_user(**kwargs):
@@ -51,6 +53,20 @@ def mng_update_project(id, **kwargs):
 
 def mng_delete_project(id):
    return mngdb_delete_project(id)
+
+def mng_parse_ann_output(target_dir):
+   if not os.path.isdir(target_dir):
+      res = '{"error": True, "mes": "Ошибка: указанная директория не сущестует или не доступна"}'
+   else:
+      files = fu.get_files(target_dir, ['json'])
+      if len(files) == 0 : 
+         res = '{"error": True, "mes": "Ошибка: в указанной директории json файлы не найдены"}'
+      else:
+         for f in files:
+            save_output(f"{target_dir}/{f}")
+         res = '{"error": False, "mes": "Файлы запущены в обработку"}'
+
+   return res
 
 
 # Roles
