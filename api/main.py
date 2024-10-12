@@ -9,6 +9,7 @@ from api.manage.manage import *
 from api.lib.reqest_classes import *
 from api.format.exceptions import http_exception_handler, NotFoundError
 import datetime as dt
+from api.lib.classJsonSaveDB import *
 
 
 app = FastAPI(openapi_tags=tags_metadata)
@@ -127,7 +128,10 @@ async def api_parse_output(request: Request,
       datasetId:str,
       parse_data:ANNParseOutput
    ):
-   return mng_parse_ann_output(parse_data.target_dir)
+   resp = JsonSaveDB(parse_data.target_dir)
+   res = resp.start_parser()
+   # return mng_parse_ann_output(parse_data.target_dir)
+   return res
 
 
 # DOCKER
