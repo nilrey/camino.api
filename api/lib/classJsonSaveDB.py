@@ -103,6 +103,9 @@ class JsonSaveDB():
                     markups_values.append(self.add_markups_values([markup_id, mdata, file_id])) # добавляем в таблицу markups
                     chains_markups_values.append(self.add_chain_markup_values([chain_id, markup_id]))# добавляем в таблицу markups_chains
                     count_values += 1 
+            #         break
+            #     break
+            # break
                     if(count_values % self.query_size == 0 ): # формируем блок запросов размером = query_size
                         self.tread_insert_batch( self.insert_markups_new(markups_values))
                         self.tread_insert_batch( self.insert_markups_chains_new(chains_markups_values))
@@ -124,10 +127,7 @@ class JsonSaveDB():
                 self.setError(f"Cannot load json from {file}")
         return content
     
-    # обходим список json файлов
-    def loop_files(self, files):
-        cnt_error = 0
-        for filename in files:
+    def tread_file(self, filename, id):
             content = self.load_json(f"{self.dir_json}/{filename}")
             if( not self.parse_error): # если json файл загружен без ошибок
                 self.ann_out_db_save(content) # оформить в поток
@@ -135,11 +135,15 @@ class JsonSaveDB():
             else:
                 print(self.message.get()) # print error message and go to next file
                 self.resetError()
-                cnt_error += 1
 
+    
+    # обходим список json файлов
+    def loop_files(self, files):
+        for filename in files:
+            threading.Thread(target=self.tread_file, args=(filename, "1234")).start()
         self.end =  str(datetime.datetime.now())
         self.message.set(f"Все файлы обработаны. 'start': {self.start}, 'end': {self.end} , "\
-                         f"'results' : 'Всего:{len(files)} Ошибок:{cnt_error}'" )
+                         f"'results' : 'Всего:{len(files)}" )
 
     # смотрим в директорию, фильтруем по расширению файлов (по умолчанию фильтр пуст)
     def get_files(self, filter = []):
@@ -164,9 +168,9 @@ class JsonSaveDB():
                 # self.message.set("Файлы запущены в обработку")
 
         return self.message.get()
-
+    
 
 if(__name__ == "__main__"):
-    resp = classJsonSaveDB(os.path.dirname(__file__)+'/json/0009')
+    resp = JsonSaveDB(os.path.dirname(__file__)+'/json/0009')
     res = resp.start_parser()
     print(res)

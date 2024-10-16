@@ -1,0 +1,13 @@
+# Dockerfile.pgvector
+FROM postgres:16.1
+
+RUN apt-get update && apt-get install -y \
+    git \
+    build-essential \
+    postgresql-server-dev-16
+
+# Клонируем репозиторий pgvector
+RUN git clone --branch v0.5.1 https://github.com/pgvector/pgvector.git
+
+# Компилируем и устанавливаем pgvector
+RUN cd pgvector && make && make install

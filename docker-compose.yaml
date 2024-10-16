@@ -2,7 +2,9 @@ version: '3'
 services:
 
   postgres:
-    image: postgres:16.1
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.pgadmin
     restart: always
     #command: -c ssl=on -c ssl_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem -c ssl_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
     environment:
@@ -13,8 +15,7 @@ services:
     volumes:
     - ./data:/var/lib/postgresql/data
     ports:
-    # - '172.17.0.3:5432:5432'
-    - '127.0.0.1:5432:5432'
+    - '5432:5432'
     networks:
       - camino-net
     container_name: camino-pgdb
@@ -27,25 +28,23 @@ services:
       PGADMIN_DEFAULT_PASSWORD: 12345678
       PGADMIN_LISTEN_PORT: 8080
     ports:
-    # - "172.17.0.1:8082:8080"
-    - "127.0.0.1:8082:8080"
+    - "8082:8080"
     container_name: camino-pgadmin
     networks:
       - camino-net
-    # volumes:
-    # - ./servers.json:/pgadmin4/servers.json 
-
     #SQL
     #create extension if not exists "uuid-ossp"
 
   camino-back:
-    build: .
-    image: idockerapi
+    build:
+      context: .
+      dockerfile: dockerfiles/Dockerfile.back
     container_name: camino-back
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /home/sadmin/Work/mounts/export:/code/export
       - /home/sadmin/Work/mounts/weights:/code/weights
+      - /home/sadmin/Documents/images/inputs:/inputs
     ports:
       - "8002:80"
     networks:
@@ -53,4 +52,6 @@ services:
 
 networks:
   camino-net:
-    driver: bridge
+    #driver: bridge
+    name: camino-net
+    attachable: true

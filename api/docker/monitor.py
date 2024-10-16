@@ -47,21 +47,21 @@ class Monitor():
                 containers[key] = value
         return containers
 
-    def create_json_part(self, id, name = None):
-        if name is None:
-            name = id
-        template = copy.deepcopy(self.template)
-        template['id'] = id
-        template['title'] = name
-        template['source'] = 'http://127.0.0.1:3000/d/b5f1b21e-35e1-4dc7-be5e-361d1bcb1bcf/docker-monitoring?orgId=1&var-id=%2Fsystem.slice%2Fdocker-{}.scope&from=now-5m&to=now'.format(id)
-        return template
+    #def create_json_part(self, id, name = None):
+    #    if name is None:
+    #        name = id
+    #    template = copy.deepcopy(self.template)
+    #    template['id'] = id
+    #    template['title'] = name
+    #    template['source'] = 'http://127.0.0.1:3000/d/b5f1b21e-35e1-4dc7-be5e-361d1bcb1bcf/docker-monitoring?orgId=1&var-id=%2Fsystem.slice%2Fdocker-{}.scope&from=now-5m&to=now&kiosk&refresh=5s'.format(id)
+    #    return template
 
     def create_json_part_vid(self, id, name, panel_num):
         for key, value in self.views.items():
             template = copy.deepcopy(self.template)
             template['id'] = id
-            template['title'] = self.views[panel_num]
-            template['source'] = 'http://127.0.0.1:3000/d/b5f1b21e-35e1-4dc7-be5e-361d1bcb1bcf/docker-monitoring?orgId=1&var-id=%2Fsystem.slice%2Fdocker-{}.scope&var-name={}&viewPanel={}&from=now-5m&to=now'.format(id, name,panel_num)
+            template['title'] = name+ ": " + self.views[panel_num]
+            template['source'] = 'http://127.0.0.1:3000/d/b5f1b21e-35e1-4dc7-be5e-361d1bcb1bcf/docker-monitoring?orgId=1&var-id=%2Fsystem.slice%2Fdocker-{}.scope&var-name={}&viewPanel={}&from=now-5m&to=now&kiosk&refresh=5s'.format(id, name,panel_num)
         return template
         
         
