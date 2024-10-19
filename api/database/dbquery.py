@@ -1,3 +1,7 @@
+from datetime import datetime
+import hashlib
+import os
+import random
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy import create_engine
 from sqlalchemy import text, insert, update, select, delete
@@ -40,7 +44,12 @@ def db_conn():
 
 
 def getUuid():
-   return str(uuid.uuid4())
+   # return str(uuid.UUID(bytes=os.urandom(16), version=4))
+   return str( uuid.UUID(
+            hashlib.sha256(str( 
+                  random.random()+datetime.now().timestamp() 
+               ).encode('utf-8')
+            ).hexdigest()[::2]) )
 
 
 def parseDbException():

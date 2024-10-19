@@ -2,7 +2,7 @@ from api.database.models.models import *
 # from api.database.models.User import User
 from api.database.dbquery import *
 import uuid
-from api.lib.func_datetime import get_dt_now
+from api.lib.func_datetime import get_dt_now_noms
 
 
 # Users
@@ -38,7 +38,7 @@ def mngdb_delete_user(id):
 # Projects
 def mngdb_create_project( **kwargs ):
     newproject = insert_new(Project, Project( id=getUuid(), name=kwargs['name'], type_id=int(kwargs['type_id']), description=kwargs['description'], 
-                                              author_id=uuid.UUID(kwargs['author_id']).hex, dt_created=get_dt_now(), is_deleted=False ) )
+                                              author_id=uuid.UUID(kwargs['author_id']).hex, dt_created=get_dt_now_noms(), is_deleted=False ) )
     return newproject
 
 

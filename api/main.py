@@ -128,7 +128,7 @@ async def api_parse_output(request: Request,
       datasetId:str,
       parse_data:ANNParseOutput
    ):
-   resp = JsonSaveDB(parse_data.target_dir)
+   resp = JsonSaveDB(projectId, datasetId, parse_data.target_dir)
    res = resp.start_parser()
    # return mng_parse_ann_output(parse_data.target_dir)
    return res
