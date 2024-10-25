@@ -152,13 +152,14 @@ class ParseJsonToDB():
         return {"file_id" : self.get_file_id_by_name(filename),
                 "dt_created" : get_dt_now(),
                 "author_id" : self.get_author_id(),
-                "chain_uuid":""
+                "chain_uuid":"",
+                "chain_name":""
                 }
     
     
     def prepare_chain_params(self, params, chain)->dict:
-        return {"id" : params["chain_uuid"], "name" : 'nil_test', "dataset_id" : self.dataset_id, "vector" : "vector", 
-                    "description" : "description", "author_id" : params['author_id'], "dt_created" : params['dt_created'], 
+        return {"id" : params["chain_uuid"], "name" : chain["chain_name"], "dataset_id" : self.dataset_id, "vector" : "vector", 
+                    "description" : "ann_output_json", "author_id" : params['author_id'], "dt_created" : params['dt_created'], 
                     "is_deleted" : False, "file_id" : params["file_id"], "color" : "", "origin_id" : chain["chain_id"]
                 }
     
@@ -166,7 +167,7 @@ class ParseJsonToDB():
     def prepare_markup_params(self, params, cm)->dict:
         return {"id" : cm['markup_id'], "previous_id" : '', "dataset_id" : self.dataset_id, "file_id" : params["file_id"], 
                     "parent_id" : '', "mark_time" : cm['markup_time'], "mark_path" : json.dumps(cm["markup_path"]), 
-                    "vector" : "vector", "description" : "thread", "author_id" : params['author_id'], 
+                    "vector" : "vector", "description" : "ann_output_json", "author_id" : params['author_id'], 
                     "dt_created" : params['dt_created'], "is_deleted" : False 
                 }
     
