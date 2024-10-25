@@ -71,7 +71,7 @@ class ParseJsonToDB():
     
     def get_file_id_by_name(self, fname):
         stmt = text("SELECT f.id FROM files f  WHERE f.dataset_id = :dataset_id and f.label = :fname")
-        resp = dbq.select_wrapper(stmt, {"dataset_id" : self.dataset_id, "fname" : fname[:-9]} )
+        resp = dbq.select_wrapper(stmt, {"dataset_id" : self.dataset_id, "fname" : fname.replace('.mp4', '').replace('.json', '')} )
         #print(f"{resp[0]['id']}", file=sys.stderr)
         return resp[0]['id'] 
     
