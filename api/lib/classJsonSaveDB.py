@@ -1,4 +1,5 @@
 import os
+import sys
 import api.database.dbquery as dbq
 import json
 from api.lib.func_datetime import *
@@ -9,7 +10,7 @@ from sqlalchemy.orm import Session
 from api.lib.classResponseMessage import responseMessage
 
 
-class JsonSaveDB():
+class ParseJsonToDB():
     # класс сохранения в базу json ответа от ИНС
 
     def __init__(self, project_id, dataset_id, dir_json):
@@ -28,24 +29,34 @@ class JsonSaveDB():
         return {
             "project_id" : self.project_id,
             "dataset_id" : self.dataset_id,
-            "chain_id" : "",
-            "cur_datetime" : get_dt_now(),
             "file_id" : "",
+            "chain_id" : "",
+            "chain_orig_id" : "",
+            "cur_datetime" : get_dt_now(),
             "author_id" : "",
             "markup_id" : "",
-            "markup_path" : ""
+            "markup_path" : "",
+            "markup_time" : ""
         }
 
-    def set_qparams(self):
+    def set_qparams(self, chain):
         self.qparams['chain_id'] = dbq.getUuid()
-        self.qparams['file_id'] = self.get_file_id("fc33c712-7b57-11ef-b77b-0242ac140002")
         self.qparams['author_id'] = self.get_author_id()
+        self.qparams['chain_orig_id'] = chain['chain_id']
+        
+    def set_markup_params(self, params):
+        self.set_markup_id(params[0])
+        self.set_markup_path(params[1])
+        self.set_markup_time(params[2])
 
     def set_markup_id(self, value):
         self.qparams['markup_id'] = value
 
     def set_markup_path(self, value):
         self.qparams['markup_path'] = value
+
+    def set_markup_time(self, value):
+        self.qparams['markup_time'] = value
 
 
     def set_error(self, text):
@@ -57,6 +68,13 @@ class JsonSaveDB():
         self.parse_error = False
         self.message.set('')
 
+    
+    def get_file_id_by_name(self, fname):
+        stmt = text("SELECT f.id FROM files f  WHERE f.dataset_id = :dataset_id and f.label = :fname")
+        resp = dbq.select_wrapper(stmt, {"dataset_id" : self.dataset_id, "fname" : fname[:-9]} )
+        #print(f"{resp[0]['id']}", file=sys.stderr)
+        return resp[0]['id'] 
+    
 
     def execute_query(self, connection, stmt):
         try:
@@ -95,16 +113,14 @@ class JsonSaveDB():
         return """INSERT INTO public.markups_chains( chain_id, markup_id, npp ) 
                   VALUES """
     
-    def add_markups_values(self):
-        return f"(\'{self.qparams['markup_id']}\', null, \'{self.qparams['dataset_id']}\', \'{self.qparams['file_id']}\', null, 99, \'{self.qparams['markup_path']}\', "\
-                f" \'{self.qparams['markup_path']}\', \'tread\', \'{self.qparams['author_id']}\', \'{self.qparams['cur_datetime']}\', false)"
+    def add_markups_values(self, mp):
+        return f"(\'{mp['id']}\', null, \'{mp['dataset_id']}\', \'{mp['file_id']}\', null, {mp['mark_time']}, \'{mp['mark_path']}\', \'{mp['vector']}\', \'{mp['description']}\', \'{mp['author_id']}\', \'{mp['dt_created']}\', false)"
     
-    def add_markups_chains_values(self):
-        return f"(\'{self.qparams['chain_id']}\', \'{self.qparams['markup_id']}\', null)"
+    def add_markups_chains_values(self, chain_id, markup_id):
+        return f"(\'{chain_id}\', \'{markup_id}\', null)"
     
-    def collect_chain_query_values(self, values):
-        return f"(\'{values[0]}\',\'{values[1]}\',\'{values[2]}\',\'{values[3]}\',\'{values[4]}\',\'{values[5]}\', "\
-            f"\'{values[6]}\', false,\'{values[8]}\',\'{values[9]}\',\'{values[10]}\')"
+    def collect_chain_query_values(self, cp):
+        return f"(\'{cp['id']}\', \'{cp['name']}\', \'{cp['dataset_id']}\', \'{cp['vector']}\', \'{cp['description']}\', \'{cp['author_id']}\', \'{cp['dt_created']}\', false, \'{cp['file_id']}\', \'{cp['color']}\', {cp['origin_id']})"
 
 
     def insert_markups_new(self, query_values):
@@ -128,47 +144,64 @@ class JsonSaveDB():
     def get_author_id(self):
         return "a020402a-1cd1-11ef-8883-fb5e6546fceb"
     
-
-    def collect_chain_params(self)->list:
-        params = [self.qparams['chain_id'], 'nil_test', self.qparams['dataset_id'], 'vector', 'description', self.qparams['author_id'], self.qparams['cur_datetime'], False, self.qparams['file_id'], '', 1]
-        return params
-    
     
     def set_insert_chains(self, query_values):
         self.tread_insert_batch( self.insert_chains_new( query_values ) )
 
+    def set_params(self, filename)->dict:
+        return {"file_id" : self.get_file_id_by_name(filename),
+                "dt_created" : get_dt_now(),
+                "author_id" : self.get_author_id(),
+                "chain_uuid":""
+                }
+    
+    
+    def prepare_chain_params(self, params, chain)->dict:
+        return {"id" : params["chain_uuid"], "name" : 'nil_test', "dataset_id" : self.dataset_id, "vector" : "vector", 
+                    "description" : "description", "author_id" : params['author_id'], "dt_created" : params['dt_created'], 
+                    "is_deleted" : False, "file_id" : params["file_id"], "color" : "", "origin_id" : chain["chain_id"]
+                }
+    
+    
+    def prepare_markup_params(self, params, cm)->dict:
+        return {"id" : cm['markup_id'], "previous_id" : '', "dataset_id" : self.dataset_id, "file_id" : params["file_id"], 
+                    "parent_id" : '', "mark_time" : cm['markup_time'], "mark_path" : json.dumps(cm["markup_path"]), 
+                    "vector" : "vector", "description" : "thread", "author_id" : params['author_id'], 
+                    "dt_created" : params['dt_created'], "is_deleted" : False 
+                }
+    
+
     # делаем обход записей блоков files в json , берем значения их chains, для каждого chains сохраняем отдельно все записи 
     # в таблицы: chains (обязательно 1, т.к. есть зависимость в базе) и markups (обязательно 2) и в связующую таблицу markups_chains
-    def parse_content(self, content):
-        count_values = 0 # values counter
+    def parse_content(self, content, filename):
+        params = self.set_params(filename)
+        counter = 0 
         markups_q_values = [] # список строк со значениями, отформатированных под insert в markups
         chains_markups_q_values = [] # список строк со значениями, отформатированных под insert в chains_markups
         for f in content['files']:
             for chain in f['file_chains'] :
                 chain_query_values = []
+                params["chain_uuid"] = dbq.getUuid()
                 # добавляем элемент списка - строка с добавленными параметрами
-                # NB - оформить в одтельную функцию получение парамтеров и добавление в список
-                self.set_qparams()
                 chain_query_values.append(  
-                    self.collect_chain_query_values(
-                        self.collect_chain_params()
+                    self.collect_chain_query_values( 
+                        self.prepare_chain_params(params, chain)
                     )
                 )
                 # выполняем запрос, перед этим проведя конкатенацию
                 self.set_insert_chains(chain_query_values)
-                for chains_markups in chain['chain_markups']:
-                    self.set_markup_id(chains_markups["markup_id"])
-                    self.set_markup_path(json.dumps(chains_markups["markup_path"])) # из json получить markups.markup_path
-                    markups_q_values.append(self.add_markups_values()) # добавляем в таблицу markups
-                    chains_markups_q_values.append(self.add_markups_chains_values()) # добавляем в таблицу markups_chains
-                    count_values += 1
-                    break
-                break
-            break
-                    # if(count_values % self.query_size == 0 ): # формируем блок запросов размером = query_size
-                    #     threading.Thread(name=self.sequence_insert_markups_markups_chains(markups_q_values, chains_markups_q_values))
-                    #     markups_q_values.clear()
-                    #     chains_markups_q_values.clear()
+                for cm in chain['chain_markups']:
+                    markups_q_values.append(
+                        self.add_markups_values(
+                            self.prepare_markup_params(params, cm)# добавляем строку в список markups_q_values
+                        )
+                    ) 
+                    chains_markups_q_values.append(self.add_markups_chains_values(params["chain_uuid"], cm['markup_id'])) # добавляем в таблицу markups_chains
+                    counter += 1
+                    if(counter % self.query_size == 0 ): # формируем блок запросов размером = query_size
+                        threading.Thread(name=self.sequence_insert_markups_markups_chains(markups_q_values, chains_markups_q_values))
+                        markups_q_values.clear()
+                        chains_markups_q_values.clear()
         if(len(markups_q_values) > 0): # сохраняем значения из последнего набора, в котором кол-во строк меньше query_size
             threading.Thread(name=self.sequence_insert_markups_markups_chains(markups_q_values, chains_markups_q_values))
         del markups_q_values
@@ -188,9 +221,10 @@ class JsonSaveDB():
     
     
     def proceed_file(self, filename):
+            # self.set_file_id(filename)
             content = self.load_json(f"{self.dir_json}/{filename}")
             if( not self.parse_error): # если json файл загружен без ошибок
-                self.parse_content(content)  
+                self.parse_content(content, filename)  
             else:
                 print(self.message.get()) # print error message and go to next file
                 self.reset_error()
@@ -201,26 +235,25 @@ class JsonSaveDB():
         for filename in files:
             threading.Thread(target=self.proceed_file, args=(filename,)).start()
         self.end =  get_dt_now_noms()
-        self.message.set(f"Все файлы обработаны. 'start': {self.start}, 'end': {self.end} , "\
-                         f"'results' : 'Всего:{len(files)}" )
+        self.message.set(f"Файлы отправлены в обработку. Всего: {len(files)}" )
 
 
-    # смотрим в директорию, фильтруем по расширению файлов (по умолчанию фильтр пуст)
+    # смотрим в директорию, фильтруем по расширению файлов (по умолчанию фильтр пуст - берем все файлы)
+    # формат фильтра - последовательность названий расширений, например: ["json", "txt", "xml"]
     def get_files(self, filter = []):
+        # сфорируем список из названий json файлов
         files = []
         for fl in os.listdir(self.dir_json):
+            #print(f'{self.dir_json}/{fl}', file=sys.stderr)
             if os.path.isfile(f'{self.dir_json}/{fl}') :
                 f, ext = os.path.splitext(fl)
                 if( len(filter) == 0 or ext[1:] in filter ): # ext[1:] точку в начале расширения убираем
                     files.append(fl)
         return files
-    
-
-    def get_file_id(self, dataset_id):
-        return "1ca4627c-7b58-11ef-b565-0242ac140002"
 
 
     def start_parser(self):
+        # проведем проверку: доступ к директории, наличие файлов json
         if not os.path.isdir(self.dir_json):
             self.message.setError(f"Ошибка: {self.dir_json} указанная директория не сущестует или не доступна")
         else:
@@ -234,7 +267,7 @@ class JsonSaveDB():
     
 
 if(__name__ == "__main__"):
-    projectId = datasetId = "1ca4627c-7b58-11ef-b565-0242ac140002"
-    resp = JsonSaveDB(projectId, datasetId, os.path.dirname(__file__)+'/json/0009')
-    res = resp.start_parser()
+    projectId = datasetId = "fc33c712-7b57-11ef-b77b-0242ac140002"
+    parser = ParseJsonToDB(projectId, datasetId, os.path.dirname(__file__)+'/json/0009')
+    res = parser.start_parser()
     print(res)

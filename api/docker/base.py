@@ -31,7 +31,7 @@ def dkr_container_create(image_name, params):
             elif(param == 'ann_mode' and value == 'teach'):
                 param_ann_mode = ' --work_format_training  '
             elif(param == 'weights' ):
-                volume_weights = f' -v {value}:{C.CNTR_BASE_01_DIR_WEIGHTS_FILE} '
+                volume_weights = f' -v {value}:{C.CNTR_BASE_01_DIR_WEIGHTS_FILE} -v {value}:/weights/yolov5s.pt '
             elif(param == 'in_dir' ):
                 volume_input = f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
                 # param_input_data = ' --input_data \'{"path1":{}}\' '

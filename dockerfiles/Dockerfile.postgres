@@ -1,6 +1,6 @@
 # Dockerfile.pgvector
 FROM postgres:16.1
-
+# для установки репозиторий pgvector , установить git & make
 RUN apt-get update && apt-get install -y \
     git \
     build-essential \
