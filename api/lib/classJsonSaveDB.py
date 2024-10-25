@@ -142,6 +142,7 @@ class ParseJsonToDB():
 
 
     def get_author_id(self):
+        # comment from Ura - take author_id from table datasets by dataset_id
         return "a020402a-1cd1-11ef-8883-fb5e6546fceb"
     
     
