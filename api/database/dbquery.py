@@ -43,11 +43,11 @@ def db_conn():
    return db
 
 
-def getUuid():
+def getUuid(user_data=0):
    # return str(uuid.UUID(bytes=os.urandom(16), version=4))
    return str( uuid.UUID(
-            hashlib.sha256(str( 
-                  random.random()+datetime.now().timestamp() 
+            hashlib.sha256( str( 
+                  random.random()+user_data+datetime.now().timestamp() 
                ).encode('utf-8')
             ).hexdigest()[::2]) )
 

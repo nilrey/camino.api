@@ -161,7 +161,7 @@ class ParseJsonToDB():
     def prepare_chain_params(self, params, chain)->dict:
         return {"id" : params["chain_uuid"], "name" : chain["chain_name"], "dataset_id" : self.dataset_id, "vector" : "vector", 
                     "description" : "ann_output_json", "author_id" : params['author_id'], "dt_created" : params['dt_created'], 
-                    "is_deleted" : False, "file_id" : params["file_id"], "color" : "", "origin_id" : chain["chain_id"]
+                    "is_deleted" : False, "file_id" : params["file_id"], "color" : "", "origin_id" : "1"
                 }
     
     
@@ -183,16 +183,20 @@ class ParseJsonToDB():
         for f in content['files']:
             for chain in f['file_chains'] :
                 chain_query_values = []
-                params["chain_uuid"] = dbq.getUuid()
+                params["chain_uuid"] = dbq.getUuid(counter)
+                # chain_keys = chain.keys()
+                # if( not "chain_id" in chain_keys ):
+                #    chain['chain_id'] = 0
                 # добавляем элемент списка - строка с добавленными параметрами
-                chain_query_values.append(  
-                    self.collect_chain_query_values( 
+                chain_query_values.append(
+                    self.collect_chain_query_values(
                         self.prepare_chain_params(params, chain)
                     )
                 )
                 # выполняем запрос, перед этим проведя конкатенацию
                 self.set_insert_chains(chain_query_values)
                 for cm in chain['chain_markups']:
+                    cm['markup_id'] = dbq.getUuid(counter)
                     markups_q_values.append(
                         self.add_markups_values(
                             self.prepare_markup_params(params, cm)# добавляем строку в список markups_q_values
