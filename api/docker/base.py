@@ -48,8 +48,8 @@ def dkr_container_create(image_name, params):
             # elif(param == 'host_web' ):
             #     param_host_web = f'--host_web \'{value}\' '
 
-    command = f'docker create --rm -it {param_name} {volume_storage} {volume_output} {volume_input} {volume_weights} \
-        {volume_socket} {volume_markups} {param_network} {image_name} {param_input_data} {param_host_web} {param_ann_mode} {param_gpu}'
+    command = f'docker create --rm -it {param_name} {param_gpu} {volume_storage} {volume_output} {volume_input} {volume_weights} \
+        {volume_socket} {volume_markups} {param_network} {image_name} {param_input_data} {param_host_web} {param_ann_mode}'
     log_info(get_time_no_microsec(), command)
     return execCommand(command) 
 
