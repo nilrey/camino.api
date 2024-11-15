@@ -13,11 +13,12 @@ from api.lib.classResponseMessage import responseMessage
 class ParseJsonToDB():
     # класс сохранения в базу json ответа от ИНС
 
-    def __init__(self, project_id, dataset_id, dir_json):
+    def __init__(self, project_id, dataset_id, files):
         self.message = responseMessage()
         self.project_id = project_id
         self.dataset_id = dataset_id
-        self.dir_json = dir_json # директория с файлами json от ИНС
+        self.dir_json = f"/projects_data/{project_id}/{dataset_id}/markups_out" # директория с файлами json от ИНС
+        self.files = files # массив названий файлов для обработки
         self.parse_error = False # метка критической ошибки в процессе
         self.query_size = 1000 # количество добавлений в одном блоке insert
         self.start = get_dt_now_noms() # начало работы скрипта
@@ -39,24 +40,24 @@ class ParseJsonToDB():
             "markup_time" : ""
         }
 
-    def set_qparams(self, chain):
-        self.qparams['chain_id'] = dbq.getUuid()
-        self.qparams['author_id'] = self.get_author_id()
-        self.qparams['chain_orig_id'] = chain['chain_id']
+    # def set_qparams(self, chain):
+    #     self.qparams['chain_id'] = dbq.getUuid()
+    #     self.qparams['author_id'] = self.get_author_id()
+    #     self.qparams['chain_orig_id'] = chain['chain_id']
         
-    def set_markup_params(self, params):
-        self.set_markup_id(params[0])
-        self.set_markup_path(params[1])
-        self.set_markup_time(params[2])
+    # def set_markup_params(self, params):
+    #     self.set_markup_id(params[0])
+    #     self.set_markup_path(params[1])
+    #     self.set_markup_time(params[2])
 
-    def set_markup_id(self, value):
-        self.qparams['markup_id'] = value
+    # def set_markup_id(self, value):
+    #     self.qparams['markup_id'] = value
 
-    def set_markup_path(self, value):
-        self.qparams['markup_path'] = value
+    # def set_markup_path(self, value):
+    #     self.qparams['markup_path'] = value
 
-    def set_markup_time(self, value):
-        self.qparams['markup_time'] = value
+    # def set_markup_time(self, value):
+    #     self.qparams['markup_time'] = value
 
 
     def set_error(self, text):
@@ -76,9 +77,15 @@ class ParseJsonToDB():
 
     
     def get_file_id_by_name(self, fname):
+        # получим корневой dataset id
+        stmt = text("SELECT d2.id FROM datasets d1 , datasets d2 where d1.project_id = d2.project_id and d2.parent_id is null and d1.id = :dataset_id")
+        dataset_id = dbq.select_wrapper(stmt, {"dataset_id" : self.dataset_id } )
+
         stmt = text("SELECT f.id FROM files f  WHERE f.dataset_id = :dataset_id and f.label = :fname")
-        resp = dbq.select_wrapper(stmt, {"dataset_id" : self.dataset_id, "fname" : fname.replace('.mp4', '').replace('.json', '')} )
-        #print(f"{resp[0]['id']}", file=sys.stderr)
+        lable = fname.replace('.mp4', '').replace('.json', '')
+        # print(f"{lable}", file=sys.stderr)
+        resp = dbq.select_wrapper(stmt, {"dataset_id" : dataset_id[0]['id'], "fname" : lable} )
+        # print(f"{resp[0]['id']}", file=sys.stderr)
         return resp[0]['id'] 
     
 
@@ -155,8 +162,8 @@ class ParseJsonToDB():
     def set_insert_chains(self, query_values):
         self.tread_insert_batch( self.insert_chains_new( query_values ) )
 
-    def set_params(self, filename)->dict:
-        return {"file_id" : self.get_file_id_by_name(filename),
+    def set_params(self)->dict:
+        return {"file_id" : "",
                 "dt_created" : get_dt_now(),
                 "author_id" : self.get_author_id(),
                 "chain_uuid":"",
@@ -182,11 +189,12 @@ class ParseJsonToDB():
     # делаем обход записей блоков files в json , берем значения их chains, для каждого chains сохраняем отдельно все записи 
     # в таблицы: chains (обязательно 1, т.к. есть зависимость в базе) и markups (обязательно 2) и в связующую таблицу markups_chains
     def parse_content(self, content, filename):
-        params = self.set_params(filename)
+        params = self.set_params()
         counter = 0 
         markups_q_values = [] # список строк со значениями, отформатированных под insert в markups
         chains_markups_q_values = [] # список строк со значениями, отформатированных под insert в chains_markups
         for f in content['files']:
+            params['file_id'] = self.get_file_id_by_name(filename)
             for chain in f['file_chains'] :
                 chain_query_values = []
                 # chain['chain_id'] = self.getValueIfExists("chain_id", chain)
@@ -245,24 +253,32 @@ class ParseJsonToDB():
     
     # обходим список json файлов
     def loop_files(self, files):
+        errFiles = []
         for filename in files:
-            threading.Thread(target=self.proceed_file, args=(filename,)).start()
+            if os.path.isfile(f'{self.dir_json}/{filename}') :
+                threading.Thread(target=self.proceed_file, args=(filename,)).start()
+            else:
+                errFiles.append(filename)
+        if len(errFiles) > 0 :
+            self.message.setError("Ошибка: "+(",".join(errFiles) )+" не найден")
+        else:
+            self.message.set(f"Файлы отправлены в обработку. Всего: {len(files)}" )
+        
         self.end =  get_dt_now_noms()
-        self.message.set(f"Файлы отправлены в обработку. Всего: {len(files)}" )
 
 
     # смотрим в директорию, фильтруем по расширению файлов (по умолчанию фильтр пуст - берем все файлы)
     # формат фильтра - последовательность названий расширений, например: ["json", "txt", "xml"]
-    def get_files(self, filter = []):
-        # сфорируем список из названий json файлов
-        files = []
-        for fl in os.listdir(self.dir_json):
-            #print(f'{self.dir_json}/{fl}', file=sys.stderr)
-            if os.path.isfile(f'{self.dir_json}/{fl}') :
-                f, ext = os.path.splitext(fl)
-                if( len(filter) == 0 or ext[1:] in filter ): # ext[1:] точку в начале расширения убираем
-                    files.append(fl)
-        return files
+    # def get_files(self, filter = []):
+    #     # сфорируем список из названий json файлов
+    #     files = []
+    #     for fl in os.listdir(self.dir_json):
+    #         #print(f'{self.dir_json}/{fl}', file=sys.stderr)
+    #         if os.path.isfile(f'{self.dir_json}/{fl}') :
+    #             f, ext = os.path.splitext(fl)
+    #             if( len(filter) == 0 or ext[1:] in filter ): # ext[1:] точку в начале расширения убираем
+    #                 files.append(fl)
+    #     return files
 
 
     def start_parser(self):
@@ -270,9 +286,9 @@ class ParseJsonToDB():
         if not os.path.isdir(self.dir_json):
             self.message.setError(f"Ошибка: {self.dir_json} указанная директория не сущестует или не доступна")
         else:
-            files = self.get_files(['json'])
+            files = self.files #self.get_files(['json'])
             if len(files) == 0 : 
-                self.message.setError(f"Ошибка: {self.dir_json} в указанной директории json файлы не найдены")
+                self.message.setError(f"Ошибка: получен пустой список json файлов")
             else:
                 self.loop_files(files)
 

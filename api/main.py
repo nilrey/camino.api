@@ -122,13 +122,13 @@ async def api_delete_project(projectId):
    return output
 
 
-@projects.post("/{projectId}/datasets/{datasetId}/export", summary="Выгрузка датасета в JSON файлы")
+@projects.post("/{projectId}/datasets/{datasetId}/import", summary="Загрузка датасета из JSON файлов")
 async def api_parse_output(request: Request,
       projectId:str,
       datasetId:str,
       parse_data:ANNParseOutput
    ):
-   resp = ParseJsonToDB(projectId, datasetId, parse_data.target_dir)
+   resp = ParseJsonToDB(projectId, datasetId, parse_data.files)
    res = resp.start_parser()
    # return mng_parse_ann_output(parse_data.target_dir)
    return res
