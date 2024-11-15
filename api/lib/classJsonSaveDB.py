@@ -69,6 +69,12 @@ class ParseJsonToDB():
         self.message.set('')
 
     
+    def getValueIfExists(self, key, lst, value = 'null'):
+        if( key in lst.keys() ):
+            value = f"'{lst[key]}'"
+        return value
+
+    
     def get_file_id_by_name(self, fname):
         stmt = text("SELECT f.id FROM files f  WHERE f.dataset_id = :dataset_id and f.label = :fname")
         resp = dbq.select_wrapper(stmt, {"dataset_id" : self.dataset_id, "fname" : fname.replace('.mp4', '').replace('.json', '')} )
@@ -114,7 +120,7 @@ class ParseJsonToDB():
                   VALUES """
     
     def add_markups_values(self, mp):
-        return f"(\'{mp['id']}\', null, \'{mp['dataset_id']}\', \'{mp['file_id']}\', null, {mp['mark_time']}, \'{mp['mark_path']}\', \'{mp['vector']}\', \'{mp['description']}\', \'{mp['author_id']}\', \'{mp['dt_created']}\', false)"
+        return f"(\'{mp['id']}\', null, \'{mp['dataset_id']}\', \'{mp['file_id']}\', {mp['parent_id']}, {mp['mark_time']}, \'{mp['mark_path']}\', \'{mp['vector']}\', \'{mp['description']}\', \'{mp['author_id']}\', \'{mp['dt_created']}\', false)"
     
     def add_markups_chains_values(self, chain_id, markup_id):
         return f"(\'{chain_id}\', \'{markup_id}\', null)"
@@ -159,7 +165,7 @@ class ParseJsonToDB():
     
     
     def prepare_chain_params(self, params, chain)->dict:
-        return {"id" : params["chain_uuid"], "name" : chain["chain_name"], "dataset_id" : self.dataset_id, "vector" : "vector", 
+        return {"id" : params["chain_uuid"], "name" : chain["chain_name"], "dataset_id" : self.dataset_id, "vector" : json.dumps(chain["chain_vector"]), 
                     "description" : "ann_output_json", "author_id" : params['author_id'], "dt_created" : params['dt_created'], 
                     "is_deleted" : False, "file_id" : params["file_id"], "color" : "", "origin_id" : "1"
                 }
@@ -167,8 +173,8 @@ class ParseJsonToDB():
     
     def prepare_markup_params(self, params, cm)->dict:
         return {"id" : cm['markup_id'], "previous_id" : '', "dataset_id" : self.dataset_id, "file_id" : params["file_id"], 
-                    "parent_id" : '', "mark_time" : cm['markup_time'], "mark_path" : json.dumps(cm["markup_path"]), 
-                    "vector" : "vector", "description" : "ann_output_json", "author_id" : params['author_id'], 
+                    "parent_id" : cm['markup_parent_id'], "mark_time" : cm['markup_time'], "mark_path" : json.dumps(cm["markup_path"]), 
+                    "vector" : json.dumps(cm["markup_vector"]), "description" : "ann_output_json", "author_id" : params['author_id'], 
                     "dt_created" : params['dt_created'], "is_deleted" : False 
                 }
     
@@ -183,10 +189,9 @@ class ParseJsonToDB():
         for f in content['files']:
             for chain in f['file_chains'] :
                 chain_query_values = []
+                # chain['chain_id'] = self.getValueIfExists("chain_id", chain)
                 params["chain_uuid"] = dbq.getUuid(counter)
-                # chain_keys = chain.keys()
-                # if( not "chain_id" in chain_keys ):
-                #    chain['chain_id'] = 0
+                params['dt_created'] = get_dt_now()
                 # добавляем элемент списка - строка с добавленными параметрами
                 chain_query_values.append(
                     self.collect_chain_query_values(
@@ -196,7 +201,9 @@ class ParseJsonToDB():
                 # выполняем запрос, перед этим проведя конкатенацию
                 self.set_insert_chains(chain_query_values)
                 for cm in chain['chain_markups']:
+                    params['dt_created'] = get_dt_now()
                     cm['markup_id'] = dbq.getUuid(counter)
+                    cm['markup_parent_id'] = self.getValueIfExists("markup_parent_id", cm)
                     markups_q_values.append(
                         self.add_markups_values(
                             self.prepare_markup_params(params, cm)# добавляем строку в список markups_q_values
