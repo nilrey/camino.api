@@ -40,26 +40,6 @@ class ParseJsonToDB():
             "markup_time" : ""
         }
 
-    # def set_qparams(self, chain):
-    #     self.qparams['chain_id'] = dbq.getUuid()
-    #     self.qparams['author_id'] = self.get_author_id()
-    #     self.qparams['chain_orig_id'] = chain['chain_id']
-        
-    # def set_markup_params(self, params):
-    #     self.set_markup_id(params[0])
-    #     self.set_markup_path(params[1])
-    #     self.set_markup_time(params[2])
-
-    # def set_markup_id(self, value):
-    #     self.qparams['markup_id'] = value
-
-    # def set_markup_path(self, value):
-    #     self.qparams['markup_path'] = value
-
-    # def set_markup_time(self, value):
-    #     self.qparams['markup_time'] = value
-
-
     def set_error(self, text):
         self.parse_error = True # error mark
         self.message.setError(text)
@@ -130,7 +110,7 @@ class ParseJsonToDB():
         return f"(\'{mp['id']}\', null, \'{mp['dataset_id']}\', \'{mp['file_id']}\', {mp['parent_id']}, {mp['mark_time']}, \'{mp['mark_path']}\', \'{mp['vector']}\', \'{mp['description']}\', \'{mp['author_id']}\', \'{mp['dt_created']}\', false)"
     
     def add_markups_chains_values(self, chain_id, markup_id):
-        return f"(\'{chain_id}\', \'{markup_id}\', null)"
+        return f"(\'{chain_id}\', \'{markup_id}\', 12345)"
     
     def collect_chain_query_values(self, cp):
         return f"(\'{cp['id']}\', \'{cp['name']}\', \'{cp['dataset_id']}\', \'{cp['vector']}\', \'{cp['description']}\', \'{cp['author_id']}\', \'{cp['dt_created']}\', false, \'{cp['file_id']}\', \'{cp['color']}\', {cp['origin_id']})"

@@ -23,6 +23,7 @@ def dkr_container_create(image_name, params):
     volume_weights = volume_input = volume_output = volume_socket = volume_markups = volume_storage = ''
     param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = ''
     volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
+    volume_family = ' -v family:/family '
     param_host_web = f' --host_web \'http://camino-restapi\' '
     param_gpu = ' --gpus all '
     for param, value in params.items():
@@ -49,7 +50,7 @@ def dkr_container_create(image_name, params):
             #     param_host_web = f'--host_web \'{value}\' '
 
     command = f'docker create --rm -it {param_name} {param_gpu} {volume_storage} {volume_output} {volume_input} {volume_weights} \
-        {volume_socket} {volume_markups} {param_network} {image_name} {param_input_data} {param_host_web} {param_ann_mode}'
+        {volume_socket} {volume_markups} {volume_family} {param_network} {image_name} {param_input_data} {param_host_web} {param_ann_mode}'
     log_info(get_time_no_microsec(), command)
     return execCommand(command) 
 
