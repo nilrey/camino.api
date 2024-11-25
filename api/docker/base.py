@@ -155,6 +155,7 @@ def log_info(export_code, mes):
         file.write(f'{get_time_no_microsec()} {mes}\n')
 
 def run_command_with_finally(export_code, command):
+    msg = ""
     try:
         execCommand(command )
     except Exception:
