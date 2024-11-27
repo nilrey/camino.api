@@ -24,6 +24,23 @@ class ParseJsonToDB():
         self.start = get_dt_now_noms() # начало работы скрипта
         self.end = '' # окончание работы скрипта
         self.qparams = self.set_new_qparams()
+        self.color_set = {
+            "olivedrab" : "6b8e23",
+            "sienna" : "a0522d",
+            "lime" : "00ff00",
+            "lightslategray" : "778899",
+            "mediumspringgreen" : "00fa9a",
+            "navy" : "000080",
+            "aqua" : "00ffff",
+            "red" : "ff0000",
+            "orange" : "ffa500",
+            "yellow" : "ffff00",
+            "blue" : "0000ff",
+            "fuchsia" : "ff00ff",
+            "dodgerblue" : "1e90ff",
+            "deeppink" : "ff1493",
+            "moccasin" : "ffe4b5"
+        }
 
 
     def set_new_qparams(self)->dict:
@@ -91,6 +108,8 @@ class ParseJsonToDB():
         engine = dbq.create_engine(dbq.get_connection_string())
         return engine.connect()
 
+    def get_foo_vector(self):
+        return '["0.116042", "-4.554680", "-1.862837", "-5.750429", "-0.454754", "-2.522960", "-0.725157", "-2.806483", "-1.563497", "-0.694797", "-1.983297", "-4.366373", "-0.981786", "-2.109066", "-2.173160", "-1.538690", "-2.162211", "-2.810481", "-0.770217", "1.129247", "-0.384295", "-0.289850", "-1.706230", "-0.026655", "-0.698680", "1.391937", "-1.128524", "-1.699184", "0.197050", "0.225844", "-0.365390", "2.624454", "2.205503", "1.234172", "-1.713398", "-3.221918", "1.048727", "-1.720429", "-2.609614", "-2.234915", "-4.320556", "-2.607154", "-1.494452", "-1.427774", "-2.968949", "-1.121514", "-1.350918", "-0.859946", "-2.248292", "-1.855603", "1.431867", "0.304567", "-0.512907", "1.236301", "-2.602892", "0.600495", "-2.790122", "-0.993832", "2.530886", "2.251848", "0.995347", "4.317902", "0.190066", "0.455789", "0.682259", "2.780439", "0.859293", "2.811572", "0.836380", "2.156464", "0.677944", "0.894499", "-0.453031", "-1.520394", "0.666892", "2.303484", "2.592246", "1.484719", "2.274570", "1.714708", "0.851308", "3.679554", "-0.699476", "3.236506", "-0.936165", "0.507164", "1.695917", "0.269416", "5.602341", "1.637749", "1.132531", "0.271580", "-1.023239", "-1.201301", "-1.423335", "0.536225", "0.958369", "1.957854", "1.889585", "2.588964", "4.553710", "2.008711", "1.172196", "2.801171", "-2.838225", "1.539892", "3.385830", "-0.094048", "1.673603", "-0.197045", "-1.177830", "-0.428138", "3.139174", "0.404254", "1.924672", "0.748128", "-1.099999", "1.641606", "-1.094444", "-4.832273", "-2.495924", "-1.822001", "-2.580733", "-1.281448", "0.461648", "2.656320", "-3.874641", "0.379173"]'
 
     def insert_chains_init(self):
         return """INSERT INTO public.chains( id, name, dataset_id, vector, description, author_id, dt_created, 
@@ -151,17 +170,30 @@ class ParseJsonToDB():
                 }
     
     
+    # def prepare_chain_params(self, params, chain)->dict:
+    #     return {"id" : params["chain_uuid"], "name" : chain["chain_name"], "dataset_id" : self.dataset_id, "vector" : json.dumps(chain["chain_vector"]), 
+    #                 "description" : "ann_output_json", "author_id" : params['author_id'], "dt_created" : params['dt_created'], 
+    #                 "is_deleted" : False, "file_id" : params["file_id"], "color" : "", "origin_id" : "1"
+    #             }
+    
+    
     def prepare_chain_params(self, params, chain)->dict:
-        return {"id" : params["chain_uuid"], "name" : chain["chain_name"], "dataset_id" : self.dataset_id, "vector" : json.dumps(chain["chain_vector"]), 
+        return {"id" : params["chain_uuid"], "name" : chain["chain_name"], "dataset_id" : self.dataset_id, "vector" : json.dumps(self.get_foo_vector()), 
                     "description" : "ann_output_json", "author_id" : params['author_id'], "dt_created" : params['dt_created'], 
                     "is_deleted" : False, "file_id" : params["file_id"], "color" : "", "origin_id" : "1"
                 }
     
+    # def prepare_markup_params(self, params, cm)->dict:
+    #     return {"id" : cm['markup_id'], "previous_id" : '', "dataset_id" : self.dataset_id, "file_id" : params["file_id"], 
+    #                 "parent_id" : cm['markup_parent_id'], "mark_time" : cm['markup_time'], "mark_path" : json.dumps(cm["markup_path"]), 
+    #                 "vector" : json.dumps(cm["markup_vector"]), "description" : "ann_output_json", "author_id" : params['author_id'], 
+    #                 "dt_created" : params['dt_created'], "is_deleted" : False 
+    #             }
     
     def prepare_markup_params(self, params, cm)->dict:
         return {"id" : cm['markup_id'], "previous_id" : '', "dataset_id" : self.dataset_id, "file_id" : params["file_id"], 
                     "parent_id" : cm['markup_parent_id'], "mark_time" : cm['markup_time'], "mark_path" : json.dumps(cm["markup_path"]), 
-                    "vector" : json.dumps(cm["markup_vector"]), "description" : "ann_output_json", "author_id" : params['author_id'], 
+                    "vector" : json.dumps(self.get_foo_vector()), "description" : "ann_output_json", "author_id" : params['author_id'], 
                     "dt_created" : params['dt_created'], "is_deleted" : False 
                 }
     
