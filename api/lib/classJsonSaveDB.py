@@ -8,6 +8,8 @@ from sqlalchemy import text
 import threading
 from sqlalchemy.orm import Session
 from api.lib.classResponseMessage import responseMessage
+import api.sets.const as C
+
 
 
 class ParseJsonToDB():
@@ -24,23 +26,8 @@ class ParseJsonToDB():
         self.start = get_dt_now_noms() # начало работы скрипта
         self.end = '' # окончание работы скрипта
         self.qparams = self.set_new_qparams()
-        self.color_set = {
-            "olivedrab" : "6b8e23",
-            "sienna" : "a0522d",
-            "lime" : "00ff00",
-            "lightslategray" : "778899",
-            "mediumspringgreen" : "00fa9a",
-            "navy" : "000080",
-            "aqua" : "00ffff",
-            "red" : "ff0000",
-            "orange" : "ffa500",
-            "yellow" : "ffff00",
-            "blue" : "0000ff",
-            "fuchsia" : "ff00ff",
-            "dodgerblue" : "1e90ff",
-            "deeppink" : "ff1493",
-            "moccasin" : "ffe4b5"
-        }
+        self.color_set = [ "6b8e23", "a0522d", "00ff00", "778899", "00fa9a", "000080", "00ffff", "ff0000", "ffa500", "ffff00", "0000ff", "ff00ff", "1e90ff", "ff1493", "ffe4b5"]
+        self.logname = get_dt_now_noms()
 
 
     def set_new_qparams(self)->dict:
@@ -56,6 +43,11 @@ class ParseJsonToDB():
             "markup_path" : "",
             "markup_time" : ""
         }
+    
+
+    def log_info(self, mes):
+        with open(C.LOG_PATH + f"/{self.logname}", "a") as file:
+            file.write(f'{get_dt_now_noms()} {mes}\n')
 
     def set_error(self, text):
         self.parse_error = True # error mark
@@ -71,6 +63,11 @@ class ParseJsonToDB():
         if( key in lst.keys() ):
             value = f"'{lst[key]}'"
         return value
+    
+
+    def get_color(self, i):
+        color_count = len(self.color_set)
+        return self.color_set[ i % color_count ]
 
     
     def get_file_id_by_name(self, fname):
@@ -108,31 +105,29 @@ class ParseJsonToDB():
         engine = dbq.create_engine(dbq.get_connection_string())
         return engine.connect()
 
-    def get_foo_vector(self):
-        return '["0.116042", "-4.554680", "-1.862837", "-5.750429", "-0.454754", "-2.522960", "-0.725157", "-2.806483", "-1.563497", "-0.694797", "-1.983297", "-4.366373", "-0.981786", "-2.109066", "-2.173160", "-1.538690", "-2.162211", "-2.810481", "-0.770217", "1.129247", "-0.384295", "-0.289850", "-1.706230", "-0.026655", "-0.698680", "1.391937", "-1.128524", "-1.699184", "0.197050", "0.225844", "-0.365390", "2.624454", "2.205503", "1.234172", "-1.713398", "-3.221918", "1.048727", "-1.720429", "-2.609614", "-2.234915", "-4.320556", "-2.607154", "-1.494452", "-1.427774", "-2.968949", "-1.121514", "-1.350918", "-0.859946", "-2.248292", "-1.855603", "1.431867", "0.304567", "-0.512907", "1.236301", "-2.602892", "0.600495", "-2.790122", "-0.993832", "2.530886", "2.251848", "0.995347", "4.317902", "0.190066", "0.455789", "0.682259", "2.780439", "0.859293", "2.811572", "0.836380", "2.156464", "0.677944", "0.894499", "-0.453031", "-1.520394", "0.666892", "2.303484", "2.592246", "1.484719", "2.274570", "1.714708", "0.851308", "3.679554", "-0.699476", "3.236506", "-0.936165", "0.507164", "1.695917", "0.269416", "5.602341", "1.637749", "1.132531", "0.271580", "-1.023239", "-1.201301", "-1.423335", "0.536225", "0.958369", "1.957854", "1.889585", "2.588964", "4.553710", "2.008711", "1.172196", "2.801171", "-2.838225", "1.539892", "3.385830", "-0.094048", "1.673603", "-0.197045", "-1.177830", "-0.428138", "3.139174", "0.404254", "1.924672", "0.748128", "-1.099999", "1.641606", "-1.094444", "-4.832273", "-2.495924", "-1.822001", "-2.580733", "-1.281448", "0.461648", "2.656320", "-3.874641", "0.379173"]'
 
     def insert_chains_init(self):
-        return """INSERT INTO public.chains( id, name, dataset_id, vector, description, author_id, dt_created, 
-                        is_deleted, file_id, color, origin_id ) 
+        return """INSERT INTO public.chains_copy( id, name, dataset_id, vector, description, author_id, dt_created, 
+                        is_deleted, file_id, color, origin_id, confidence ) 
                   VALUES """
 
     def insert_markups_init(self):
-        return """INSERT INTO public.markups( id, previous_id, dataset_id, file_id, parent_id, 
-                        mark_time, mark_path, vector, description, author_id,  dt_created, is_deleted ) 
+        return """INSERT INTO public.markups_copy( id, previous_id, dataset_id, file_id, parent_id, 
+                        mark_time, mark_frame, mark_path, vector, description, author_id,  dt_created, is_deleted, confidence ) 
                   VALUES """
 
     def insert_markups_chains_init(self):
-        return """INSERT INTO public.markups_chains( chain_id, markup_id, npp ) 
+        return """INSERT INTO public.markups_chains_copy( chain_id, markup_id, npp ) 
                   VALUES """
     
     def add_markups_values(self, mp):
-        return f"(\'{mp['id']}\', null, \'{mp['dataset_id']}\', \'{mp['file_id']}\', {mp['parent_id']}, {mp['mark_time']}, \'{mp['mark_path']}\', \'{mp['vector']}\', \'{mp['description']}\', \'{mp['author_id']}\', \'{mp['dt_created']}\', false)"
+        return f"(\'{mp['id']}\', null, \'{mp['dataset_id']}\', \'{mp['file_id']}\', \'{mp['parent_id']}\', {mp['mark_time']}, {mp['mark_frame']}, \'{mp['mark_path']}\', \'{mp['vector']}\', \'{mp['description']}\', \'{mp['author_id']}\', \'{mp['dt_created']}\', false, {mp['confidence']})"
     
     def add_markups_chains_values(self, chain_id, markup_id):
         return f"(\'{chain_id}\', \'{markup_id}\', 12345)"
     
     def collect_chain_query_values(self, cp):
-        return f"(\'{cp['id']}\', \'{cp['name']}\', \'{cp['dataset_id']}\', \'{cp['vector']}\', \'{cp['description']}\', \'{cp['author_id']}\', \'{cp['dt_created']}\', false, \'{cp['file_id']}\', \'{cp['color']}\', {cp['origin_id']})"
+        return f"(\'{cp['id']}\', \'{cp['name']}\', \'{cp['dataset_id']}\', \'{cp['vector']}\', \'{cp['description']}\', \'{cp['author_id']}\', \'{cp['dt_created']}\', false, \'{cp['file_id']}\', \'{cp['color']}\', {cp['origin_id']}, {cp['confidence']})"
 
 
     def insert_markups_new(self, query_values):
@@ -170,31 +165,20 @@ class ParseJsonToDB():
                 }
     
     
-    # def prepare_chain_params(self, params, chain)->dict:
-    #     return {"id" : params["chain_uuid"], "name" : chain["chain_name"], "dataset_id" : self.dataset_id, "vector" : json.dumps(chain["chain_vector"]), 
-    #                 "description" : "ann_output_json", "author_id" : params['author_id'], "dt_created" : params['dt_created'], 
-    #                 "is_deleted" : False, "file_id" : params["file_id"], "color" : "", "origin_id" : "1"
-    #             }
-    
-    
     def prepare_chain_params(self, params, chain)->dict:
-        return {"id" : params["chain_uuid"], "name" : chain["chain_name"], "dataset_id" : self.dataset_id, "vector" : json.dumps(self.get_foo_vector()), 
-                    "description" : "ann_output_json", "author_id" : params['author_id'], "dt_created" : params['dt_created'], 
-                    "is_deleted" : False, "file_id" : params["file_id"], "color" : "", "origin_id" : "1"
+        if ( not any("chain_confidence" in d for d in chain) ): # проверка на наличие ключа
+            chain['chain_confidence']  = 0
+        return {"id" : params["chain_uuid"], "name" : chain["chain_name"], "dataset_id" : self.dataset_id, "vector" : json.dumps(chain["chain_vector"]), "description" : "ann_output_json", "author_id" : params['author_id'], "dt_created" : params['dt_created'], "is_deleted" : False, "file_id" : params["file_id"], "color" : chain['color'], "origin_id" : "1", "confidence" : chain['chain_confidence']
                 }
     
-    # def prepare_markup_params(self, params, cm)->dict:
-    #     return {"id" : cm['markup_id'], "previous_id" : '', "dataset_id" : self.dataset_id, "file_id" : params["file_id"], 
-    #                 "parent_id" : cm['markup_parent_id'], "mark_time" : cm['markup_time'], "mark_path" : json.dumps(cm["markup_path"]), 
-    #                 "vector" : json.dumps(cm["markup_vector"]), "description" : "ann_output_json", "author_id" : params['author_id'], 
-    #                 "dt_created" : params['dt_created'], "is_deleted" : False 
-    #             }
     
     def prepare_markup_params(self, params, cm)->dict:
+        if ( not any("markup_confidence" in d for d in cm) ): # проверка на наличие ключа
+            cm['markup_confidence']  = 0
         return {"id" : cm['markup_id'], "previous_id" : '', "dataset_id" : self.dataset_id, "file_id" : params["file_id"], 
-                    "parent_id" : cm['markup_parent_id'], "mark_time" : cm['markup_time'], "mark_path" : json.dumps(cm["markup_path"]), 
-                    "vector" : json.dumps(self.get_foo_vector()), "description" : "ann_output_json", "author_id" : params['author_id'], 
-                    "dt_created" : params['dt_created'], "is_deleted" : False 
+                    "parent_id" : cm['markup_parent_id'], "mark_time" : cm['markup_time'], "mark_frame" : cm['markup_frame'], "mark_path" : json.dumps(cm["markup_path"]), 
+                    "vector" : json.dumps(cm["markup_vector"]), "description" : "ann_output_json", "author_id" : params['author_id'], 
+                    "dt_created" : params['dt_created'], "is_deleted" : False, "confidence" : cm['markup_confidence']
                 }
     
 
@@ -202,7 +186,7 @@ class ParseJsonToDB():
     # в таблицы: chains (обязательно 1, т.к. есть зависимость в базе) и markups (обязательно 2) и в связующую таблицу markups_chains
     def parse_content(self, content, filename):
         params = self.set_params()
-        counter = 0 
+        chain_counter = counter = 0 
         markups_q_values = [] # список строк со значениями, отформатированных под insert в markups
         chains_markups_q_values = [] # список строк со значениями, отформатированных под insert в chains_markups
         for f in content['files']:
@@ -212,6 +196,7 @@ class ParseJsonToDB():
                 # chain['chain_id'] = self.getValueIfExists("chain_id", chain)
                 params["chain_uuid"] = dbq.getUuid(counter)
                 params['dt_created'] = get_dt_now()
+                chain['color'] = self.get_color(chain_counter)
                 # добавляем элемент списка - строка с добавленными параметрами
                 chain_query_values.append(
                     self.collect_chain_query_values(
@@ -235,6 +220,7 @@ class ParseJsonToDB():
                         threading.Thread(name=self.sequence_insert_markups_markups_chains(markups_q_values, chains_markups_q_values))
                         markups_q_values.clear()
                         chains_markups_q_values.clear()
+                chain_counter += 1
         if(len(markups_q_values) > 0): # сохраняем значения из последнего набора, в котором кол-во строк меньше query_size
             threading.Thread(name=self.sequence_insert_markups_markups_chains(markups_q_values, chains_markups_q_values))
         del markups_q_values
@@ -279,21 +265,8 @@ class ParseJsonToDB():
         self.end =  get_dt_now_noms()
 
 
-    # смотрим в директорию, фильтруем по расширению файлов (по умолчанию фильтр пуст - берем все файлы)
-    # формат фильтра - последовательность названий расширений, например: ["json", "txt", "xml"]
-    # def get_files(self, filter = []):
-    #     # сфорируем список из названий json файлов
-    #     files = []
-    #     for fl in os.listdir(self.dir_json):
-    #         #print(f'{self.dir_json}/{fl}', file=sys.stderr)
-    #         if os.path.isfile(f'{self.dir_json}/{fl}') :
-    #             f, ext = os.path.splitext(fl)
-    #             if( len(filter) == 0 or ext[1:] in filter ): # ext[1:] точку в начале расширения убираем
-    #                 files.append(fl)
-    #     return files
-
-
     def start_parser(self):
+        self.log_info("Start process")
         # проведем проверку: доступ к директории, наличие файлов json
         if not os.path.isdir(self.dir_json):
             self.message.setError(f"Ошибка: {self.dir_json} указанная директория не сущестует или не доступна")
