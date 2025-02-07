@@ -107,21 +107,21 @@ class ParseJsonToDB():
 
 
     def insert_chains_init(self):
-        return """INSERT INTO public.chains_copy( id, name, dataset_id, vector, description, author_id, dt_created, 
+        return """INSERT INTO public.chains( id, name, dataset_id, vector, description, author_id, dt_created, 
                         is_deleted, file_id, color, origin_id, confidence ) 
                   VALUES """
 
     def insert_markups_init(self):
-        return """INSERT INTO public.markups_copy( id, previous_id, dataset_id, file_id, parent_id, 
+        return """INSERT INTO public.markups( id, previous_id, dataset_id, file_id, parent_id, 
                         mark_time, mark_frame, mark_path, vector, description, author_id,  dt_created, is_deleted, confidence ) 
                   VALUES """
 
     def insert_markups_chains_init(self):
-        return """INSERT INTO public.markups_chains_copy( chain_id, markup_id, npp ) 
+        return """INSERT INTO public.markups_chains( chain_id, markup_id, npp ) 
                   VALUES """
     
     def add_markups_values(self, mp):
-        return f"(\'{mp['id']}\', null, \'{mp['dataset_id']}\', \'{mp['file_id']}\', \'{mp['parent_id']}\', {mp['mark_time']}, {mp['mark_frame']}, \'{mp['mark_path']}\', \'{mp['vector']}\', \'{mp['description']}\', \'{mp['author_id']}\', \'{mp['dt_created']}\', false, {mp['confidence']})"
+        return f"(\'{mp['id']}\', null, \'{mp['dataset_id']}\', \'{mp['file_id']}\', {mp['parent_id']}, {mp['mark_time']}, {mp['mark_frame']}, \'{mp['mark_path']}\', \'{mp['vector']}\', \'{mp['description']}\', \'{mp['author_id']}\', \'{mp['dt_created']}\', false, {mp['confidence']})"
     
     def add_markups_chains_values(self, chain_id, markup_id):
         return f"(\'{chain_id}\', \'{markup_id}\', 12345)"
