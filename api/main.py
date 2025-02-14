@@ -10,6 +10,7 @@ from api.lib.reqest_classes import *
 from api.format.exceptions import http_exception_handler, NotFoundError
 import datetime as dt
 from api.lib.classJsonSaveDB import *
+from api.lib.classDatasetMarkupsExport import *
 
 
 app = FastAPI(openapi_tags=tags_metadata)
@@ -133,7 +134,6 @@ async def api_parse_output(request: Request,
    # return mng_parse_ann_output(parse_data.target_dir)
    return res
 
-
 # DOCKER
 
 
@@ -164,11 +164,19 @@ async def api_docker_image_create(request: Request,
 
 
 @docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
-async def api_docker_image_run(request: Request,
+async def api_docker_image_run2(request: Request,
       imageId:str,
       imrun: ImageRun
    ):
-   return mng_image_run(imageId, imrun.getAllParams() )
+   return mng_image_run2(imageId, imrun.getAllParams() )
+
+
+# @docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
+# async def api_docker_image_run(request: Request,
+#       imageId:str,
+#       imrun: ImageRun
+#    ):
+#    return mng_image_run(imageId, imrun.getAllParams() )
 
 
 # ANN

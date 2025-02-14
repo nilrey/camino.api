@@ -8,6 +8,7 @@ import api.sets.const as C
 import time 
 from api.lib.func_ann_out_db_save import ann_out_db_save as save_output
 import api.lib.func_utils as fu
+from api.lib.classDatasetMarkupsExport import *
 
 # Users
 def mng_create_user(**kwargs):
@@ -105,10 +106,21 @@ def mng_container_create(image_id, params):
    return response
 
 
-def mng_image_run(image_id, params):
+def mng_image_run2(image_id, params):
    response = mng_container_create(image_id, params)
    if (not response['error']): response = mng_container_start(response['response'][0])
    return response
+
+
+def mng_image_run(image_id, params):
+   datasetId = params['markups'].split('/')[-2]
+   projectId = params['markups'].split('/')[-3]
+   response = f'{projectId}/{datasetId}'
+   resp = DatasetMarkupsExport(projectId, datasetId)
+   res = resp.run()
+   # response = mng_container_create(image_id, params)
+   # if (not response['error']): response = mng_container_start(response['response'][0])
+   return res #response
 
 
 def mng_containers():

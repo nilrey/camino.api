@@ -5,6 +5,7 @@ import json
 from api.lib.func_datetime import *
 # import datetime
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 import threading
 from sqlalchemy.orm import Session
 from api.lib.classResponseMessage import responseMessage
@@ -88,6 +89,8 @@ class ParseJsonToDB():
             with Session(connection) as session:
                 session.execute( text(stmt) )
                 session.commit()
+        except SQLAlchemyError as e:
+            self.log_info(f"Ошибка выполнения запроса: {e}")
         finally:
             # closes the connection, i.e. the socket etc.
             connection.close()
@@ -217,12 +220,13 @@ class ParseJsonToDB():
                     chains_markups_q_values.append(self.add_markups_chains_values(params["chain_uuid"], cm['markup_id'])) # добавляем в таблицу markups_chains
                     counter += 1
                     if(counter % self.query_size == 0 ): # формируем блок запросов размером = query_size
-                        threading.Thread(name=self.sequence_insert_markups_markups_chains(markups_q_values, chains_markups_q_values))
+                        # threading.Thread(name=self.sequence_insert_markups_markups_chains(markups_q_values, chains_markups_q_values))
+                        self.sequence_insert_markups_markups_chains(markups_q_values, chains_markups_q_values)
                         markups_q_values.clear()
                         chains_markups_q_values.clear()
                 chain_counter += 1
         if(len(markups_q_values) > 0): # сохраняем значения из последнего набора, в котором кол-во строк меньше query_size
-            threading.Thread(name=self.sequence_insert_markups_markups_chains(markups_q_values, chains_markups_q_values))
+            self.sequence_insert_markups_markups_chains(markups_q_values, chains_markups_q_values)
         del markups_q_values
         del chains_markups_q_values
         
@@ -254,7 +258,8 @@ class ParseJsonToDB():
         errFiles = []
         for filename in files:
             if os.path.isfile(f'{self.dir_json}/{filename}') :
-                threading.Thread(target=self.proceed_file, args=(filename,)).start()
+                #threading.Thread(target=self.proceed_file, args=(filename,)).start()
+                self.proceed_file(filename)
             else:
                 errFiles.append(filename)
         if len(errFiles) > 0 :
@@ -275,13 +280,9 @@ class ParseJsonToDB():
             if len(files) == 0 : 
                 self.message.setError(f"Ошибка: получен пустой список json файлов")
             else:
-                self.loop_files(files)
+                threading.Thread(target=self.loop_files, args=(files,)).start()
+                #self.loop_files(files)
+                self.message.set(f"Файлы отправлены в обработку. Всего: {len(files)}" )
 
         return self.message.get()
     
-
-if(__name__ == "__main__"):
-    projectId = datasetId = "fc33c712-7b57-11ef-b77b-0242ac140002"
-    parser = ParseJsonToDB(projectId, datasetId, os.path.dirname(__file__)+'/json/0009')
-    res = parser.start_parser()
-    print(res)
