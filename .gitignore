@@ -4,3 +4,10 @@ venv
 .vscode
 *.log
 *.zip
+*.yaml
+docker-compose-back.yaml
+docker-compose-back-vm1.yaml
+docker-compose.yaml
+Dockerfile.back
+dockerfiles/
+api/database/database.ini

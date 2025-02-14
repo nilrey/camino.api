@@ -23,7 +23,7 @@ def dkr_container_create(image_name, params):
     volume_weights = volume_input = volume_output = volume_socket = volume_markups = volume_storage = ''
     param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = ''
     volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
-    volume_family = ' -v family:/family '
+    volume_family = ' -v /family:/family '
     param_host_web = f' --host_web \'http://camino-restapi\' '
     param_gpu = ' --gpus all '
     for param, value in params.items():
@@ -33,17 +33,17 @@ def dkr_container_create(image_name, params):
             elif(param == 'ann_mode' and value == 'teach'):
                 param_ann_mode = ' --work_format_training  '
             elif(param == 'weights' ):
-                volume_weights = f' -v {value}:{C.CNTR_BASE_01_DIR_WEIGHTS_FILE} -v {value}:/weights/yolov5s.pt '
+                volume_weights = f' -v /family{value}:/weights/yolo.pt '
             elif(param == 'in_dir' ):
-                volume_input = f' -v {value}:{C.CNTR_BASE_01_DIR_IN} '
+                volume_input = f' -v /family{value}:{C.CNTR_BASE_01_DIR_IN} '
                 # param_input_data = ' --input_data \'{"path1":{}}\' '
                 # param_input_data = ' --input_data \'{"datasets":[{"dataset_name": "video"}]}\' '
             elif(param == 'out_dir' ):
-                volume_output = f' -v {value}:{C.CNTR_BASE_01_DIR_OUT} '
+                volume_output = f' -v /family{value}:{C.CNTR_BASE_01_DIR_OUT} '
             elif(param == 'markups'):
-                volume_markups = f' -v {value}:/markups '
+                volume_markups = f' -v /family{value}:/input_data '
             elif(param == 'video_storage'):
-                volume_storage = f' -v {value}:/projects_data '
+                volume_storage = f' -v /family{value}:/projects_data '
             elif(param == 'network' ):
                 param_network = f' --network {value} '
             # elif(param == 'host_web' ):

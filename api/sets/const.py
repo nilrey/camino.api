@@ -2,7 +2,7 @@
 ROOT = "/code"
 
 CNTR_BASE_01_DIR_WEIGHTS_FILE="/common/yolov5s.pt"
-CNTR_BASE_01_DIR_IN="/input"
+CNTR_BASE_01_DIR_IN="/input_videos"
 CNTR_BASE_01_DIR_OUT="/output"
 
 LOG_DIR = "/export/logs"
