@@ -4,13 +4,15 @@ import api.database.dbquery as dbq
 import json
 from api.lib.func_datetime import *
 # import datetime
-from sqlalchemy import text
-from sqlalchemy.exc import SQLAlchemyError
+# from sqlalchemy import text
+# from sqlalchemy.exc import SQLAlchemyError
 import threading
 from sqlalchemy.orm import Session
 from api.lib.classResponseMessage import responseMessage
 import api.sets.const as C
-
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
 
 
 class ParseJsonToDB():
@@ -29,6 +31,9 @@ class ParseJsonToDB():
         self.qparams = self.set_new_qparams()
         self.color_set = [ "6b8e23", "a0522d", "00ff00", "778899", "00fa9a", "000080", "00ffff", "ff0000", "ffa500", "ffff00", "0000ff", "ff00ff", "1e90ff", "ff1493", "ffe4b5"]
         self.logname = get_dt_now_noms()
+
+        self.engine = create_engine(dbq.get_connection_string())
+        self.Session = sessionmaker(bind=self.engine)
 
 
     def set_new_qparams(self)->dict:
@@ -84,7 +89,7 @@ class ParseJsonToDB():
         return resp[0]['id'] 
     
 
-    def execute_query(self, connection, stmt):
+    def execute_query2(self, connection, stmt):
         try:
             with Session(connection) as session:
                 session.execute( text(stmt) )
@@ -96,12 +101,26 @@ class ParseJsonToDB():
             connection.close()
 
 
+    def execute_query(self, stmt):
+        session = None
+        try:
+            session = self.Session()
+            session.execute(text(stmt))
+            session.commit()
+        except SQLAlchemyError as e:
+            self.log_info(f"Ошибка выполнения запроса: {e}")
+        finally:
+            if session: 
+                session.close()
+
+
+
     def tread_insert_batch(self, stmt):
-        connection = self.create_connection()
-        # detach it! now this connection has nothing to do with the pool.
-        connection.detach()
-        # pass the connection to the thread.  
-        threading.Thread(target=self.execute_query, args=(connection, stmt)).start()
+        # connection = self.create_connection()
+        # connection.detach() # pass the connection to the thread.  
+
+        # threading.Thread(target=self.execute_query, args=(connection, stmt)).start()
+        threading.Thread(target=self.execute_query, args=( stmt,)).start()
 
     def create_connection(self):
         # connection from the regular pool
@@ -143,8 +162,10 @@ class ParseJsonToDB():
 
     def sequence_insert_markups_markups_chains(self, markups_values, chains_markups_values):
         # создаем последовательность вставки insert, т.к. markups_chains зависит от наличия записи в markups
-        self.execute_query( self.create_connection() , self.insert_markups_new(markups_values) ) # args(connection, stms_for_execute)
-        self.execute_query( self.create_connection() , self.insert_markups_chains_new(chains_markups_values) )
+        # self.execute_query( self.create_connection() , self.insert_markups_new(markups_values) ) # args(connection, stms_for_execute)
+        # self.execute_query( self.create_connection() , self.insert_markups_chains_new(chains_markups_values) )
+        self.execute_query(  self.insert_markups_new(markups_values), ) # args(connection, stms_for_execute)
+        self.execute_query(  self.insert_markups_chains_new(chains_markups_values), )
 
 
     def insert_chains_new(self, query_values):
@@ -157,7 +178,7 @@ class ParseJsonToDB():
     
     
     def set_insert_chains(self, query_values):
-        self.tread_insert_batch( self.insert_chains_new( query_values ) )
+        self.tread_insert_batch( self.insert_chains_new( query_values ), )
 
     def set_params(self)->dict:
         return {"file_id" : "",
@@ -229,9 +250,14 @@ class ParseJsonToDB():
             self.sequence_insert_markups_markups_chains(markups_q_values, chains_markups_q_values)
         del markups_q_values
         del chains_markups_q_values
+        self.close_idle()
         
         return self.message.get()
     
+    def close_idle(self):
+        stmt = 'SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = \'idle\' AND pid <> pg_backend_pid()'
+        self.execute_query(stmt, )
+        return True
 
     def load_json(self, filepath):
         content = {}
