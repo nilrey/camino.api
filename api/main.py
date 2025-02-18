@@ -163,7 +163,7 @@ async def api_docker_image_create(request: Request,
    return mng_container_create(imageId, ContCreate.getAllParams() )
 
 
-@docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
+@docker_images.post("/{imageId}/run/old", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
 async def api_docker_image_run2(request: Request,
       imageId:str,
       imrun: ImageRun
@@ -171,12 +171,12 @@ async def api_docker_image_run2(request: Request,
    return mng_image_run2(imageId, imrun.getAllParams() )
 
 
-# @docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
-# async def api_docker_image_run(request: Request,
-#       imageId:str,
-#       imrun: ImageRun
-#    ):
-#    return mng_image_run(imageId, imrun.getAllParams() )
+@docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
+async def api_docker_image_run(request: Request,
+      imageId:str,
+      imrun: ImageRun
+   ):
+   return mng_image_run(imageId, imrun.getAllParams() )
 
 
 # ANN

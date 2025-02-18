@@ -113,14 +113,9 @@ def mng_image_run2(image_id, params):
 
 
 def mng_image_run(image_id, params):
-   datasetId = params['markups'].split('/')[-2]
-   projectId = params['markups'].split('/')[-3]
-   response = f'{projectId}/{datasetId}'
-   resp = DatasetMarkupsExport(projectId, datasetId)
+   resp = DatasetMarkupsExport(image_id, params)
    res = resp.run()
-   # response = mng_container_create(image_id, params)
-   # if (not response['error']): response = mng_container_start(response['response'][0])
-   return res #response
+   return res
 
 
 def mng_containers():
