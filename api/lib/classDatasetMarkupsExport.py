@@ -106,10 +106,10 @@ class DatasetMarkupsExport:
         chains = self.get_chains(dataset_id, file_id)
         self.log_info(f'Chains: {len(chains)}' ) 
         # Заполняем словарь
-        total = len(chains)
+        chains_cnt = len(chains)
         for idx, chain in enumerate(chains, start=1): 
             markups = self.get_markups(chain['cid']) 
-            self.log_info(f"{idx} из {total} ({int(idx/(total/100))}%)")
+            self.log_info(f"File id:{file_id}; Chain_id: {chain['cid']}; {idx} of {chains_cnt}; Chain markups: {len(markups)})")
             chain["chain_markups"] = markups
             chain.pop("cid", None)
 
@@ -138,7 +138,7 @@ class DatasetMarkupsExport:
                 #     self.message = 'Error: dataset_parent_id is not found '
 
             self.status[file_data['name']] = "Success"
-            self.log_info(self.status[file_data['name']])
+            self.log_info(f"{file_data['name']} is success done. ")
         except Exception as e:
             self.status[file_data['name']] = "Failed"
             self.errors[file_data['name']] = traceback.format_exc()
@@ -149,9 +149,8 @@ class DatasetMarkupsExport:
         # Менеджер потоков - для отслеживания состояния других потоков
         while not self.stop_event.is_set():
             all_finished = True
-            self.log_info(f"monitor_threads = self.status : {self.status}")
             for filename, state in list(self.status.items()):
-                if state not in ["Success", "Failed", "In Progress"]:
+                if state not in ["Success", "Failed"]:
                     #self.log_info(f'Error: state not in Success or Failed: {state}')
                     all_finished = False
                 elif state is not None:
@@ -235,7 +234,7 @@ class DatasetMarkupsExport:
         # chains = self.exec_query( self.stmt_chains(), {"dataset_id": dataset_id, "file_id": file_id })
         stmt = self.stmt_chains(dataset_id, file_id)
         chains = self.exec_query( stmt, {})
-        self.log_info(f'chains: {len(chains)}')
+        # self.log_info(f'chains: {len(chains)}')
         return chains
     
     def stmt_markups(self):
@@ -252,7 +251,7 @@ class DatasetMarkupsExport:
         
     def get_markups(self, chain_id):
         markups = self.exec_query( self.stmt_markups(), {"chain_id": chain_id })
-        self.log_info(f'markups: {len(markups)}')
+        # self.log_info(f'markups: {len(markups)}')
         return markups
     
 
