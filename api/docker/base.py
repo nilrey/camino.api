@@ -24,7 +24,7 @@ def dkr_container_create(image_name, params):
     param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = ''
     volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
     volume_family = ' -v /family:/family '
-    param_host_web = f' --host_web \'http://camino-restapi\' '
+    param_host_web = f' --host_web \'{C.HOST_RESTAPI}\' '
     param_gpu = ' --gpus all '
     for param, value in params.items():
         if( value ):
@@ -200,7 +200,7 @@ def get_time_no_microsec():
     return dt.datetime.now().replace(microsecond=0)
 
 def send_arch_on_save(export_code, annId):
-    url = f'http://camino-restapi/ann/{annId}/archive/on_save'
+    url = f'{C.HOST_RESTAPI}/ann/{annId}/archive/on_save'
     try:
         requests.post(url, json = {"action":"start"} )
         mes = f"Сообщение отправлено. {url}"
@@ -210,7 +210,7 @@ def send_arch_on_save(export_code, annId):
         log_info(export_code, mes)
 
 def send_on_error(export_code, annId, msg):
-    url = f'http://camino-restapi/ann/{annId}/archive/on_error'
+    url = f'{C.HOST_RESTAPI}/ann/{annId}/archive/on_error'
     try:
         requests.post(url, json = {"msg": msg} )
         mes = f"Сообщение об ошибке отправлено: {msg}. {url}"

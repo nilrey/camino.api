@@ -95,7 +95,7 @@ class DatasetMarkupsExport:
       
         self.log_info(f"file_id: {file['id']}" ) 
         chains = self.prepare_chains(self.dataset_id , file['id']) # [{"id":1}, {"id":2}]
-        return {'file_name' : file['name'],
+        return {'file_name' : C.CNTR_BASE_01_DIR_IN + '/' + file['name'],
                 'file_id' : file['id'],
                 'file_subset': 'teach',
                 'file_chains' : self.convert_to_serializable(chains),
@@ -108,31 +108,28 @@ class DatasetMarkupsExport:
         # Заполняем словарь
         chains_cnt = len(chains)
         for idx, chain in enumerate(chains, start=1): 
-            markups = self.get_markups(chain['cid']) 
-            self.log_info(f"File id:{file_id}; Chain_id: {chain['cid']}; {idx} of {chains_cnt}; Chain markups: {len(markups)})")
+            markups = self.get_markups(chain['chain_id']) 
+            self.log_info(f"File id:{file_id}; Chain_id: {chain['chain_id']}; {idx} of {chains_cnt}; Chain markups: {len(markups)})")
             chain["chain_markups"] = markups
-            chain.pop("cid", None)
 
         return chains
     
     def get_json_data(self, file_data):
         datasets = self.get_binded_datasets()
         file = self.prepare_file(file_data)
-        return {'datasets': datasets, 'files': {'file': file} }
+        return {'datasets': datasets, 'files': [file] }
     
 
-    def create_json_file(self, file_data):
-        # path_to_file = self.output_dir #'json/0018/'
+    def create_json_file(self, file_data):  
         json_data = self.get_json_data(file_data)
 
         try:
             os.makedirs(self.output_dir, exist_ok=True)  # Создаем каталог, если его нет
-            file_path = os.path.join(self.output_dir, f"{file_data['name']}.json")
+            file_path = os.path.join(self.output_dir, f"IN_{file_data['name']}.json")
 
             self.log_info(f"путь к файлу: {file_path}")
             with open(file_path, "w", encoding="utf-8") as f:
-                # if (self.get_dataset_parent_id(datasets) is not None ):
-                json.dump(json_data, f, ensure_ascii=False, indent=4)
+                json.dump(json_data, f, ensure_ascii=False)
                 self.message = 'Success'
                 # else:
                 #     self.message = 'Error: dataset_parent_id is not found '
@@ -190,7 +187,7 @@ class DatasetMarkupsExport:
     def run(self):
         self.log_info("Start process")
         self.data_files = self.get_dataset_files(self.dataset_id)
-        self.log_info(len(self.data_files))
+        self.log_info(f'Files found: {len(self.data_files)} ')
         # Запуск потоков создания файлов
         self.status = {filename["name"]: "In Progress" for filename in self.data_files}
         # print(f"{resp[0]['id']}", file=sys.stderr)
@@ -206,9 +203,9 @@ class DatasetMarkupsExport:
         # Запуск ожидания завершения в отдельном потоке
         self.wait_thread = threading.Thread(target=self.wait_for_threads)
         self.wait_thread.start()
-        #files_count = len(self.data_files)
-        message = {'message': 'Файлы отправлены в обработку', 'files_count' : 1 }
-        self.log_info( message )
+        files_count = len(self.data_files)
+        message = {'message': 'Файлы отправлены в обработку', 'files_count' : {files_count} }
+        self.log_info( f'Response json: {message} ' )
         
         return message
 
@@ -217,32 +214,30 @@ class DatasetMarkupsExport:
         stmt = text("SELECT d2.id FROM datasets d1 , datasets d2 where d1.project_id = d2.project_id and d2.parent_id is null and d1.id = :dataset_id")
         parent_dataset_id = self.exec_query(stmt, {"dataset_id" : dataset_id } )
         self.log_info(f'dataset_id = {dataset_id}')
-        self.log_info(f'parent_dataset_id = {parent_dataset_id[0]["id"]}')
-
-        stmt = text("SELECT * FROM files f  WHERE f.dataset_id = :dataset_id")
-        files = self.exec_query(stmt, {"dataset_id" : parent_dataset_id[0]['id']} , False)
+        if(parent_dataset_id):
+            self.log_info(f'parent_dataset_id = {parent_dataset_id[0]["id"]}')
+            stmt = text("SELECT * FROM files f  WHERE f.dataset_id = :dataset_id AND f.is_deleted = false")
+            files = self.exec_query(stmt, {"dataset_id" : parent_dataset_id[0]['id']} , False)
+        else:
+            self.log_info(f'Error: parent_dataset_id is null')
+            files = []
         #print(f"{resp}", file=sys.stderr)
         return files
     
-    def stmt_chains(self, dataset_id, file_id):
-        stmt = text(f'select c.id as cid, c.name as chain_name, c.vector as chain_vector from chains c where c.dataset_id = \'{dataset_id}\' AND c.file_id = \'{file_id}\' order by cid')
-        return stmt
+    def stmt_chains(self):
+        return text("""SELECT c.id as chain_id, c.name as chain_name, c.vector as chain_vector 
+                    FROM chains c WHERE c.dataset_id = :dataset_id AND c.file_id = :file_id AND c.is_deleted = false""")
         
     def get_chains(self, dataset_id, file_id):
-        # self.log_info(f'get_chains->dataset_id: {dataset_id}')
-        # self.log_info(f'get_chains->file_id: {file_id}')
-        # chains = self.exec_query( self.stmt_chains(), {"dataset_id": dataset_id, "file_id": file_id })
-        stmt = self.stmt_chains(dataset_id, file_id)
-        chains = self.exec_query( stmt, {})
-        # self.log_info(f'chains: {len(chains)}')
+        chains = self.exec_query( self.stmt_chains(), {'dataset_id':dataset_id, 'file_id': file_id})
         return chains
-    
+
     def stmt_markups(self):
         return text("""
-            select m.mark_frame as markup_frame, m.mark_time as markup_time, m.vector as markup_vector, m.mark_path as markup_path 
-                from markups_chains mc
-            join markups m on mc.markup_id = m.id 
-            where mc.chain_id = :chain_id
+            SELECT m.id as markup_id, m.mark_frame as markup_frame, m.mark_time as markup_time, m.vector as markup_vector, m.mark_path as markup_path 
+            FROM markups_chains mc
+            JOIN markups m ON mc.markup_id = m.id 
+            WHERE mc.chain_id = :chain_id
             AND m.is_deleted = false
             AND NOT EXISTS (
                 SELECT 1 FROM markups m2 WHERE m2.previous_id = m.id 

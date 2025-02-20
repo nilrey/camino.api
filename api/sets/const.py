@@ -1,4 +1,7 @@
 # Настройки для конейнеров
+HOST_RESTAPI = "http://camino-restapi"
+HOST_GRAFANA = "http://10.0.0.1:3000"
+
 ROOT = "/code"
 
 CNTR_BASE_01_DIR_WEIGHTS_FILE="/common/yolov5s.pt"

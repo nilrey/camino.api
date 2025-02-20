@@ -1,6 +1,7 @@
 import os
 import copy
 import subprocess
+import api.sets.const as C
 
 class Monitor():
     # Создается экземпляр класса Monitor 
@@ -61,7 +62,7 @@ class Monitor():
             template = copy.deepcopy(self.template)
             template['id'] = id
             template['title'] = name+ ": " + self.views[panel_num]
-            template['source'] = 'http://10.0.0.1:3000/d/b5f1b21e-35e1-4dc7-be5e-361d1bcb1bcf/docker-monitoring?orgId=1&var-id=%2Fsystem.slice%2Fdocker-{}.scope&var-name={}&viewPanel={}&from=now-5m&to=now&kiosk&refresh=5s'.format(id, name,panel_num)
+            template['source'] = '{}/d/b5f1b21e-35e1-4dc7-be5e-361d1bcb1bcf/docker-monitoring?orgId=1&var-id=%2Fsystem.slice%2Fdocker-{}.scope&var-name={}&viewPanel={}&from=now-5m&to=now&kiosk&refresh=5s'.format( C.HOST_GRAFANA, id, name, panel_num)
         return template
         
         

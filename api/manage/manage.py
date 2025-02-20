@@ -9,6 +9,7 @@ import time
 from api.lib.func_ann_out_db_save import ann_out_db_save as save_output
 import api.lib.func_utils as fu
 from api.lib.classDatasetMarkupsExport import *
+import requests
 
 # Users
 def mng_create_user(**kwargs):
@@ -108,7 +109,16 @@ def mng_container_create(image_id, params):
 
 def mng_image_run2(image_id, params):
    response = mng_container_create(image_id, params)
-   if (not response['error']): response = mng_container_start(response['response'][0])
+   if (not response['error']): 
+      response = mng_container_start(response['response'][0])
+      # регистрация контейнера
+      if (not response['error']): 
+         url = f"{C.HOST_RESTAPI}/containers/{response['id']}/on_run"
+         response['dataset_id'] = params['out_dir'].split('/')[-2]
+         requests.post(url, json = response)
+      else:
+         print(f"{response['error_descr']}", file=sys.stderr)
+
    return response
 
 
