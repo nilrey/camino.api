@@ -101,11 +101,8 @@ class ImportAnnJsonToDB:
     def get_file_id_by_name(self, cursor, fname):
         # получим корневой dataset id
         cursor.execute(self.stmt_dataset_parent_id(), (self.dataset_id,))
-        dataset_parent_id = cursor.fetchone()
-        # self.logger.info(dataset_parent_id[0])
-
-        # formatted_query = cursor.mogrify(self.stmt_file_id(), (dataset_parent_id[0], fname) )
-        # self.logger.info(formatted_query.decode('utf-8'))  # Выведет SQL-запрос
+        dataset_parent_id = cursor.fetchone() 
+        
         cursor.execute(self.stmt_file_id(), (dataset_parent_id[0], fname))
         file_info = cursor.fetchone()
         # self.logger.info(file_info[0])
@@ -163,18 +160,7 @@ class ImportAnnJsonToDB:
             
             # Обрабатываем файлы
             for file_entry in data_files:
-                for cnt, chain in enumerate(file_entry.get("file_chains", [])):
-                    # self.logger.info(f'{file_name}: Обрабатывается Chain {cnt+1} of {chain_total}')
-
-                    # Вставляем в таблицу chains
-                    # show query
-                    # self.logger.info( cursor.mogrify(self.insert_chain_query(), (
-                    #         chain["chain_id"], 
-                    #         self.dataset_id, 
-                    #         file_id, 
-                    #         chain["chain_name"], 
-                    #         json.dumps(chain["chain_vector"])
-                    #     )).decode('utf-8') ) 
+                for cnt, chain in enumerate(file_entry.get("file_chains", [])): 
                     chain_result = self.exec_query( cursor, self.insert_chain_query(), 
                         (
                             chain["chain_id"], 
@@ -183,26 +169,11 @@ class ImportAnnJsonToDB:
                             chain["chain_name"], 
                             json.dumps(chain["chain_vector"])
                         )
-                    )
-                    # self.logger.info(f'chain_result: {chain_result}')
+                    ) 
 
                     if( chain_result > 0 ):
                         chain_success += 1
-                        for markup in chain.get("chain_markups", []): 
-
-                            # self.logger.info(
-                            #     cursor.mogrify(self.insert_markup_query(), 
-                            #     (
-                            #         markup["markup_id"], 
-                            #         self.dataset_id, 
-                            #         file_id, 
-                            #         markup["markup_frame"], 
-                            #         markup["markup_time"], 
-                            #         json.dumps(markup["markup_vector"]), 
-                            #         json.dumps(markup["markup_path"])
-                            #         )).decode('utf-8')
-                            # )
-
+                        for markup in chain.get("chain_markups", []):  
                             # Вставляем в таблицу markups 
                             markup_result = self.exec_query(cursor, self.insert_markup_query(), 
                                 (
@@ -214,8 +185,7 @@ class ImportAnnJsonToDB:
                                     json.dumps(markup["markup_vector"]), 
                                     json.dumps(markup["markup_path"])
                                 )
-                            )
-                            # self.logger.info(f'markup_result: {markup_result}')
+                            ) 
                             if(markup_result > 0 ):
                                 markup_success += 1
                                 self.exec_query(cursor, self.insert_chain_markup_query(), (chain["chain_id"], markup["markup_id"]))
