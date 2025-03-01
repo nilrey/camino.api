@@ -134,6 +134,15 @@ async def api_parse_output(request: Request,
    # return mng_parse_ann_output(parse_data.target_dir)
    return res
 
+
+@projects.post("/{projectId}/datasets/{datasetId}/import/new", summary="Загрузка датасета из JSON файлов")
+async def api_import_json_to_db(request: Request,
+      projectId:str,
+      datasetId:str,
+      parse_data:ANNParseOutput
+   ):
+   return mng_import_json_to_db(projectId, datasetId, parse_data)
+
 # DOCKER
 
 

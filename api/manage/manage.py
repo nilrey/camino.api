@@ -9,6 +9,7 @@ import time
 from api.lib.func_ann_out_db_save import ann_out_db_save as save_output
 import api.lib.func_utils as fu
 from api.lib.classDatasetMarkupsExport import *
+from api.lib.classImportAnnJsonToDB import *
 import requests
 
 # Users
@@ -171,6 +172,12 @@ def mng_container_stop(container_id):
    if (not response['error']): response = mng_container(response['response'][0])
    # if (not response['error']): response = ro.container_stop(container_id, response['response'])
    return response  
+
+def mng_import_json_to_db(projectId, datasetId, parse_data):
+
+   resp = ImportAnnJsonToDB(projectId, datasetId, parse_data.files)
+   res = resp.run()
+   return res
 
 def mng_ann_export(imageId, weights, export, annId):
    weights = weights.replace("/projects_data/weights/", "")
