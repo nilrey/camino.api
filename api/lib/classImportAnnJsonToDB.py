@@ -23,6 +23,7 @@ class ImportAnnJsonToDB:
         self.dataset_id = dataset_id    # dataset_id текущего датасета
         self.files = files
         self.dataset_parent_id = None
+        self.author_id = None
         self.dir_json = f"/projects_data/{self.project_id}/{self.dataset_id}/markups_out" # директория импорта - файлы json от ИНС 
         self.color_set = [ "6b8e23", "a0522d", "00ff00", "778899", "00fa9a", "000080", "00ffff", "ff0000", "ffa500", "ffff00", "0000ff", "ff00ff", "1e90ff", "ff1493", "ffe4b5"]
         self.logname = get_dt_now_noms()
@@ -98,8 +99,8 @@ class ImportAnnJsonToDB:
     
     def insert_chain_query(self):
         return """
-            INSERT INTO chains (id, dataset_id, file_id, name, vector, color )
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO chains (id, dataset_id, file_id, name, vector, author_id, color, confidence )
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """
 
     def insert_markup_query(self):
@@ -116,6 +117,9 @@ class ImportAnnJsonToDB:
 
     def stmt_file_id(self):
         return "SELECT f.id FROM files f  WHERE f.dataset_id = %s and f.name = %s"
+
+    def stmt_author_id(self):
+        return "SELECT u.id FROM users u  WHERE u.login = %s"
 
     def get_dataset_parent_id(self):
         self.logger.info(f'Поиск dataset_parent_id. Подключение к базе.' )
@@ -136,19 +140,48 @@ class ImportAnnJsonToDB:
             conn.close()
 
         return True
+
+    def get_author_id(self, user_login):
+        self.logger.info(f'Поиск author_id. Подключение к базе.' )
+        conn = self.get_connect()
+        cursor = conn.cursor()
+        author = ()
+        try:
+            cursor.execute(self.stmt_author_id(), (user_login,))
+            author = cursor.fetchone()
+            if(len(author) > 0):
+                self.author_id = author[0]
+                self.logger.info(f'author_id = {self.author_id}')
+            else:
+                self.logger.error(f'author_id не найден . Параметры поиска: user_login={user_login}')
+        except psycopg2.DatabaseError as e:
+            self.logger.error(f"Поиск author_id. Ошибка базы данных: {e}") 
+        finally:
+            cursor.close()
+            conn.close()
+
+        return True
     
     def get_file_id_by_name(self, cursor, file_name):
+        file_id = None
         self.logger.info(f'{file_name}: Начинаем поиск file_id ' )
         fname = file_name.replace('.json', '') 
         cursor.execute(self.stmt_file_id(), (self.dataset_parent_id, fname))
-        file_id = cursor.fetchone()[0]
-        if(file_id):
+        file = cursor.fetchone()
+        if(len(file) > 0):
+            file_id = file[0]
             self.logger.info(f'{file_name}: file_id = {file_id}')
         else:
             self.log(f'{file_name}: file_id не найден . Параметры поиска: dataset_parent_id={self.dataset_parent_id}, fname={fname}')
             self.logger.info( cursor.mogrify(f'{file_name}: {self.stmt_file_id()}', (self.dataset_parent_id, fname) ).decode('utf-8'))
 
         return file_id
+    
+    def get_confidence(self, chain):
+        confidence = 0.0
+        if(chain.get('chain_confidence')):
+            confidence = chain['chain_confidence']
+        return confidence
     
     def exec_query(self, cursor, method_name, query_params, count_success = 0):
         try:
@@ -183,7 +216,7 @@ class ImportAnnJsonToDB:
                     chain_total = len(file_chains)
                     markup_total = sum(len(chain.get("chain_markups", [])) for chain in file_chains)
 
-                self.logger.info(f'{file_name}: Chains in file {chain_total}')
+                self.logger.info(f'{file_name}: найдено: Chains {chain_total}, Markups {markup_total}')
 
                 self.logger.info(f'{file_name}: Подключение к БД ' )
                 conn = self.get_connect()
@@ -194,8 +227,8 @@ class ImportAnnJsonToDB:
                 # Обрабатываем файлы
                 if (file_id):
                     for file_entry in data_files:
-                        for cnt, chain in enumerate(file_entry.get("file_chains", [])): 
-                            color = self.get_color(cnt)
+                        file_chains = file_entry.get("file_chains", []) 
+                        for cnt, chain in enumerate(file_chains):  
                             chain_result = self.exec_query( cursor, self.insert_chain_query(), 
                                 (
                                     chain["chain_id"], 
@@ -203,7 +236,9 @@ class ImportAnnJsonToDB:
                                     file_id, 
                                     chain["chain_name"], 
                                     json.dumps(chain["chain_vector"]),
-                                    color
+                                    self.author_id,
+                                    self.get_color(cnt),
+                                    self.get_confidence(chain)
                                 )
                             ) 
 
@@ -225,11 +260,12 @@ class ImportAnnJsonToDB:
                                     if(markup_result > 0 ):
                                         markup_success += 1
                                         self.exec_query(cursor, self.insert_chain_markup_query(), (chain["chain_id"], markup["markup_id"]))
+                            if( cnt % 100 == 0):
+                                self.logger.info(f'{file_name} Обработано: Chains: {cnt} из {chain_total}')
                 else:
-                    pass
-
+                    self.logger.error(f"{file_name} file_id NOT passed : {file_id}")
                 # Фиксация транзакции
-                if ( chain_success > 0 and markup_success >  0  ) :
+                if ( chain_success > 0 and markup_success >  0 ) :
                     try:
                         conn.commit()
                         self.logger.info(f"{file_name} добавлено записей: Chains = {chain_success} из {chain_total}. Markups: {markup_success} из {markup_total}")
@@ -270,7 +306,8 @@ class ImportAnnJsonToDB:
             else:
                 # Запуск мониторинга
                 self.get_dataset_parent_id()
-                if(self.dataset_parent_id):
+                self.get_author_id('manager')
+                if(self.dataset_parent_id and self.author_id):
                     self.monitor_thread = threading.Thread(target=self.run_monitor_thread)
                     self.monitor_thread.start()
                     self.log(f"Данные получены. Файлов в обработке: {len(self.files)}")
