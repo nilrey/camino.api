@@ -12,3 +12,4 @@ starlette==0.37.2
 typing_extensions==4.10.0
 requests==2.32.3
 psycopg2-binary==2.9.7
+ijson==3.2.2

@@ -34,7 +34,7 @@ class ANNEventBeforeRun(BaseModel):
    
 
 class ANNParseOutput(BaseModel):
-   files: list = Field(default=["1_кол_сев_вход_1.mp4.json"])
+   files: list = Field(default=[])
 
 
 class ContainerCreate(BaseModel):

@@ -5,6 +5,7 @@ import api.sets.const as C
 from api.lib.func_datetime import *
 from api.lib.classResponseMessage import responseMessage
 import json
+import ijson
 import psycopg2
 import time
 from datetime import datetime
@@ -206,77 +207,82 @@ class ImportAnnJsonToDB:
 
         file_path = f'{self.dir_json}/{file_name}'
         try:
-            self.logger.info(f"Начало обработки {file_path}")
+            # self.logger.info(f"Начало обработки {file_path}")
             with open(file_path, "r", encoding="utf-8") as file:
-                data = json.load(file)
-
-                data_files = data.get("files", [])
-                if data_files:
-                    file_chains = data_files[0].get("file_chains", [])
-                    chain_total = len(file_chains)
-                    markup_total = sum(len(chain.get("chain_markups", [])) for chain in file_chains)
-
-                self.logger.info(f'{file_name}: найдено: Chains {chain_total}, Markups {markup_total}')
-
-                self.logger.info(f'{file_name}: Подключение к БД ' )
-                conn = self.get_connect()
-                cursor = conn.cursor()
-
-                file_id = self.get_file_id_by_name(cursor, file_name)
+                parser = ijson.items(file, "files.item")
+                for file_entry in parser:
+                    for chain in file_entry["file_chains"]:
+                        self.logger.info(f'{file_name}: chain {chain["chain_id"]}' )       
                 
-                # Обрабатываем файлы
-                if (file_id):
-                    for file_entry in data_files:
-                        file_chains = file_entry.get("file_chains", []) 
-                        for cnt, chain in enumerate(file_chains):  
-                            chain_result = self.exec_query( cursor, self.insert_chain_query(), 
-                                (
-                                    chain["chain_id"], 
-                                    self.dataset_id, 
-                                    file_id, 
-                                    chain["chain_name"], 
-                                    json.dumps(chain["chain_vector"]),
-                                    self.author_id,
-                                    self.get_color(cnt),
-                                    self.get_confidence(chain)
-                                )
-                            ) 
+                # data = json.load(file)
 
-                            if( chain_result > 0 ):
-                                chain_success += 1
-                                for markup in chain.get("chain_markups", []):  
-                                    # Вставляем в таблицу markups 
-                                    markup_result = self.exec_query(cursor, self.insert_markup_query(), 
-                                        (
-                                            markup["markup_id"], 
-                                            self.dataset_id, 
-                                            file_id, 
-                                            markup["markup_frame"], 
-                                            markup["markup_time"], 
-                                            json.dumps(markup["markup_vector"]), 
-                                            json.dumps(markup["markup_path"])
-                                        )
-                                    ) 
-                                    if(markup_result > 0 ):
-                                        markup_success += 1
-                                        self.exec_query(cursor, self.insert_chain_markup_query(), (chain["chain_id"], markup["markup_id"]))
-                            if( cnt % 100 == 0):
-                                self.logger.info(f'{file_name} Обработано: Chains: {cnt} из {chain_total}')
-                else:
-                    self.logger.error(f"{file_name} file_id NOT passed : {file_id}")
-                # Фиксация транзакции
-                if ( chain_success > 0 and markup_success >  0 ) :
-                    try:
-                        conn.commit()
-                        self.logger.info(f"{file_name} добавлено записей: Chains = {chain_success} из {chain_total}. Markups: {markup_success} из {markup_total}")
-                    except psycopg2.DatabaseError as e:
-                        conn.rollback()
-                        self.logger.error(f"Ошибка при commit(): {e}")
-                else:
-                    self.logger.error("Данные не добавлены.")
+                # data_files = data.get("files", [])
+                # if data_files:
+                #     file_chains = data_files[0].get("file_chains", [])
+                #     chain_total = len(file_chains)
+                #     markup_total = sum(len(chain.get("chain_markups", [])) for chain in file_chains)
 
-                cursor.close()
-                conn.close()                   
+                # self.logger.info(f'{file_name}: найдено: Chains {chain_total}, Markups {markup_total}')
+
+                # self.logger.info(f'{file_name}: Подключение к БД ' )
+                # conn = self.get_connect()
+                # cursor = conn.cursor()
+
+                # file_id = self.get_file_id_by_name(cursor, file_name)
+                
+                # # Обрабатываем файлы
+                # if (file_id):
+                #     for file_entry in data_files:
+                #         file_chains = file_entry.get("file_chains", []) 
+                #         for cnt, chain in enumerate(file_chains):  
+                #             chain_result = self.exec_query( cursor, self.insert_chain_query(), 
+                #                 (
+                #                     chain["chain_id"], 
+                #                     self.dataset_id, 
+                #                     file_id, 
+                #                     chain["chain_name"], 
+                #                     json.dumps(chain["chain_vector"]),
+                #                     self.author_id,
+                #                     self.get_color(cnt),
+                #                     self.get_confidence(chain)
+                #                 )
+                #             ) 
+
+                #             if( chain_result > 0 ):
+                #                 chain_success += 1
+                #                 for markup in chain.get("chain_markups", []):  
+                #                     # Вставляем в таблицу markups 
+                #                     markup_result = self.exec_query(cursor, self.insert_markup_query(), 
+                #                         (
+                #                             markup["markup_id"], 
+                #                             self.dataset_id, 
+                #                             file_id, 
+                #                             markup["markup_frame"], 
+                #                             markup["markup_time"], 
+                #                             json.dumps(markup["markup_vector"]), 
+                #                             json.dumps(markup["markup_path"])
+                #                         )
+                #                     ) 
+                #                     if(markup_result > 0 ):
+                #                         markup_success += 1
+                #                         self.exec_query(cursor, self.insert_chain_markup_query(), (chain["chain_id"], markup["markup_id"]))
+                #             if( cnt % 100 == 0):
+                #                 self.logger.info(f'{file_name} Обработано: Chains: {cnt} из {chain_total}')
+                # else:
+                #     self.logger.error(f"{file_name} file_id NOT passed : {file_id}")
+                # # Фиксация транзакции
+                # if ( chain_success > 0 and markup_success >  0 ) :
+                #     try:
+                #         conn.commit()
+                #         self.logger.info(f"{file_name} добавлено записей: Chains = {chain_success} из {chain_total}. Markups: {markup_success} из {markup_total}")
+                #     except psycopg2.DatabaseError as e:
+                #         conn.rollback()
+                #         self.logger.error(f"Ошибка при commit(): {e}")
+                # else:
+                #     self.logger.error("Данные не добавлены.")
+
+                # cursor.close()
+                # conn.close()                   
                 
             
         except Exception as e:
