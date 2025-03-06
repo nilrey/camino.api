@@ -144,28 +144,6 @@ async def api_import_json_to_db(request: Request,
    ):
    return mng_import_json_to_db(projectId, datasetId, parse_data)
 
-# test send post
-@projects.post("/{projectId}/datasets/{datasetId}/import_response", summary="Загрузка датасета из JSON файлов")
-async def api_test_send_post(request: Request,
-      projectId:str,
-      datasetId:str,
-      parse_data:ANNParseOutput
-   ):
-   url = f"{C.HOST_RESTAPI}/projects/{projectId}/datasets/{datasetId}/on_export" 
-   headers = { "Content-Type": "application/json" }
-   data = {
-         "files": [
-            {
-               "name": "filename.json",
-               "chains_count": 123,
-               "markups_count": 345
-            }
-         ]
-      }
-
-   response = requests.post(url, json=data, headers=headers) 
-   # write to response to LOG
-   return response.json() 
 
 # DOCKER
 
