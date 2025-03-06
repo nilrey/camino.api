@@ -114,9 +114,11 @@ def mng_image_run2(image_id, params):
       response = mng_container_start(response['response'][0])
       # регистрация контейнера
       # if (not response['error']): 
-      url = f"{C.HOST_RESTAPI}/containers/{response['id']}/on_run"
+
+      url = f"{C.HOST_RESTAPI}/containers/{response['id']}/on_start"
       response['dataset_id'] = params['out_dir'].split('/')[-2]
       requests.post(url, json = response)
+      
       # else:
       #    print(f"{response['error_descr']}", file=sys.stderr)
 

@@ -164,6 +164,7 @@ async def api_test_send_post(request: Request,
       }
 
    response = requests.post(url, json=data, headers=headers) 
+   # write to response to LOG
    return response.json() 
 
 # DOCKER

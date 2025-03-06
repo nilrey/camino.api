@@ -1,6 +1,7 @@
 import os
 import sys
 import json
+import requests
 import threading
 import time
 import traceback
@@ -17,6 +18,7 @@ import api.sets.const as C
 import api.manage.manage as mng
 
 class DatasetMarkupsExport:
+    # выгрузка данных из БД в json и запуск контейнера из образа 
     def __init__(self, image_id, params): 
         self.data_files = {}
         self.image_id = image_id
@@ -31,11 +33,14 @@ class DatasetMarkupsExport:
         self.wait_thread = None
         self.output_dir = f"/projects_data/{self.project_id}/{self.dataset_id}/markups_in" # директория с файлами json от ИНС
         self.engine = create_engine(self.get_connection_string())
-        self.logname = get_dt_now_noms()+'_files_markups_export.log'
+        self.logname = get_dt_now_noms()+'_datasets_import.log'
+        self.files_res = {}
+
 
     def log_info(self, mes):
         with open(C.LOG_PATH + f"/{self.logname}", "a") as file:
             file.write(f'{get_dt_now_noms()} {mes}\n')
+
 
     def load_config(self, filename='/code/api/database/database.ini', section='postgresql'):
         parser = ConfigParser()
@@ -50,11 +55,13 @@ class DatasetMarkupsExport:
             raise Exception('Section {0} not found in the {1} file'.format(section, filename))
 
         return config
-    
+
+
     def get_connection_string(self):
         config = self.load_config()
         cs = f"postgresql://{config['user']}:{config['password']}@{config['host']}:{config['port']}/{config['database']}"
         return cs
+
 
     def exec_query(self, query, params={}, convert = True):
         with self.engine.connect() as connection:
@@ -90,30 +97,35 @@ class DatasetMarkupsExport:
             return {k: DatasetMarkupsExport.convert_to_serializable(v) for k, v in obj.items()}
         return obj  # Остальное оставляем без изменений
     
+
     def prepare_file(self, file_data):
         file = self.convert_to_serializable(dict(file_data)) 
       
         self.log_info(f"file_id: {file['id']}" ) 
-        chains = self.prepare_chains(self.dataset_id , file['id']) # [{"id":1}, {"id":2}]
+        chains = self.prepare_chains(self.dataset_id , file) # [{"id":1}, {"id":2}]
         return {'file_name' : C.CNTR_BASE_01_DIR_IN + '/' + file['name'],
                 'file_id' : file['id'],
                 'file_subset': 'teach',
                 'file_chains' : self.convert_to_serializable(chains),
                 }
     
-    def prepare_chains(self, dataset_id, file_id): 
-        
-        chains = self.get_chains(dataset_id, file_id)
-        self.log_info(f'Chains: {len(chains)}' ) 
-        # Заполняем словарь
+
+    def prepare_chains(self, dataset_id, file): 
+        chains = self.get_chains(dataset_id, file['id'])
         chains_cnt = len(chains)
+        markups_cnt = 0
+        self.log_info(f'Chains: {chains_cnt}' ) 
+        # Заполняем словарь
         for idx, chain in enumerate(chains, start=1): 
             markups = self.get_markups(chain['chain_id']) 
-            self.log_info(f"File id:{file_id}; Chain_id: {chain['chain_id']}; {idx} of {chains_cnt}; Chain markups: {len(markups)})")
+            self.log_info(f"File id:{file['id']}; Chain_id: {chain['chain_id']}; {idx} of {chains_cnt}; Chain markups: {len(markups)})")
             chain["chain_markups"] = markups
+            markups_cnt += len(markups)
 
+        self.files_res[file['id']] = {'name': file['name'], 'chains_count':chains_cnt, 'markups_count':markups_cnt }
         return chains
-    
+
+
     def get_json_data(self, file_data):
         datasets = self.get_binded_datasets()
         file = self.prepare_file(file_data)
@@ -176,7 +188,20 @@ class DatasetMarkupsExport:
         self.stop_event.set()
         self.monitor_thread.join()
         self.log_info("Работа с файлами закончена") 
-        print("Работа с файлами закончена.", file=sys.stderr)
+        self.log_info(self.files_res)
+        # print("Работа с файлами закончена.", file=sys.stderr)
+        try:
+            url = f"{C.HOST_RESTAPI}/projects/{self.project_id}/datasets/{self.dataset_id}/on_export" 
+            self.log_info(f'prepare Url on_export: {url}')
+            files_post = list(self.files_res.values())
+            headers = { "Content-Type": "application/json" }
+            data = { "files": files_post }
+
+            response = requests.post(url, json=data, headers=headers) 
+            self.log_info(f'on_export response: {response}')
+        except Exception as e:
+            self.log_info(f'on_export response error: {e}')
+        
         # START DOCKER CREATE CONTAINER
         self.log_info('Начало запуска контейнера')
         res = mng.mng_image_run2(self.image_id, self.params)
@@ -188,9 +213,9 @@ class DatasetMarkupsExport:
         self.log_info("Start process")
         self.data_files = self.get_dataset_files(self.dataset_id)
         self.log_info(f'Files found: {len(self.data_files)} ')
-        # Запуск потоков создания файлов
         self.status = {filename["name"]: "In Progress" for filename in self.data_files}
         # print(f"{resp[0]['id']}", file=sys.stderr)
+        # Запуск потоков создания файлов
         for file in self.data_files:
             thread = threading.Thread(target=self.create_json_file, args=(file,))
             thread.start()
@@ -273,7 +298,7 @@ class DatasetMarkupsExport:
             "name": "dataset_name",
             "type_id": "dataset_type"
         }
-        type_mapping = {0: "initial", 1: "frame"}
+        type_mapping = {0: "initial", 1: "frame", 2: "skeleton", 3: "detail"}
 
         renamed_datasets = [
             {key_mapping[k]: (type_mapping[v] if k == "type_id" else v) for k, v in d.items()}
