@@ -188,12 +188,14 @@ class DatasetMarkupsExport:
         self.stop_event.set()
         self.monitor_thread.join()
         self.log_info("Работа с файлами закончена") 
-        self.log_info(self.files_res)
+        self.close_idle()
+        # self.log_info(self.files_res)
         # print("Работа с файлами закончена.", file=sys.stderr)
         try:
             url = f"{C.HOST_RESTAPI}/projects/{self.project_id}/datasets/{self.dataset_id}/on_export" 
             self.log_info(f'prepare Url on_export: {url}')
             files_post = list(self.files_res.values())
+            self.log_info(f'Данные отправленные on_export "files": {files_post}')
             headers = { "Content-Type": "application/json" }
             data = { "files": files_post }
 
@@ -207,7 +209,6 @@ class DatasetMarkupsExport:
         res = mng.mng_image_run2(self.image_id, self.params)
         self.log_info('Окончание запуска контейнера. Результат')
         self.log_info(res)
-        self.close_idle()
 
     def run(self):
         self.log_info("Start process")
@@ -278,33 +279,20 @@ class DatasetMarkupsExport:
     def stmt_binded_datasets(self):
         return text("""
             WITH RECURSIVE dataset_hierarchy AS (
-                SELECT id, parent_id, name, type_id
+                SELECT id as dataset_id, parent_id as dataset_parent_id, name as dataset_name, type_id as dataset_type
                 FROM public.datasets
                 WHERE id = :dataset_id
                 UNION ALL
-                SELECT d.id, d.parent_id, d.name, d.type_id
+                SELECT d.id as dataset_id, d.parent_id as dataset_parent_id, d.name, d.type_id
                 FROM public.datasets d
-                JOIN dataset_hierarchy dh ON d.id = dh.parent_id
+                JOIN dataset_hierarchy dh ON d.id = dh.dataset_parent_id
             )
             SELECT * FROM dataset_hierarchy;
         """)
 
     def get_binded_datasets(self):
-        datasets = self.exec_query( self.stmt_binded_datasets(), {"dataset_id": self.dataset_id })
-
-        key_mapping = {
-            "id": "dataset_id",
-            "parent_id": "dataset_parent_id",
-            "name": "dataset_name",
-            "type_id": "dataset_type"
-        }
-        type_mapping = {0: "initial", 1: "frame", 2: "skeleton", 3: "detail"}
-
-        renamed_datasets = [
-            {key_mapping[k]: (type_mapping[v] if k == "type_id" else v) for k, v in d.items()}
-            for d in datasets
-        ]
-        return renamed_datasets
+        datasets = self.exec_query( self.stmt_binded_datasets(), {"dataset_id": self.dataset_id }) 
+        return datasets
     
     
     def close_idle(self):
