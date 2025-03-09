@@ -278,7 +278,7 @@ class ImportAnnJsonToDB:
 
     def run_monitor_thread(self):
         # Запуск обработки файлов в нескольких потоках
-        with ThreadPoolExecutor(max_workers=2) as executor:  # 5 потоков (можно увеличить)
+        with ThreadPoolExecutor(max_workers=C.SET_MAX_WORKERS) as executor:  # 5 потоков (можно увеличить)
             executor.map(self.process_json_file, self.files)
 
         try:

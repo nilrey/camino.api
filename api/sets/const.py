@@ -25,6 +25,8 @@ PARAM_NO_TRUNC = " --no-trunc "
 BLOCK_LIST_IMAGES = ['idockerapi', 'vdbr/grafana', 'camino-camino-plugins', 'vdbr/monitor', 'vdbr/test', 'elestio/pgadmin', 'jrottenberg/ffmpeg', 'yiisoftware/yii2-php', 'postgres', 'inevm/camino', 'grafana/grafana-enterprise', 'postgres', 'prom/node-exporter', 'ubuntu/prometheus', 'gcr.io/cadvisor/cadvisor']
 BLOCK_LIST_CONTAINERS = ['camino-back', 'camino-pgdb', 'camino-restapi', 'camino-front', 'camino-plugins', 'camino-pgadmin', 'node-exporter']
 
+SET_MAX_WORKERS = 4
+
 # DB_SCHEMA = 'public'
 # TABLE_CHAINS = 'chains_copy'
 # TABLE_MARKUPS = 'markups_copy'
