@@ -9,8 +9,7 @@ from api.manage.manage import *
 from api.lib.reqest_classes import *
 from api.format.exceptions import http_exception_handler, NotFoundError
 import datetime as dt
-from api.lib.classJsonSaveDB import *
-from api.lib.classDatasetMarkupsExport import *
+from api.lib.classExportDBToAnnJson import *
 import requests
 
 
@@ -125,18 +124,6 @@ async def api_delete_project(projectId):
 
 
 @projects.post("/{projectId}/datasets/{datasetId}/import", summary="Загрузка датасета из JSON файлов")
-async def api_parse_output(request: Request,
-      projectId:str,
-      datasetId:str,
-      parse_data:ANNParseOutput
-   ):
-   resp = ParseJsonToDB(projectId, datasetId, parse_data.files)
-   res = resp.start_parser()
-   # return mng_parse_ann_output(parse_data.target_dir)
-   return res
-
-
-@projects.post("/{projectId}/datasets/{datasetId}/import/new", summary="Загрузка датасета из JSON файлов")
 async def api_import_json_to_db(request: Request,
       projectId:str,
       datasetId:str,
@@ -174,12 +161,12 @@ async def api_docker_image_create(request: Request,
    return mng_container_create(imageId, ContCreate.getAllParams() )
 
 
-@docker_images.post("/{imageId}/run/old", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
-async def api_docker_image_run2(request: Request,
-      imageId:str,
-      imrun: ImageRun
-   ):
-   return mng_image_run2(imageId, imrun.getAllParams() )
+# @docker_images.post("/{imageId}/run/old", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
+# async def api_docker_image_run2(request: Request,
+#       imageId:str,
+#       imrun: ImageRun
+#    ):
+#    return mng_image_run2(imageId, imrun.getAllParams() )
 
 
 @docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")

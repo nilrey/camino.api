@@ -8,7 +8,7 @@ import api.sets.const as C
 import time 
 from api.lib.func_ann_out_db_save import ann_out_db_save as save_output
 import api.lib.func_utils as fu
-from api.lib.classDatasetMarkupsExport import *
+from api.lib.classExportDBToAnnJson import *
 from api.lib.classImportAnnJsonToDB import *
 import requests
 

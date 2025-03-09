@@ -95,7 +95,7 @@ class ImportAnnJsonToDB:
             host=config['host'],
             port=config['port'],
         )
-        self.logger.info(f"Данные подключения: хост: {config['host']},  название БД: {config['database']}")
+        # self.logger.info(f"Данные подключения: хост: {config['host']},  название БД: {config['database']}")
         return conn 
         
     def close_idle(self):
@@ -211,11 +211,9 @@ class ImportAnnJsonToDB:
                 
                 # Обрабатываем файлы
                 if (file_id):
-                    self.logger.info('Перед получением parser')
                     parser = ijson.items(file, "files.item.file_chains.item")  # Извлекаем цепочки напрямую
-                    self.logger.info('После получения parser')
                     for cnt, chain in enumerate(parser):
-                        self.logger.info(f'Chain: {cnt}')              
+                        # self.logger.info(f'Chain: {cnt}')              
                         chain_id = self.exec_insert( cursor, self.insert_chain_query(), 
                             (
                                 self.dataset_id, 
@@ -227,7 +225,7 @@ class ImportAnnJsonToDB:
                                 chain.get("chain_confidence", None),
                             )
                         ) 
-                        self.logger.info(f'chain_id: {chain_id}')
+                        # self.logger.info(f'chain_id: {chain_id}')
 
                         if( chain_id ):
                             chain_success += 1
@@ -247,8 +245,9 @@ class ImportAnnJsonToDB:
                                 ) 
                                 # self.logger.info(f'markup_id: {markup_id}')
                                 if( markup_id ):
+                                    markup_success += 1
                                     self.exec_insert(cursor, self.insert_chain_markup_query(), ( chain_id, markup_id))
-                        if( cnt > 0 and cnt % 100 == 0):
+                        if( cnt > 0 and cnt % 10 == 0):
                             self.logger.info(f'{file_name} Обработано: Chains: {cnt}')
                         del chain  # Удаляем обработанный объект, чтобы освободить память
                         gc.collect() 
@@ -283,17 +282,17 @@ class ImportAnnJsonToDB:
             executor.map(self.process_json_file, self.files)
 
         try:
-            url = f"{C.HOST_RESTAPI}/projects/{self.project_id}/datasets/{self.dataset_id}/on_export" 
-            self.logger.info(f'prepare Url on_export: {url}')
+            url = f"{C.HOST_RESTAPI}/projects/{self.project_id}/datasets/{self.dataset_id}/on_import" 
+            self.logger.info(f'prepare Url on_import: {url}')
             files_post = list(self.files_res.values())
-            self.logger.info(f'Данные отправленные on_export "files": {files_post}')
+            self.logger.info(f'Данные отправленные on_import "files": {files_post}')
             headers = { "Content-Type": "application/json" }
             data = { "files": files_post }
 
             response = requests.post(url, json=data, headers=headers) 
-            self.logger.info(f'on_export response: {response}')
+            self.logger.info(f'on_import response: {response}')
         except Exception as e:
-            self.logger.info(f'on_export response error: {e}')
+            self.logger.info(f'on_import response error: {e}')
 
         self.close_idle()
         self.time_end = time.time()

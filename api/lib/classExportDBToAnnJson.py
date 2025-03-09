@@ -298,12 +298,4 @@ class DatasetMarkupsExport:
     def close_idle(self):
         stmt = text('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = \'idle\' AND pid <> pg_backend_pid()')
         self.exec_query(stmt, {}, True)
-        return True
-
-if __name__ == "__main__":
-    # project_id='fc3108a6-7b57-11ef-b77b-0242ac140002'
-    # dataset_id='03dfeb68-7cb5-11ef-84e7-0242ac140002'
-    project_id='32c92072-857d-11ef-8c09-0242ac140002'
-    dataset_id='b1e57392-87c1-11ef-8658-0242ac140002'
-    manager = DatasetMarkupsExport(project_id, dataset_id)
-    manager.run()
+        return True 
