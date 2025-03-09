@@ -6,12 +6,14 @@ from api.lib.func_datetime import *
 from api.lib.classResponseMessage import responseMessage
 import json
 import ijson
+import requests
 import psycopg2
 import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from configparser import ConfigParser
 import logging
+import gc
 
 class ImportAnnJsonToDB:
 
@@ -27,6 +29,7 @@ class ImportAnnJsonToDB:
         self.author_id = None
         self.dir_json = f"/projects_data/{self.project_id}/{self.dataset_id}/markups_out" # директория импорта - файлы json от ИНС 
         self.color_set = [ "6b8e23", "a0522d", "00ff00", "778899", "00fa9a", "000080", "00ffff", "ff0000", "ffa500", "ffff00", "0000ff", "ff00ff", "1e90ff", "ff1493", "ffe4b5"]
+        self.files_res = {}
         self.logname = get_dt_now_noms()
         self.message = responseMessage()
         self.logger = self.init_logger()
@@ -63,12 +66,10 @@ class ImportAnnJsonToDB:
         else:
             self.logger.error(m)
             self.message.setError(m)
-    
 
     def get_color(self, i):
         color_count = len(self.color_set)
         return self.color_set[ i % color_count ]
-
 
     def load_config(self, filename='/code/api/database/database.ini', section='postgresql'):
         parser = ConfigParser()
@@ -97,21 +98,19 @@ class ImportAnnJsonToDB:
         self.logger.info(f"Данные подключения: хост: {config['host']},  название БД: {config['database']}")
         return conn 
         
+    def close_idle(self):
+        conn = self.get_connect()
+        cursor = conn.cursor()
+        cursor.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = \'idle\' AND pid <> pg_backend_pid()")
     
     def insert_chain_query(self):
-        return """
-            INSERT INTO chains (id, dataset_id, file_id, name, vector, author_id, color, confidence )
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """
+        return "INSERT INTO chains ( dataset_id, file_id, name, vector, author_id, color, confidence ) VALUES ( %s, %s, %s, %s, %s, %s, %s) RETURNING id"
 
     def insert_markup_query(self):
-        return """
-            INSERT INTO markups (id, dataset_id, file_id, mark_frame, mark_time, vector, mark_path)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
+        return "INSERT INTO markups ( dataset_id, file_id, mark_frame, mark_time, vector, mark_path, author_id, confidence) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id "
 
     def insert_chain_markup_query(self):
-        return "INSERT INTO markups_chains (chain_id, markup_id) VALUES (%s, %s)"
+        return "INSERT INTO markups_chains (chain_id, markup_id) VALUES (%s, %s) RETURNING markup_id"
 
     def stmt_dataset_parent_id(self):
         return "SELECT d2.id FROM datasets d1 , datasets d2 where d1.project_id = d2.project_id and d2.parent_id is null and d1.id = %s"
@@ -146,11 +145,10 @@ class ImportAnnJsonToDB:
         self.logger.info(f'Поиск author_id. Подключение к базе.' )
         conn = self.get_connect()
         cursor = conn.cursor()
-        author = ()
         try:
             cursor.execute(self.stmt_author_id(), (user_login,))
             author = cursor.fetchone()
-            if(len(author) > 0):
+            if(author):
                 self.author_id = author[0]
                 self.logger.info(f'author_id = {self.author_id}')
             else:
@@ -176,18 +174,15 @@ class ImportAnnJsonToDB:
             self.log(f'{file_name}: file_id не найден . Параметры поиска: dataset_parent_id={self.dataset_parent_id}, fname={fname}')
             self.logger.info( cursor.mogrify(f'{file_name}: {self.stmt_file_id()}', (self.dataset_parent_id, fname) ).decode('utf-8'))
 
-        return file_id
+        return file_id  
     
-    def get_confidence(self, chain):
-        confidence = 0.0
-        if(chain.get('chain_confidence')):
-            confidence = chain['chain_confidence']
-        return confidence
-    
-    def exec_query(self, cursor, method_name, query_params, count_success = 0):
+    def exec_insert(self, cursor, method_name, query_params, count_success = 0):
+        result_id = 0
         try:
-            cursor.execute("SAVEPOINT sp1;")
+            cursor.execute("SAVEPOINT sp1;") 
             cursor.execute(method_name, query_params)
+            result = cursor.fetchone()
+            result_id = result[0] if result else 0
             count_success += 1
         except psycopg2.IntegrityError as e:
             cursor.execute("ROLLBACK TO SAVEPOINT sp1;")   # Очищаем состояние транзакции после ошибки
@@ -198,92 +193,82 @@ class ImportAnnJsonToDB:
         finally:
             cursor.execute("RELEASE SAVEPOINT sp1;") 
 
-        return count_success
+        return result_id
 
-    
+
     def process_json_file(self, file_name):
-        chain_total = markup_total = chain_success = markup_success = 0  
+        chain_success = markup_success = 0  
         start_time = time.time()
-
         file_path = f'{self.dir_json}/{file_name}'
         try:
             # self.logger.info(f"Начало обработки {file_path}")
-            with open(file_path, "r", encoding="utf-8") as file:
-                parser = ijson.items(file, "files.item")
-                for file_entry in parser:
-                    for chain in file_entry["file_chains"]:
-                        self.logger.info(f'{file_name}: chain {chain["chain_id"]}' )       
+            with open(file_path, "r", encoding="utf-8") as file: 
+                self.logger.info(f'{file_name}: Подключение к БД ' )
+                conn = self.get_connect()
+                cursor = conn.cursor()
+
+                file_id = self.get_file_id_by_name(cursor, file_name)
                 
-                # data = json.load(file)
+                # Обрабатываем файлы
+                if (file_id):
+                    self.logger.info('Перед получением parser')
+                    parser = ijson.items(file, "files.item.file_chains.item")  # Извлекаем цепочки напрямую
+                    self.logger.info('После получения parser')
+                    for cnt, chain in enumerate(parser):
+                        self.logger.info(f'Chain: {cnt}')              
+                        chain_id = self.exec_insert( cursor, self.insert_chain_query(), 
+                            (
+                                self.dataset_id, 
+                                file_id, 
+                                chain.get("chain_name", None),
+                                chain.get("chain_vector", None),
+                                self.author_id,
+                                self.get_color(cnt),
+                                chain.get("chain_confidence", None),
+                            )
+                        ) 
+                        self.logger.info(f'chain_id: {chain_id}')
 
-                # data_files = data.get("files", [])
-                # if data_files:
-                #     file_chains = data_files[0].get("file_chains", [])
-                #     chain_total = len(file_chains)
-                #     markup_total = sum(len(chain.get("chain_markups", [])) for chain in file_chains)
+                        if( chain_id ):
+                            chain_success += 1
+                            for cnt2, markup in enumerate(chain.get("chain_markups", [])):
+                                # self.logger.info(f'markup {cnt2}')
+                                markup_id = self.exec_insert(cursor, self.insert_markup_query(), 
+                                    (
+                                        self.dataset_id, 
+                                        file_id, 
+                                        markup.get("markup_frame", None),
+                                        markup.get("markup_time", None),
+                                        markup.get("markup_vector", None),
+                                        json.dumps(markup.get("markup_path", None)),
+                                        self.author_id,
+                                        markup.get("markup_confidence", None)
+                                    )
+                                ) 
+                                # self.logger.info(f'markup_id: {markup_id}')
+                                if( markup_id ):
+                                    self.exec_insert(cursor, self.insert_chain_markup_query(), ( chain_id, markup_id))
+                        if( cnt > 0 and cnt % 100 == 0):
+                            self.logger.info(f'{file_name} Обработано: Chains: {cnt}')
+                        del chain  # Удаляем обработанный объект, чтобы освободить память
+                        gc.collect() 
+                else:
+                    self.logger.error(f"{file_name} file_id NOT passed : {file_id}")
+                # Фиксация транзакции
+                self.logger.info(f'chain_success: {chain_success}')
+                if ( chain_success > 0 ) :
+                    try:
+                        conn.commit()
+                        self.logger.info(f"{file_name} добавлено записей: Chains = {chain_success}. Markups: {markup_success}")
+                        self.files_res[file_id] = {'name': file_name, 'chains_count':chain_success, 'markups_count':markup_success }
+                    except psycopg2.DatabaseError as e:
+                        conn.rollback()
+                        self.logger.error(f"Ошибка при commit(): {e}")
+                else:
+                    self.logger.error("Данные не добавлены.")
 
-                # self.logger.info(f'{file_name}: найдено: Chains {chain_total}, Markups {markup_total}')
-
-                # self.logger.info(f'{file_name}: Подключение к БД ' )
-                # conn = self.get_connect()
-                # cursor = conn.cursor()
-
-                # file_id = self.get_file_id_by_name(cursor, file_name)
-                
-                # # Обрабатываем файлы
-                # if (file_id):
-                #     for file_entry in data_files:
-                #         file_chains = file_entry.get("file_chains", []) 
-                #         for cnt, chain in enumerate(file_chains):  
-                #             chain_result = self.exec_query( cursor, self.insert_chain_query(), 
-                #                 (
-                #                     chain["chain_id"], 
-                #                     self.dataset_id, 
-                #                     file_id, 
-                #                     chain["chain_name"], 
-                #                     json.dumps(chain["chain_vector"]),
-                #                     self.author_id,
-                #                     self.get_color(cnt),
-                #                     self.get_confidence(chain)
-                #                 )
-                #             ) 
-
-                #             if( chain_result > 0 ):
-                #                 chain_success += 1
-                #                 for markup in chain.get("chain_markups", []):  
-                #                     # Вставляем в таблицу markups 
-                #                     markup_result = self.exec_query(cursor, self.insert_markup_query(), 
-                #                         (
-                #                             markup["markup_id"], 
-                #                             self.dataset_id, 
-                #                             file_id, 
-                #                             markup["markup_frame"], 
-                #                             markup["markup_time"], 
-                #                             json.dumps(markup["markup_vector"]), 
-                #                             json.dumps(markup["markup_path"])
-                #                         )
-                #                     ) 
-                #                     if(markup_result > 0 ):
-                #                         markup_success += 1
-                #                         self.exec_query(cursor, self.insert_chain_markup_query(), (chain["chain_id"], markup["markup_id"]))
-                #             if( cnt % 100 == 0):
-                #                 self.logger.info(f'{file_name} Обработано: Chains: {cnt} из {chain_total}')
-                # else:
-                #     self.logger.error(f"{file_name} file_id NOT passed : {file_id}")
-                # # Фиксация транзакции
-                # if ( chain_success > 0 and markup_success >  0 ) :
-                #     try:
-                #         conn.commit()
-                #         self.logger.info(f"{file_name} добавлено записей: Chains = {chain_success} из {chain_total}. Markups: {markup_success} из {markup_total}")
-                #     except psycopg2.DatabaseError as e:
-                #         conn.rollback()
-                #         self.logger.error(f"Ошибка при commit(): {e}")
-                # else:
-                #     self.logger.error("Данные не добавлены.")
-
-                # cursor.close()
-                # conn.close()                   
-                
+                cursor.close()
+                conn.close()                   
             
         except Exception as e:
             print(f"Произошла ошибка при открытии файла {file_name}: {e}")
@@ -296,7 +281,21 @@ class ImportAnnJsonToDB:
         # Запуск обработки файлов в нескольких потоках
         with ThreadPoolExecutor(max_workers=2) as executor:  # 5 потоков (можно увеличить)
             executor.map(self.process_json_file, self.files)
-        
+
+        try:
+            url = f"{C.HOST_RESTAPI}/projects/{self.project_id}/datasets/{self.dataset_id}/on_export" 
+            self.logger.info(f'prepare Url on_export: {url}')
+            files_post = list(self.files_res.values())
+            self.logger.info(f'Данные отправленные on_export "files": {files_post}')
+            headers = { "Content-Type": "application/json" }
+            data = { "files": files_post }
+
+            response = requests.post(url, json=data, headers=headers) 
+            self.logger.info(f'on_export response: {response}')
+        except Exception as e:
+            self.logger.info(f'on_export response error: {e}')
+
+        self.close_idle()
         self.time_end = time.time()
         self.logger.info(f"Окончание работы. Время работы скрипта {self.time_end - self.time_start:.2f} сек")
             
