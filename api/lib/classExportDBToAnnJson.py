@@ -122,7 +122,7 @@ class DatasetMarkupsExport:
             chain["chain_markups"] = markups
             markups_cnt += len(markups)
 
-        self.files_res[file['id']] = {'name': file['name'], 'chains_count':chains_cnt, 'markups_count':markups_cnt }
+        self.files_res[file['id']] = {'name': file['name'], 'file_id': file['id'], 'chains_count':chains_cnt, 'markups_count':markups_cnt }
         return chains
 
 

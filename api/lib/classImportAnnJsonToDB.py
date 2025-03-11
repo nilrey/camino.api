@@ -258,13 +258,14 @@ class ImportAnnJsonToDB:
                 if ( chain_success > 0 ) :
                     try:
                         conn.commit()
-                        self.logger.info(f"{file_name} добавлено записей: Chains = {chain_success}. Markups: {markup_success}")
-                        self.files_res[file_id] = {'name': file_name, 'chains_count':chain_success, 'markups_count':markup_success }
                     except psycopg2.DatabaseError as e:
                         conn.rollback()
                         self.logger.error(f"Ошибка при commit(): {e}")
                 else:
                     self.logger.error("Данные не добавлены.")
+
+                self.logger.info(f"{file_name} добавлено записей: Chains = {chain_success}. Markups: {markup_success}")
+                self.files_res[file_id] = {'name': file_name, 'file_id': file_id, 'chains_count':chain_success, 'markups_count':markup_success }
 
                 cursor.close()
                 conn.close()                   
