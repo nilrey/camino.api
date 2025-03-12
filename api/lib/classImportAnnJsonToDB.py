@@ -8,6 +8,8 @@ import json
 import ijson
 import requests
 import psycopg2
+import uuid
+from decimal import Decimal
 import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
@@ -70,6 +72,28 @@ class ImportAnnJsonToDB:
     def get_color(self, i):
         color_count = len(self.color_set)
         return self.color_set[ i % color_count ]
+
+
+    @staticmethod
+    def convert_to_serializable(obj):
+        # Преобразует объекты, которые не поддерживаются JSON (UUID, datetime, Decimal, JSON-строки).
+        if isinstance(obj, uuid.UUID):
+            return str(obj)  # UUID -> строка
+        elif isinstance(obj, datetime):
+            return obj.isoformat()  # Дата -> ISO 8601
+        elif isinstance(obj, Decimal):
+            return float(obj)  # Decimal -> float
+        elif isinstance(obj, str):  
+            try:
+                return json.loads(obj)  # Пробуем распарсить JSON-строку
+            except (json.JSONDecodeError, TypeError):
+                return obj  # Оставляем как есть, если это не JSON
+        elif isinstance(obj, list):  
+            return [ImportAnnJsonToDB.convert_to_serializable(i) for i in obj]
+        elif isinstance(obj, dict):  
+            return {k: ImportAnnJsonToDB.convert_to_serializable(v) for k, v in obj.items()}
+        return obj  # Остальное оставляем без изменений
+    
 
     def load_config(self, filename='/code/api/database/database.ini', section='postgresql'):
         parser = ConfigParser()
@@ -213,13 +237,14 @@ class ImportAnnJsonToDB:
                 if (file_id):
                     parser = ijson.items(file, "files.item.file_chains.item")  # Извлекаем цепочки напрямую
                     for cnt, chain in enumerate(parser):
-                        # self.logger.info(f'Chain: {cnt}')              
+                        # self.logger.info(f'Chain: {cnt}')      
+                        chain_vector = json.dumps(self.convert_to_serializable(chain.get("chain_vector", [])))
                         chain_id = self.exec_insert( cursor, self.insert_chain_query(), 
                             (
                                 self.dataset_id, 
                                 file_id, 
                                 chain.get("chain_name", None),
-                                chain.get("chain_vector", None),
+                                chain_vector,
                                 self.author_id,
                                 self.get_color(cnt),
                                 chain.get("chain_confidence", None),
@@ -231,14 +256,15 @@ class ImportAnnJsonToDB:
                             chain_success += 1
                             for cnt2, markup in enumerate(chain.get("chain_markups", [])):
                                 # self.logger.info(f'markup {cnt2}')
+                                markup_vector = json.dumps(self.convert_to_serializable(markup.get("markup_vector", [])))
                                 markup_id = self.exec_insert(cursor, self.insert_markup_query(), 
                                     (
                                         self.dataset_id, 
                                         file_id, 
                                         markup.get("markup_frame", None),
                                         markup.get("markup_time", None),
-                                        markup.get("markup_vector", None),
-                                        json.dumps(markup.get("markup_path", None)),
+                                        markup_vector,
+                                        json.dumps(markup.get("markup_path", {})),
                                         self.author_id,
                                         markup.get("markup_confidence", None)
                                     )
