@@ -94,6 +94,17 @@ class ImportAnnJsonToDB:
             return {k: ImportAnnJsonToDB.convert_to_serializable(v) for k, v in obj.items()}
         return obj  # Остальное оставляем без изменений
     
+    def get_file_id(self, file_path):
+        with open(file_path, "r", encoding="utf-8") as file:
+            parser = ijson.parse(file)
+            is_first_file = False
+            for prefix, event, value in parser:
+                if (prefix == "files.item" and event == "start_map"):
+                    is_first_file = True  # Нашли первый элемент списка files
+                if (is_first_file and prefix == "files.item.file_id" and event == "string"):
+                    return value
+        return None     
+
 
     def load_config(self, filename='/code/api/database/database.ini', section='postgresql'):
         parser = ConfigParser()
@@ -131,16 +142,13 @@ class ImportAnnJsonToDB:
         return "INSERT INTO chains ( dataset_id, file_id, name, vector, author_id, color, confidence ) VALUES ( %s, %s, %s, %s, %s, %s, %s) RETURNING id"
 
     def insert_markup_query(self):
-        return "INSERT INTO markups ( dataset_id, file_id, mark_frame, mark_time, vector, mark_path, author_id, confidence) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id "
+        return "INSERT INTO markups ( dataset_id, file_id, parent_id, mark_frame, mark_time, vector, mark_path, author_id, confidence) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id "
 
     def insert_chain_markup_query(self):
         return "INSERT INTO markups_chains (chain_id, markup_id) VALUES (%s, %s) RETURNING markup_id"
 
     def stmt_dataset_parent_id(self):
         return "SELECT d2.id FROM datasets d1 , datasets d2 where d1.project_id = d2.project_id and d2.parent_id is null and d1.id = %s"
-
-    def stmt_file_id(self):
-        return "SELECT f.id FROM files f  WHERE f.dataset_id = %s and f.name = %s"
 
     def stmt_author_id(self):
         return "SELECT u.id FROM users u  WHERE u.login = %s"
@@ -185,21 +193,7 @@ class ImportAnnJsonToDB:
 
         return True
     
-    def get_file_id_by_name(self, cursor, file_name):
-        file_id = None
-        self.logger.info(f'{file_name}: Начинаем поиск file_id ' )
-        fname = file_name.replace('.json', '') 
-        cursor.execute(self.stmt_file_id(), (self.dataset_parent_id, fname))
-        file = cursor.fetchone()
-        if(len(file) > 0):
-            file_id = file[0]
-            self.logger.info(f'{file_name}: file_id = {file_id}')
-        else:
-            self.log(f'{file_name}: file_id не найден . Параметры поиска: dataset_parent_id={self.dataset_parent_id}, fname={fname}')
-            self.logger.info( cursor.mogrify(f'{file_name}: {self.stmt_file_id()}', (self.dataset_parent_id, fname) ).decode('utf-8'))
 
-        return file_id  
-    
     def exec_insert(self, cursor, method_name, query_params, count_success = 0):
         result_id = 0
         try:
@@ -224,17 +218,19 @@ class ImportAnnJsonToDB:
         chain_success = markup_success = 0  
         start_time = time.time()
         file_path = f'{self.dir_json}/{file_name}'
-        try:
-            # self.logger.info(f"Начало обработки {file_path}")
-            with open(file_path, "r", encoding="utf-8") as file: 
-                self.logger.info(f'{file_name}: Подключение к БД ' )
-                conn = self.get_connect()
-                cursor = conn.cursor()
 
-                file_id = self.get_file_id_by_name(cursor, file_name)
-                
-                # Обрабатываем файлы
-                if (file_id):
+        file_id = self.get_file_id(file_path)
+        self.logger.info(f'{file_name}: files.file.file_id = {file_id}')
+        if (file_id):
+            try:
+                # self.logger.info(f"Начало обработки {file_path}")
+                with open(file_path, "r", encoding="utf-8") as file: 
+                    self.logger.info(f'{file_name}: Подключение к БД ' )
+                    conn = self.get_connect()
+                    cursor = conn.cursor()
+                    
+                    
+                    # Обрабатываем файлы
                     parser = ijson.items(file, "files.item.file_chains.item")  # Извлекаем цепочки напрямую
                     for cnt, chain in enumerate(parser):
                         # self.logger.info(f'Chain: {cnt}')      
@@ -261,10 +257,11 @@ class ImportAnnJsonToDB:
                                     (
                                         self.dataset_id, 
                                         file_id, 
+                                        markup.get("markup_parent_id", None),
                                         markup.get("markup_frame", None),
                                         markup.get("markup_time", None),
                                         markup_vector,
-                                        json.dumps(markup.get("markup_path", {})),
+                                        json.dumps(self.convert_to_serializable(markup.get("markup_path", {}))),
                                         self.author_id,
                                         markup.get("markup_confidence", None)
                                     )
@@ -277,35 +274,36 @@ class ImportAnnJsonToDB:
                             self.logger.info(f'{file_name} Обработано: Chains: {cnt}')
                         del chain  # Удаляем обработанный объект, чтобы освободить память
                         gc.collect() 
-                else:
-                    self.logger.error(f"{file_name} file_id NOT passed : {file_id}")
-                # Фиксация транзакции
-                self.logger.info(f'chain_success: {chain_success}')
-                if ( chain_success > 0 ) :
-                    try:
-                        conn.commit()
-                    except psycopg2.DatabaseError as e:
-                        conn.rollback()
-                        self.logger.error(f"Ошибка при commit(): {e}")
-                else:
-                    self.logger.error("Данные не добавлены.")
+                    # Фиксация транзакции
+                    self.logger.info(f'chain_success: {chain_success}')
+                    if ( chain_success > 0 ) :
+                        try:
+                            conn.commit()
+                        except psycopg2.DatabaseError as e:
+                            conn.rollback()
+                            self.logger.error(f"Ошибка при commit(): {e}")
+                    else:
+                        self.logger.error("Данные не добавлены.")
 
-                self.logger.info(f"{file_name} добавлено записей: Chains = {chain_success}. Markups: {markup_success}")
-                self.files_res[file_id] = {'name': file_name, 'file_id': file_id, 'chains_count':chain_success, 'markups_count':markup_success }
+                    self.logger.info(f"{file_name} добавлено записей: Chains = {chain_success}. Markups: {markup_success}")
+                    self.files_res[file_id] = {'name': file_name, 'file_id': file_id, 'chains_count':chain_success, 'markups_count':markup_success }
 
-                cursor.close()
-                conn.close()                   
-            
-        except Exception as e:
-            print(f"Произошла ошибка при открытии файла {file_name}: {e}")
-            
+                    cursor.close()
+                    conn.close()                   
+                
+            except Exception as e:
+                self.logger.error(f"Произошла ошибка при открытии файла {file_name}: {e}")
+
+        else:
+            self.logger.error(f"{file_name} file_id not correct : {file_id}")
+
         end_time = time.time()
         self.logger.info(f"{file_name} обработан за {end_time - start_time:.2f} сек")
         
 
     def run_monitor_thread(self):
         # Запуск обработки файлов в нескольких потоках
-        with ThreadPoolExecutor(max_workers=C.SET_MAX_WORKERS) as executor:  # 5 потоков (можно увеличить)
+        with ThreadPoolExecutor(max_workers=C.SET_MAX_WORKERS) as executor:
             executor.map(self.process_json_file, self.files)
 
         try:
@@ -338,7 +336,11 @@ class ImportAnnJsonToDB:
                 # Запуск мониторинга
                 self.get_dataset_parent_id()
                 self.get_author_id('manager')
-                if(self.dataset_parent_id and self.author_id):
+                if( not self.dataset_parent_id):
+                    self.log(f"Ошибка: dataset parent_id: {self.dataset_parent_id}", True)
+                elif( not self.author_id):
+                    self.log(f"Ошибка: dataset author_id: {self.author_id}", True)
+                else:
                     self.monitor_thread = threading.Thread(target=self.run_monitor_thread)
                     self.monitor_thread.start()
                     self.log(f"Данные получены. Файлов в обработке: {len(self.files)}")

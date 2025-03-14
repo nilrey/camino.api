@@ -133,7 +133,7 @@ async def api_import_json_to_db(request: Request,
 
 
 
-@projects.post("/{projectId}/datasets/{datasetId}/export", summary="Загрузка датасета из JSON файлов")
+@projects.post("/{projectId}/datasets/{datasetId}/export", summary="Запускает процесс формирования JSON файлов разметки датасета и возвращает признак успешного начала операции. По окончании операции вызывается соотв. роут export on_save")
 async def api_export_db_to_json(request: Request,
       projectId:str,
       datasetId:str,

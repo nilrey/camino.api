@@ -245,6 +245,9 @@ class DatasetMarkupsExport:
             self.log_info(f'parent_dataset_id = {parent_dataset_id[0]["id"]}')
             stmt = text("SELECT * FROM files f  WHERE f.dataset_id = :dataset_id AND f.is_deleted = false")
             files = self.exec_query(stmt, {"dataset_id" : parent_dataset_id[0]['id']} , False)
+            # self.log_info(files)
+            # if(len(self.only_selected_files) > 0 ):
+
         else:
             self.log_info(f'Error: parent_dataset_id is null')
             files = []
@@ -270,7 +273,7 @@ class DatasetMarkupsExport:
 
     def stmt_markups(self):
         return text("""
-            SELECT m.id as markup_id, m.mark_frame as markup_frame, m.mark_time as markup_time, m.vector as markup_vector, m.mark_path as markup_path 
+            SELECT m.id as markup_id, m.mark_frame as markup_frame, m.mark_time as markup_time, m.vector as markup_vector, m.parent_id as markup_parent_id, m.mark_path as markup_path 
             FROM markups_chains mc
             JOIN markups m ON mc.markup_id = m.id 
             WHERE mc.chain_id = :chain_id
