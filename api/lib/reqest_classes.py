@@ -11,7 +11,9 @@ class ImageRun(BaseModel):
    markups:str = Field(default="")
    video_storage:str = Field(default="")
    network:str = Field(default="")
-   # host_web:str = Field(default="")
+   dataset_id:str = Field(default="")
+   only_verified_chains:bool = Field(default=True)
+   only_selected_files: list = Field(default=[])
    
 
    def getAllParams(self):
@@ -24,7 +26,21 @@ class ImageRun(BaseModel):
             'markups': self.markups, 
             'video_storage': self.video_storage, 
             'network': self.network, 
-            # 'host_web': self.host_web, 
+            'dataset_id': self.dataset_id, 
+            'only_verified_chains': self.only_verified_chains, 
+            'only_selected_files': self.only_selected_files
+            }
+
+
+class DbExportParams(BaseModel):
+   target_dir:str = Field(default="")
+   only_verified_chains:bool = Field(default=True)
+   only_selected_files: list = Field(default=[])
+
+   def getAllParams(self):
+      return {'target_dir': self.target_dir, 
+            'only_verified_chains': self.only_verified_chains, 
+            'only_selected_files': self.only_selected_files
             }
    
 

@@ -19,23 +19,46 @@ import api.manage.manage as mng
 
 class DatasetMarkupsExport:
     # выгрузка данных из БД в json и запуск контейнера из образа 
-    def __init__(self, image_id, params): 
-        self.data_files = {}
-        self.image_id = image_id
-        self.params = params
-        self.dataset_id = self.params['markups'].split('/')[-2]
-        self.project_id = self.params['markups'].split('/')[-3]
-        self.status = {}
-        self.errors = {}
-        self.stop_event = threading.Event()
-        self.threads = []
+    def __init__(self, exp_params, img_params): 
+        self.params = exp_params
+        self.img_params = img_params
+        self.image_id = self.img_params.get('image_id', None)
+        self.dataset_id = self.get_param_dataset_id(self.params, self.img_params) 
+        self.project_id = self.get_param_project_id(self.params, self.img_params)
+        self.only_verified_chains = self.params.get('only_verified_chains', True)
+        self.only_selected_files = self.params.get('only_selected_files', [])        
         self.monitor_thread = None
         self.wait_thread = None
-        self.output_dir = f"/projects_data/{self.project_id}/{self.dataset_id}/markups_in" # директория с файлами json от ИНС
+        self.output_dir = self.get_param_output_dir(self.params, f"/projects_data/{self.project_id}/{self.dataset_id}/markups_in") # директория где создаются файлы json
         self.engine = create_engine(self.get_connection_string())
-        self.logname = get_dt_now_noms()+'_datasets_import.log'
+        self.logname = get_dt_now_noms()+'_db_export_json.log'
+        self.data_files = {}
+        self.status = {}
+        self.errors = {}
         self.files_res = {}
+        self.stop_event = threading.Event()
+        self.threads = []
 
+
+    def get_param_dataset_id(self, params, img_params):
+        if ( img_params.get('markups', None)):
+            resp = img_params['markups'].split('/')[-2]
+        else:
+            resp = params.get('dataset_id', None)
+        return resp
+
+    def get_param_project_id(self, params, img_params):
+        if ( img_params.get('markups', None)):
+            resp = img_params['markups'].split('/')[-3]
+        else:
+            resp = params.get('project_id', None)
+        return resp
+
+    def get_param_output_dir(self, params, output_dir):
+        if ( params.get('target_dir', None)):
+            output_dir = params['target_dir']
+        return output_dir
+    
 
     def log_info(self, mes):
         with open(C.LOG_PATH + f"/{self.logname}", "a") as file:
@@ -203,43 +226,21 @@ class DatasetMarkupsExport:
             self.log_info(f'on_export response: {response}')
         except Exception as e:
             self.log_info(f'on_export response error: {e}')
+        finally:
+            self.log_info(f'Выгрузка данных из БД в Json закончена.')
         
-        # START DOCKER CREATE CONTAINER
-        self.log_info('Начало запуска контейнера')
-        res = mng.mng_image_run2(self.image_id, self.params)
-        self.log_info('Окончание запуска контейнера. Результат')
-        self.log_info(res)
-
-    def run(self):
-        self.log_info("Start process")
-        self.data_files = self.get_dataset_files(self.dataset_id)
-        self.log_info(f'Files found: {len(self.data_files)} ')
-        self.status = {filename["name"]: "In Progress" for filename in self.data_files}
-        # print(f"{resp[0]['id']}", file=sys.stderr)
-        # Запуск потоков создания файлов
-        for file in self.data_files:
-            thread = threading.Thread(target=self.create_json_file, args=(file,))
-            thread.start()
-            self.threads.append(thread)
-
-        # Запуск мониторинга
-        self.monitor_thread = threading.Thread(target=self.monitor_threads)
-        self.monitor_thread.start()
-
-        # Запуск ожидания завершения в отдельном потоке
-        self.wait_thread = threading.Thread(target=self.wait_for_threads)
-        self.wait_thread.start()
-        files_count = len(self.data_files)
-        message = {'message': 'Файлы отправлены в обработку', 'files_count' : {files_count} }
-        self.log_info( f'Response json: {message} ' )
-        
-        return message
+        if(self.image_id): # Используем наличие image_id, в качестве признака запуска контейнера
+            # DOCKER RUN CONTAINER
+            self.log_info('Начало запуска контейнера')
+            res = mng.mng_image_run_container(self.image_id, self.img_params)
+            self.log_info('Окончание запуска контейнера. Результат')
+            self.log_info(res)
 
     def get_dataset_files(self, dataset_id):
         # получим корневой dataset id
         stmt = text("SELECT d2.id FROM datasets d1 , datasets d2 where d1.project_id = d2.project_id and d2.parent_id is null and d1.id = :dataset_id")
         parent_dataset_id = self.exec_query(stmt, {"dataset_id" : dataset_id } )
-        self.log_info(f'dataset_id = {dataset_id}')
+        # self.log_info(f'dataset_id = {dataset_id}')
         if(parent_dataset_id):
             self.log_info(f'parent_dataset_id = {parent_dataset_id[0]["id"]}')
             stmt = text("SELECT * FROM files f  WHERE f.dataset_id = :dataset_id AND f.is_deleted = false")
@@ -252,10 +253,19 @@ class DatasetMarkupsExport:
     
     def stmt_chains(self):
         return text("""SELECT c.id as chain_id, c.name as chain_name, c.vector as chain_vector 
-                    FROM chains c WHERE c.dataset_id = :dataset_id AND c.file_id = :file_id AND c.is_deleted = false""")
+                    FROM chains c WHERE c.dataset_id = :dataset_id AND c.file_id = :file_id AND c.is_deleted = false """)
+    
+    def stmt_chains_verified(self):
+        return text("""SELECT c.id as chain_id, c.name as chain_name, c.vector as chain_vector 
+                    FROM chains c WHERE c.dataset_id = :dataset_id AND c.file_id = :file_id AND c.is_deleted = false AND is_verified = true """)
         
     def get_chains(self, dataset_id, file_id):
-        chains = self.exec_query( self.stmt_chains(), {'dataset_id':dataset_id, 'file_id': file_id})
+        stmt = self.stmt_chains()
+        params = {'dataset_id':dataset_id, 'file_id': file_id}
+        if (self.only_verified_chains):
+            stmt = self.stmt_chains_verified()
+
+        chains = self.exec_query( stmt, params)
         return chains
 
     def stmt_markups(self):
@@ -299,3 +309,39 @@ class DatasetMarkupsExport:
         stmt = text('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = \'idle\' AND pid <> pg_backend_pid()')
         self.exec_query(stmt, {}, True)
         return True 
+
+
+    def run(self):
+        message = "Выгрузка данных из БД в json и запуск контейнера из образа"
+        if(self.image_id):
+            message = "Выгрузка данных из БД в json без запуска контейнера"
+
+        self.log_info(message)
+        self.log_info(f'image_id: {self.image_id}')
+        self.log_info(f'project_id: {self.project_id}')
+        self.log_info(f'dataset_id: {self.dataset_id}')
+        self.log_info(f'only_verified_chains: {self.only_verified_chains}')
+        self.log_info(f'only_selected_files: {self.only_selected_files}')
+
+        self.data_files = self.get_dataset_files(self.dataset_id)
+        self.log_info(f'Files found: {len(self.data_files)} ')
+        self.status = {filename["name"]: "In Progress" for filename in self.data_files}
+        # print(f"{resp[0]['id']}", file=sys.stderr)
+        # Запуск потоков создания файлов
+        for file in self.data_files:
+            thread = threading.Thread(target=self.create_json_file, args=(file,))
+            thread.start()
+            self.threads.append(thread)
+
+        # Запуск мониторинга
+        self.monitor_thread = threading.Thread(target=self.monitor_threads)
+        self.monitor_thread.start()
+
+        # Запуск ожидания завершения в отдельном потоке
+        self.wait_thread = threading.Thread(target=self.wait_for_threads)
+        self.wait_thread.start()
+        files_count = len(self.data_files)
+        message = {'message': 'Файлы отправлены в обработку', 'files_count' : {files_count} }
+        self.log_info( f'Response json: {message} ' )
+        
+        return message

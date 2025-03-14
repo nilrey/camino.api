@@ -132,6 +132,19 @@ async def api_import_json_to_db(request: Request,
    return mng_import_json_to_db(projectId, datasetId, parse_data)
 
 
+
+@projects.post("/{projectId}/datasets/{datasetId}/export", summary="Загрузка датасета из JSON файлов")
+async def api_export_db_to_json(request: Request,
+      projectId:str,
+      datasetId:str,
+      exparams:DbExportParams
+   ):
+   post_data = exparams.getAllParams()
+   post_data['project_id'] = projectId
+   post_data['dataset_id'] = datasetId
+   return mng_export_db_to_json(post_data)
+
+
 # DOCKER
 
 
@@ -161,20 +174,14 @@ async def api_docker_image_create(request: Request,
    return mng_container_create(imageId, ContCreate.getAllParams() )
 
 
-# @docker_images.post("/{imageId}/run/old", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
-# async def api_docker_image_run2(request: Request,
-#       imageId:str,
-#       imrun: ImageRun
-#    ):
-#    return mng_image_run2(imageId, imrun.getAllParams() )
-
-
 @docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
 async def api_docker_image_run(request: Request,
       imageId:str,
       imrun: ImageRun
    ):
-   return mng_image_run(imageId, imrun.getAllParams() )
+   post_data = imrun.getAllParams()
+   post_data['image_id'] = imageId
+   return mng_image_run( post_data)
 
 
 # ANN

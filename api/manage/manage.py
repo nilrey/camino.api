@@ -108,25 +108,31 @@ def mng_container_create(image_id, params):
    return response
 
 
-def mng_image_run2(image_id, params):
+def mng_image_run_container(image_id, params):
    response = mng_container_create(image_id, params)
    if (not response['error']): 
       response = mng_container_start(response['response'][0])
       # регистрация контейнера
-      # if (not response['error']): 
-
+      
       url = f"{C.HOST_RESTAPI}/containers/{response['id']}/on_start"
       response['dataset_id'] = params['out_dir'].split('/')[-2]
       requests.post(url, json = response)
-      
+
+      # #???? if (not response['error']):       
+      # if( response.get('id', None)):
+      #    print(f"container_id: {response['id']}", file=sys.stderr)
+      #    url = f"{C.HOST_RESTAPI}/containers/{response['id']}/on_start"
+      #    response['dataset_id'] = params['out_dir'].split('/')[-2]
+      #    requests.post(url, json = response)
       # else:
+      #    print(f"ERROR: ошибка запуска конейнера", file=sys.stderr)
       #    print(f"{response['error_descr']}", file=sys.stderr)
 
    return response
 
 
-def mng_image_run(image_id, params):
-   resp = DatasetMarkupsExport(image_id, params)
+def mng_image_run(post_data):
+   resp = DatasetMarkupsExport({}, post_data)
    res = resp.run()
    return res
 
@@ -178,6 +184,12 @@ def mng_container_stop(container_id):
 def mng_import_json_to_db(projectId, datasetId, parse_data):
 
    resp = ImportAnnJsonToDB(projectId, datasetId, parse_data.files)
+   res = resp.run()
+   return res
+
+
+def mng_export_db_to_json(post_data):
+   resp = DatasetMarkupsExport(post_data , {})
    res = resp.run()
    return res
 
