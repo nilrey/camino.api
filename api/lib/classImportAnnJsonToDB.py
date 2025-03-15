@@ -18,10 +18,10 @@ import logging
 import gc
 
 class ImportAnnJsonToDB:
-
+    
     def __init__(self, project_id, dataset_id, files):
 
-        self.LOG_FNAME = f"{datetime.now().strftime('%Y-%m-%d_%H:%M:%S.%f')}_import_json.log"
+        self.LOG_FNAME = f"{datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}_import_json.log"
         self.LOG_FILE = f'{C.LOG_PATH}/{self.LOG_FNAME}'
 
         self.project_id = project_id
