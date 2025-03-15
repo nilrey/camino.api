@@ -319,7 +319,7 @@ class ImportAnnJsonToDB:
         except Exception as e:
             self.logger.info(f'on_import response error: {e}')
 
-        self.close_idle()
+        # self.close_idle()
         self.time_end = time.time()
         self.logger.info(f"Окончание работы. Время работы скрипта {self.time_end - self.time_start:.2f} сек")
             
