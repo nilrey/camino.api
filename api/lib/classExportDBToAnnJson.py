@@ -211,7 +211,7 @@ class DatasetMarkupsExport:
         self.stop_event.set()
         self.monitor_thread.join()
         self.log_info("Работа с файлами закончена") 
-        self.close_idle()
+        # self.close_idle()
         # self.log_info(self.files_res)
         # print("Работа с файлами закончена.", file=sys.stderr)
         try:
