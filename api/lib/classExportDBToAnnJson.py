@@ -244,10 +244,14 @@ class DatasetMarkupsExport:
         if(parent_dataset_id):
             self.log_info(f'parent_dataset_id = {parent_dataset_id[0]["id"]}')
             stmt = text("SELECT * FROM files f  WHERE f.dataset_id = :dataset_id AND f.is_deleted = false")
-            files = self.exec_query(stmt, {"dataset_id" : parent_dataset_id[0]['id']} , False)
+            files = self.exec_query(stmt, {"dataset_id" : parent_dataset_id[0]['id']})
+            self.log_info(f'найдено всех файлов корневого датасета = {len(files)}')
+            # проверка на only_selected_files
             # self.log_info(files)
-            # if(len(self.only_selected_files) > 0 ):
-
+            if(len(self.only_selected_files) > 0 ):
+                self.log_info("начата фильтрация по only_selected_files")
+                files = [f for f in files if f['id'] in self.only_selected_files] 
+                        
         else:
             self.log_info(f'Error: parent_dataset_id is null')
             files = []
