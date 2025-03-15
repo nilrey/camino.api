@@ -25,7 +25,7 @@ class DatasetMarkupsExport:
         self.image_id = self.img_params.get('image_id', None)
         self.dataset_id = self.get_param_dataset_id(self.params, self.img_params) 
         self.project_id = self.get_param_project_id(self.params, self.img_params)
-        self.only_verified_chains = self.params.get('only_verified_chains', True)
+        self.only_verified_chains = self.params.get('only_verified_chains', False)
         self.only_selected_files = self.params.get('only_selected_files', [])        
         self.monitor_thread = None
         self.wait_thread = None
@@ -320,7 +320,7 @@ class DatasetMarkupsExport:
 
     def run(self):
         message = "Выгрузка данных из БД в json и запуск контейнера из образа"
-        if(self.image_id):
+        if(not self.image_id):
             message = "Выгрузка данных из БД в json без запуска контейнера"
 
         self.log_info(message)
