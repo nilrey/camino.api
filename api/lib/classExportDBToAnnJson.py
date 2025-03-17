@@ -215,7 +215,8 @@ class DatasetMarkupsExport:
         # self.log_info(self.files_res)
         # print("Работа с файлами закончена.", file=sys.stderr)
         try:
-            url = f"{C.HOST_RESTAPI}/projects/{self.project_id}/datasets/{self.dataset_id}/on_export" 
+            ds_id = self.img_params.get('dataset_id', self.dataset_id)
+            url = f"{C.HOST_RESTAPI}/projects/{self.project_id}/datasets/{ds_id}/on_export" 
             self.log_info(f'prepare Url on_export: {url}')
             files_post = list(self.files_res.values())
             self.log_info(f'Данные отправленные on_export "files": {files_post}')

@@ -12,7 +12,7 @@ class ImageRun(BaseModel):
    video_storage:str = Field(default="")
    network:str = Field(default="")
    dataset_id:str = Field(default="")
-   only_verified_chains:bool = Field(default=True)
+   only_verified_chains:bool = Field(default=False)
    only_selected_files: list = Field(default=[])
    
 
@@ -34,7 +34,7 @@ class ImageRun(BaseModel):
 
 class DbExportParams(BaseModel):
    target_dir:str = Field(default="")
-   only_verified_chains:bool = Field(default=True)
+   only_verified_chains:bool = Field(default=False)
    only_selected_files: list = Field(default=[])
 
    def getAllParams(self):

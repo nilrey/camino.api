@@ -132,7 +132,7 @@ def mng_image_run_container(image_id, params):
 
 
 def mng_image_run(post_data):
-   resp = DatasetMarkupsExport({}, post_data)
+   resp = DatasetMarkupsExport({"only_verified_chains": post_data['only_verified_chains'], "only_selected_files": post_data['only_selected_files']}, post_data)
    res = resp.run()
    return res
 
