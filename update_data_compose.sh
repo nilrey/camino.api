@@ -1,20 +1,24 @@
-# Остановка и удаление контейнеров
-echo "Stopping and removing containers..."
+#!/bin/bash
+
+set -e  # Остановить выполнение при ошибке
+
+echo "Обновление репозитория"
+sudo git pull origin main
+
+echo "Остановка и удаление контейнеров..."
 cd ../../
 sudo docker compose down
 
-# Удаление старого образа
-echo "Removing old Docker image..."
+echo "Удаление старого образа..."
+# sudo docker rm -f camino-back
 sudo docker image rm idockerapi
 
-# Пересборка образа
-echo "Building new Docker image..."
+echo "Пересборка образа..."
 cd back/camino.api
 sudo docker build -t idockerapi -f Dockerfile .
 
-# Запуск контейнеров
-echo "Starting containers..."
+echo "Запуск контейнеров..."
 cd ../../
 sudo docker compose up --build -d
 
-echo "Update completed successfully!"
+echo "Изменения внесены."
