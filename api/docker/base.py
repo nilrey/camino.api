@@ -44,7 +44,7 @@ def dkr_container_create(image_name, params):
             elif(param == 'markups'):
                 volume_markups = f' -v /family{value}:/input_data '
             elif(param == 'video_storage'):
-                volume_storage = f' -v /family{value}:/projects_data '
+                volume_storage = f' -v /family{value}:/family{value} '
             elif(param == 'network' ):
                 param_network = f' --network {value} '
             # elif(param == 'host_web' ):

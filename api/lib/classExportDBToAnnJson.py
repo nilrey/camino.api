@@ -19,7 +19,7 @@ import api.manage.manage as mng
 
 class DatasetMarkupsExport:
     # выгрузка данных из БД в json и запуск контейнера из образа 
-    def __init__(self, exp_params, img_params): 
+    def __init__(self, exp_params, img_params, export_type = 'image_run'): 
         self.params = exp_params
         self.img_params = img_params
         self.image_id = self.img_params.get('image_id', None)

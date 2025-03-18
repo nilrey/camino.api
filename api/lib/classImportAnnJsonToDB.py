@@ -337,13 +337,13 @@ class ImportAnnJsonToDB:
                 self.get_dataset_parent_id()
                 self.get_author_id('manager')
                 if( not self.dataset_parent_id):
-                    self.log(f"Ошибка: dataset parent_id: {self.dataset_parent_id}", True)
+                    self.log(f"Ошибка: dataset parent_id: '{self.dataset_parent_id}'", True)
                 elif( not self.author_id):
-                    self.log(f"Ошибка: dataset author_id: {self.author_id}", True)
+                    self.log(f"Ошибка: dataset author_id: '{self.author_id}'", True)
                 else:
                     self.monitor_thread = threading.Thread(target=self.run_monitor_thread)
                     self.monitor_thread.start()
-                    self.log(f"Данные получены. Файлов в обработке: {len(self.files)}")
+                    self.log(f"Данные получены. Файлов в обработке: '{len(self.files)}'")
 
         return self.message.get()
     
