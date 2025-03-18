@@ -26,6 +26,7 @@ BLOCK_LIST_IMAGES = ['idockerapi', 'vdbr/grafana', 'camino-camino-plugins', 'vdb
 BLOCK_LIST_CONTAINERS = ['camino-back', 'camino-pgdb', 'camino-restapi', 'camino-front', 'camino-plugins', 'camino-pgadmin', 'node-exporter']
 
 SET_MAX_WORKERS = 2
+SET_SHM_SIZE = 20 # размер shm при старте контейнера
 
 # DB_SCHEMA = 'public'
 # TABLE_CHAINS = 'chains_copy'

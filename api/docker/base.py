@@ -22,6 +22,7 @@ def dkr_container_create(image_name, params):
     command = 'docker create --rm '
     volume_weights = volume_input = volume_output = volume_socket = volume_markups = volume_storage = ''
     param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = ''
+    param_shm_size = f' --shm-size={C.SET_SHM_SIZE}g '
     volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
     volume_family = ' -v /family:/family '
     param_host_web = f' --host_web \'{C.HOST_RESTAPI}\' '
@@ -49,7 +50,7 @@ def dkr_container_create(image_name, params):
             # elif(param == 'host_web' ):
             #     param_host_web = f'--host_web \'{value}\' '
 
-    command = f'docker create --rm -it {param_name} {param_gpu} {volume_storage} {volume_output} {volume_input} {volume_weights} \
+    command = f'docker create --rm -it {param_name} {param_gpu} {param_shm_size} {volume_storage} {volume_output} {volume_input} {volume_weights} \
         {volume_socket} {volume_markups} {volume_family} {param_network} {image_name} {param_input_data} {param_host_web} {param_ann_mode}'
     log_info(get_time_no_microsec(), command)
     return execCommand(command) 
