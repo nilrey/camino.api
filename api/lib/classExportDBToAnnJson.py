@@ -5,6 +5,7 @@ import requests
 import threading
 import time
 import traceback
+import shutil
 from sqlalchemy import text
 import uuid
 from datetime import datetime
@@ -319,6 +320,17 @@ class DatasetMarkupsExport:
         return True 
 
 
+    def clear_directory(self, dir):
+        if ( not os.path.exists(dir)):
+            self.log_info(f"Удаление директории. Директория не существует: '{dir}'")
+        else:
+            shutil.rmtree(dir)
+            if ( not os.path.exists(dir)):
+                self.log_info(f"Удаление директории. Директория удалена: '{dir}'")
+            else:
+                self.log_info(f"Удаление директории. Ошибка: директория не удалена: '{dir}'")
+
+
     def run(self):
         message = "Выгрузка данных из БД в json и запуск контейнера из образа"
         if(not self.image_id):
@@ -333,6 +345,9 @@ class DatasetMarkupsExport:
 
         self.data_files = self.get_dataset_files(self.dataset_id)
         self.log_info(f'Files found: {len(self.data_files)} ')
+        # очистка директории перед выгрузкой из базы
+        self.clear_directory(self.output_dir)
+
         self.status = {filename["name"]: "In Progress" for filename in self.data_files}
         # print(f"{resp[0]['id']}", file=sys.stderr)
         # Запуск потоков создания файлов
