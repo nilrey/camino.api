@@ -19,8 +19,15 @@ import api.sets.const as C
 import api.manage.manage as mng
 
 class DatasetMarkupsExport:
-    # выгрузка данных из БД в json и запуск контейнера из образа 
+    ''' выгрузка данных из БД в json и запуск контейнера из образа 
+    В результате работы get_binded_datasets, получим:
+    dataset_id - текущий датасет, в случае ИНС - тот в пространстве которого будет работать ИНС - загрузка данных из markups_in, выгрузка в markups_out
+    parent_dataset_id - родительский датасет текущего датасета, с этим параметром идет запрос в БД на выгрузку chains & markups
+    init_dataset_id - начальный датасет, к которому идет привязка видео файлов 
+    '''
     def __init__(self, exp_params, img_params, export_type = 'image_run'): 
+        self.log_info(f'exp_params: {exp_params}')
+        self.log_info(f'img_params: {img_params}')
         self.params = exp_params
         self.img_params = img_params
         self.image_id = self.img_params.get('image_id', None)
@@ -132,7 +139,7 @@ class DatasetMarkupsExport:
                 'file_subset': 'teach',
                 'file_chains' : self.convert_to_serializable(chains),
                 }
-    
+
 
     def prepare_chains(self, dataset_id, file): 
         chains = self.get_chains(dataset_id, file['id'])
@@ -167,8 +174,6 @@ class DatasetMarkupsExport:
             with open(file_path, "w", encoding="utf-8") as f:
                 json.dump(json_data, f, ensure_ascii=False)
                 self.message = 'Success'
-                # else:
-                #     self.message = 'Error: dataset_parent_id is not found '
 
             self.status[file_data['name']] = "Success"
             self.log_info(f"{file_data['name']} is success done. ")
