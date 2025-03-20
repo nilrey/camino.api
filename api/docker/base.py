@@ -19,9 +19,11 @@ def dkr_images():
     return exeCommand('docker images '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
 
 def dkr_container_create(image_name, params):
+    export_code = get_time_no_microsec()
+    log_info(export_code, f'params: {params}')
     command = 'docker create --rm '
     volume_weights = volume_input = volume_output = volume_socket = volume_markups = volume_storage = ''
-    param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = ''
+    param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = param_hyper = ''
     param_shm_size = f' --shm-size={C.SET_SHM_SIZE}g '
     volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
     volume_family = ' -v /family:/family '
@@ -35,6 +37,8 @@ def dkr_container_create(image_name, params):
                 param_ann_mode = ' --work_format_training  '
             elif(param == 'weights' ):
                 volume_weights = f' -v /family{value}:/weights/yolo.pt '
+            elif(param == 'hyper_params'):
+                param_hyper = f' --input_data {value} '
             elif(param == 'in_dir' ):
                 volume_input = f' -v /family{value}:{C.CNTR_BASE_01_DIR_IN} '
                 # param_input_data = ' --input_data \'{"path1":{}}\' '
@@ -51,8 +55,8 @@ def dkr_container_create(image_name, params):
             #     param_host_web = f'--host_web \'{value}\' '
 
     command = f'docker create --rm -it {param_name} {param_gpu} {param_shm_size} {volume_storage} {volume_output} {volume_input} {volume_weights} \
-        {volume_socket} {volume_markups} {volume_family} {param_network} {image_name} {param_input_data} {param_host_web} {param_ann_mode}'
-    log_info(get_time_no_microsec(), command)
+        {volume_socket} {volume_markups} {volume_family} {param_network} {image_name} {param_hyper} {param_input_data} {param_host_web} {param_ann_mode}'
+    log_info(export_code, command)
     return execCommand(command) 
 
 

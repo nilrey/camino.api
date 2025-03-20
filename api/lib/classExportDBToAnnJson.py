@@ -19,15 +19,13 @@ import api.sets.const as C
 import api.manage.manage as mng
 
 class DatasetMarkupsExport:
-    ''' выгрузка данных из БД в json и запуск контейнера из образа 
-    В результате работы get_binded_datasets, получим:
-    dataset_id - текущий датасет, в случае ИНС - тот в пространстве которого будет работать ИНС - загрузка данных из markups_in, выгрузка в markups_out
-    parent_dataset_id - родительский датасет текущего датасета, с этим параметром идет запрос в БД на выгрузку chains & markups
-    init_dataset_id - начальный датасет, к которому идет привязка видео файлов 
-    '''
+    # выгрузка данных из БД в json и запуск контейнера из образа 
+    # В результате работы get_binded_datasets, получим:
+    # dataset_id - текущий датасет, в случае ИНС - тот в пространстве которого будет работать ИНС - загрузка данных из markups_in, выгрузка в markups_out
+    # parent_dataset_id - родительский датасет текущего датасета, с этим параметром идет запрос в БД на выгрузку chains & markups
+    # init_dataset_id - начальный датасет, к которому идет привязка видео файлов 
+    
     def __init__(self, exp_params, img_params, export_type = 'image_run'): 
-        self.log_info(f'exp_params: {exp_params}')
-        self.log_info(f'img_params: {img_params}')
         self.params = exp_params
         self.img_params = img_params
         self.image_id = self.img_params.get('image_id', None)
@@ -342,6 +340,8 @@ class DatasetMarkupsExport:
             message = "Выгрузка данных из БД в json без запуска контейнера"
 
         self.log_info(message)
+        self.log_info(f'exp_params: {self.params}')
+        self.log_info(f'img_params: {self.img_params}')
         self.log_info(f'image_id: {self.image_id}')
         self.log_info(f'project_id: {self.project_id}')
         self.log_info(f'dataset_id: {self.dataset_id}')
