@@ -38,7 +38,7 @@ def dkr_container_create(image_name, params):
             elif(param == 'weights' ):
                 volume_weights = f' -v /family{value}:/weights/yolo.pt '
             elif(param == 'hyper_params'):
-                param_hyper = f' --input_data {value} '
+                param_hyper = f" --input_data '{value}' "
             elif(param == 'in_dir' ):
                 volume_input = f' -v /family{value}:{C.CNTR_BASE_01_DIR_IN} '
                 # param_input_data = ' --input_data \'{"path1":{}}\' '
