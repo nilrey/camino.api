@@ -373,7 +373,8 @@ class DatasetMarkupsExport:
             self.data_files = self.get_dataset_files(self.init_dataset_id)
             self.log_info(f'Files found: {len(self.data_files)} ')
             # очистка директории перед выгрузкой из базы
-            self.clear_directory(self.output_dir)
+            if (self.image_id):
+                self.clear_directory(self.output_dir)
 
             self.status = {filename["name"]: "In Progress" for filename in self.data_files}
             # print(f"{resp[0]['id']}", file=sys.stderr)
