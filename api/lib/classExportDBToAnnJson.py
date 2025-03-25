@@ -277,7 +277,7 @@ class DatasetMarkupsExport:
         
     def get_chains(self, parent_dataset_id, file_id):
         stmt = self.stmt_chains()
-        params = {'dataset_id':parent_dataset_id, 'file_id': file_id}
+        params = {'dataset_id': self.parent_dataset_id if self.image_id else self.dataset_id, 'file_id': file_id}
         if (self.only_verified_chains):
             stmt = self.stmt_chains_verified()
 
