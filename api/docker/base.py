@@ -41,8 +41,6 @@ def dkr_container_create(image_name, params):
                 param_hyper = f" --input_data '{value}' "
             elif(param == 'in_dir' ):
                 volume_input = f' -v /family{value}:{C.CNTR_BASE_01_DIR_IN} '
-                # param_input_data = ' --input_data \'{"path1":{}}\' '
-                # param_input_data = ' --input_data \'{"datasets":[{"dataset_name": "video"}]}\' '
             elif(param == 'out_dir' ):
                 volume_output = f' -v /family{value}:{C.CNTR_BASE_01_DIR_OUT} '
             elif(param == 'markups'):
@@ -51,11 +49,8 @@ def dkr_container_create(image_name, params):
                 volume_storage = f' -v /family{value}:/family{value} '
             elif(param == 'network' ):
                 param_network = f' --network {value} '
-            # elif(param == 'host_web' ):
-            #     param_host_web = f'--host_web \'{value}\' '
 
-    command = f'docker create --rm -it {param_name} {param_gpu} {param_shm_size} {volume_storage} {volume_output} {volume_input} {volume_weights} \
-        {volume_socket} {volume_markups} {volume_family} {param_network} {image_name} {param_hyper} {param_input_data} {param_host_web} {param_ann_mode}'
+    command = f'docker create --rm -it {param_name} {param_gpu} {param_shm_size} {volume_storage} {volume_output} {volume_input} {volume_weights} {volume_socket} {volume_markups} {volume_family} {param_network} {image_name} {param_hyper} {param_input_data} {param_host_web} {param_ann_mode}'
     log_info(export_code, command)
     return execCommand(command) 
 
