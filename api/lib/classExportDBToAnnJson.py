@@ -324,12 +324,11 @@ class DatasetMarkupsExport:
                 if (self.dataset_id == dataset['dataset_id']):
                     self.parent_dataset_id = dataset['dataset_parent_id']
                     self.project_id = dataset['project_id']
-                elif(dataset['dataset_parent_id'] == None):
-                    self.init_dataset_id = dataset['dataset_id']
-                    if(self.dataset_id == dataset['dataset_id']): # если текущий датасет является начальным, т.е. у него нет parent & init 
-                        self.project_id = dataset['project_id']
+                    if(dataset['dataset_parent_id'] == None): # если текущий датасет является начальным, т.е. у него нет parent & init 
                         self.parent_dataset_id = dataset['dataset_id']
                         self.init_dataset_id = dataset['dataset_id']
+                elif(dataset['dataset_parent_id'] == None):
+                    self.init_dataset_id = dataset['dataset_id']
             self.datasets = datasets
 
         # return datasets
