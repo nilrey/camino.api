@@ -163,6 +163,7 @@ def run_command_with_finally(export_code, command):
     msg = ""
     try:
         execCommand(command )
+        msg = f"Команда успешно выполенена. {command}"
     except Exception:
         msg = f"Ошибка: Команда выполенена с ошибкой. {command}"
     finally:
@@ -171,7 +172,7 @@ def run_command_with_finally(export_code, command):
     return True
 
 def log_file_path(export_code):
-    dir = f'{C.EXPORT_DIR}/logs' if(os.path.isdir(f'{C.EXPORT_DIR}/logs')) else C.EXPORT_DIR # если сущ. директория для логов
+    dir = f'{C.LOG_DIR}' if(os.path.isdir(f'{C.LOG_DIR}')) else C.EXPORT_DIR # если сущ. директория для логов
     return f'{dir}/{log_fname(export_code)}'
 
 def log_fname(export_code):
