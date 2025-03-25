@@ -325,7 +325,7 @@ class ImportAnnJsonToDB:
             
 
     def run(self):
-        self.logger.info(f"Начало работы. Чтение файлов имопрта из директории: {self.dir_json}")
+        self.logger.info(f"Начало работы. Чтение файлов импорта из директории: {self.dir_json}")
         self.time_start = time.time()
         if not os.path.isdir(self.dir_json):
             self.log(f"Ошибка: {self.dir_json} указанная директория не сущестует или не доступна", True)

@@ -9,10 +9,10 @@ CNTR_BASE_01_DIR_IN="/input_videos"
 CNTR_BASE_01_DIR_OUT="/output"
 
 LOG_DIR = "/export/logs"
-LOG_PATH = ROOT+LOG_DIR
+LOG_PATH = LOG_DIR
 
-WEIGHTS_DIR = ROOT+"/weights"
-EXPORT_DIR = ROOT+"/export"
+WEIGHTS_DIR = "/weights"
+EXPORT_DIR = "/export"
 EXPORT_README_PATH = ROOT+"/api/docs"
 EXPORT_README_FNAME = "README.md"
 EXPORT_EXT="tar"
