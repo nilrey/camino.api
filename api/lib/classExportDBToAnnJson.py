@@ -355,27 +355,29 @@ class DatasetMarkupsExport:
                 self.log_info(f"Удаление директории. Ошибка: директория не удалена: '{dir}'")
 
     def create_simlinks(self):
-        source_dir = f"/projects_data/{self.project_id}/{self.parent_dataset_id}/markups_out"
-        target_dir = self.output_dir
+        try:
+            source_dir = f"/projects_data/{self.project_id}/{self.parent_dataset_id}/markups_out"
+            target_dir = self.output_dir
 
-        # Получаем список всех файлов с расширением .pkl
-        for filename in os.listdir(source_dir):
-            if filename.endswith(".pkl"):
-                source_file = os.path.join(source_dir, filename)
-                target_link = os.path.join(target_dir, filename)
+            # Получаем список всех файлов с расширением .pkl
+            for filename in os.listdir(source_dir):
+                if filename.endswith(".pkl"):
+                    source_file = os.path.join(source_dir, filename)
+                    target_link = os.path.join(target_dir, filename)
+                    try:
+                        # Удаляем существующий файл или ссылку, если есть
+                        if os.path.exists(target_link) or os.path.islink(target_link):
+                            os.remove(target_link)
 
-                try:
-                    # Удаляем существующий файл или ссылку, если есть
-                    if os.path.exists(target_link) or os.path.islink(target_link):
-                        os.remove(target_link)
+                        # Создаем символическую ссылку
+                        os.symlink(os.path.abspath(source_file), target_link)
+                        fsize = os.path.getsize(target_link)
+                        self.log_info(f"Создана ссылка: source_file:'{source_file}', target_link:'{target_link}', размер исходного файла: {fsize} байт")
 
-                    # Создаем символическую ссылку
-                    os.symlink(os.path.abspath(source_file), target_link)
-                    fsize = os.path.getsize(target_link)
-                    self.log_info(f"Создана ссылка: source_file:'{source_file}', target_link:'{target_link}', размер исходного файла: {fsize} байт")
-
-                except OSError as e:
-                    self.log_info(f"Ошибка при создании ссылки для source_file:{source_file}: {e}")
+                    except Exception as e:
+                        self.log_info(f"Ошибка при создании ссылки для source_file:{source_file}: {e}")
+        except Exception as e:
+            self.log_info(f"Ошибка при создании создании симлинк для pkl: {e}")
 
 
     def run(self):
