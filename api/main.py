@@ -228,8 +228,11 @@ async def api_docker_container_start(containerId ):
 
 
 @docker_containers.put("/{containerId}/stop", tags=["Docker-контейнеры"], summary="Остановка Docker-контейнер на сервере")
-async def api_docker_container_stop(containerId ):
-   return mng_container_stop(containerId)
+async def api_docker_container_stop(request: Request,
+      containerId:str,
+      data:ContainerOnStopPostData ):
+   threading.Thread(target=mng_container_stop, args=(containerId, data.dataset_id)).start()
+   return True
 
 
 # EVENTS

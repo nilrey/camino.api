@@ -175,11 +175,15 @@ def mng_container_start(container_id):
    return response
 
 
-def mng_container_stop(container_id):
+def mng_container_stop(container_id, dataset_id):
    response = dkr.dkr_container_stop(container_id) # UID as response 
-   if (not response['error']): response = mng_container(response['response'][0])
-   # if (not response['error']): response = ro.container_stop(container_id, response['response'])
-   return response  
+   if (not response['error']): 
+      response = mng_container(response['response'][0])
+   url = f"{C.HOST_RESTAPI}/containers/{container_id}/on_stop"
+   response['dataset_id'] = dataset_id
+   requests.post(url, json = response)
+
+   #return response  
 
 def mng_import_json_to_db(projectId, datasetId, parse_data):
 

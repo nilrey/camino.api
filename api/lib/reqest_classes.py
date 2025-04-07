@@ -83,3 +83,6 @@ class ANNExport(BaseModel):
    image_id:str = Field(default="") 
    weights:str = Field(default="") # path to weights file
    export:str = Field(default=f"ann_export_{int(dt.datetime.now().timestamp())}" )
+
+class ContainerOnStopPostData(BaseModel):
+   dataset_id: str = Field(default="undefined")
