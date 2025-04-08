@@ -232,7 +232,8 @@ async def api_docker_container_stop(request: Request,
       containerId:str,
       data:ContainerOnStopPostData ):
    threading.Thread(target=mng_container_stop, args=(containerId, data.dataset_id)).start()
-   return True
+   resp = mng_container_stats(containerId)
+   return resp
 
 
 # EVENTS

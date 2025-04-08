@@ -1,5 +1,5 @@
 # Настройки для конейнеров
-HOST_RESTAPI = "http://camino-restapi"
+HOST_RESTAPI = "http://10.0.0.1:8000" # "http://camino-restapi"
 HOST_GRAFANA = "http://10.0.0.1:3000"
 
 ROOT = "/code"
@@ -23,7 +23,7 @@ PARAM_TO_JSON = " --format '{{json .}}' "
 PARAM_NO_TRUNC = " --no-trunc "
 
 BLOCK_LIST_IMAGES = ['idockerapi', 'vdbr/grafana', 'camino-camino-plugins', 'vdbr/monitor', 'vdbr/test', 'elestio/pgadmin', 'jrottenberg/ffmpeg', 'yiisoftware/yii2-php', 'postgres', 'inevm/camino', 'grafana/grafana-enterprise', 'postgres', 'prom/node-exporter', 'ubuntu/prometheus', 'gcr.io/cadvisor/cadvisor']
-BLOCK_LIST_CONTAINERS = ['camino-back', 'camino-pgdb', 'camino-restapi', 'camino-front', 'camino-plugins', 'camino-pgadmin', 'node-exporter']
+BLOCK_LIST_CONTAINERS = ['camino-back', 'camino-pgdb', 'camino-restapi', 'camino-front', 'camino-plugins', 'camino-pgadmin', 'grafana', 'prometheus', 'cadvisor', 'node-exporter']
 
 SET_MAX_WORKERS = 2
 SET_SHM_SIZE = 20 # размер shm при старте контейнера

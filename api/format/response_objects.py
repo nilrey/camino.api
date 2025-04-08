@@ -1,4 +1,5 @@
 import json
+import subprocess
 import api.sets.const as C
 from api.format.exceptions import *
 
@@ -96,14 +97,35 @@ def containers_stats(data_json):
     items = []
     for item in lst_items:
         if( not isBlockListContainers(item['Name'])):
+
+            # Получаем статус
+            try:
+                state = subprocess.check_output([
+                    "docker", "inspect", "-f", "{{.State.Status}}", item['ID']
+                ]).decode().strip()
+            except subprocess.CalledProcessError:
+                state = "unknown"
+
+            # Получаем размер
+            try:
+                size_output = subprocess.check_output([
+                    "docker", "inspect", "--size", item['ID']
+                ]).decode()
+                size_data = json.loads(size_output)[0]
+                size_bytes = size_data.get("SizeRootFs", None)
+                size = size_bytes# bytes_to_readable(size_bytes)
+            except Exception:
+                size = ""
+
+
             items.append(
                 {
                     "id": item['ID'],
-                    "state": "",
+                    "state": state,
                     "cpu": item['CPUPerc'],
                     "mem": item['MemPerc'],
                     "mem_use": item['MemUsage'],
-                    "size": ""
+                    "size": size
                 }
             )
     return {'items':items }
@@ -136,19 +158,20 @@ def container(data)->dict:
     return resp
 
 
-def container_stats(containerId, data_json):
-    lst_items = json.loads(data_json)
+def container_stats(containerId, lst_items):
+    # lst_items = json.loads(data_json)
     resp = {}
-    for item in lst_items:
-        if(removeSha256(item["ID"]) == containerId ):
-            resp = {
-                "id": item['ID'],
-                "state": "",
-                "cpu": item['CPUPerc'],
-                "mem": item['MemPerc'],
-                "mem_use": item['MemUsage'],
-                "size": ""
-            }
+    for item in lst_items['items']:
+        if(item["id"] == containerId ):
+            # resp = {
+            #     "id": item['ID'],
+            #     "state": "",
+            #     "cpu": item['CPUPerc'],
+            #     "mem": item['MemPerc'],
+            #     "mem_use": item['MemUsage'],
+            #     "size": item['CPUPerc'],
+            # }
+            resp = item
     return resp
 
 

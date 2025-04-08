@@ -158,8 +158,7 @@ def mng_container(container_id):
 
 
 def mng_container_stats(container_id):
-   response = dkr.dkr_containers_stats()
-   if (not response['error']): response = ro.container_stats(container_id, response['response'])
+   response = ro.container_stats(container_id, mng_containers_stats())
    return response
    
 
