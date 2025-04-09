@@ -39,7 +39,8 @@ class DatasetMarkupsExport:
         self.only_selected_files = self.params.get('only_selected_files', [])        
         self.monitor_thread = None
         self.wait_thread = None
-        self.output_dir = '' 
+        self.output_dir = ''
+        self.ann_output_dir = ''
         self.engine = create_engine(self.get_connection_string())
         self.logname = get_dt_now_noms()+'_db_export_json.log'
         self.data_files = {}
@@ -244,6 +245,8 @@ class DatasetMarkupsExport:
         
         if(self.image_id): # Используем наличие image_id, в качестве признака запуска контейнера
             # DOCKER RUN CONTAINER
+            self.log_info('Удаление директории "markups_out" перед запуском контейнера')
+            self.clear_directory(self.ann_output_dir)
             self.log_info('Начало запуска контейнера')
             res = mng.mng_image_run_container(self.image_id, self.img_params)
             self.log_info('Окончание запуска контейнера. Результат')
@@ -321,10 +324,13 @@ class DatasetMarkupsExport:
         """)
 
     def get_binded_datasets(self):
-        datasets = self.exec_query( self.stmt_binded_datasets(), {"dataset_id": self.dataset_id })
-        self.log_info(f"datasets: {datasets}")
-        if (len(datasets) > 0):
-            for dataset in datasets:
+        self.datasets = self.exec_query( self.stmt_binded_datasets(), {"dataset_id": self.dataset_id })
+        self.log_info(f"datasets: {self.datasets}")
+
+
+    def set_datasets_hierarchy(self):
+        if (len(self.datasets) > 0):
+            for dataset in self.datasets:
                 if (self.dataset_id == dataset['dataset_id']):
                     self.parent_dataset_id = dataset['dataset_parent_id']
                     self.project_id = dataset['project_id']
@@ -333,11 +339,8 @@ class DatasetMarkupsExport:
                         self.init_dataset_id = dataset['dataset_id']
                 elif(dataset['dataset_parent_id'] == None):
                     self.init_dataset_id = dataset['dataset_id']
-            self.datasets = datasets
 
-        # return datasets
-    
-    
+
     def close_idle(self):
         stmt = text('SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = \'idle\' AND pid <> pg_backend_pid()')
         self.exec_query(stmt, {}, True)
@@ -390,9 +393,11 @@ class DatasetMarkupsExport:
         self.log_info(f'img_params: {self.img_params}')
 
         self.get_binded_datasets()
+        self.set_datasets_hierarchy()
 
         if(self.project_id and self.dataset_id):
             self.get_param_output_dir(self.params, f"/projects_data/{self.project_id}/{self.dataset_id}/markups_in") # директория где создаются файлы json
+            self.ann_output_dir = f"/projects_data/{self.project_id}/{self.dataset_id}/markups_out"
             
             self.log_info(f'image_id: {self.image_id}')
             self.log_info(f'project_id: {self.project_id}')
