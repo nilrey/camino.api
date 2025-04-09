@@ -36,7 +36,7 @@ def dkr_container_create(image_name, params):
             elif(param == 'ann_mode' and value == 'teach'):
                 param_ann_mode = ' --work_format_training  '
             elif(param == 'weights' ):
-                volume_weights = f' -v /family{value}:/weights '
+                volume_weights = f' -v /family{value}:/weights/ '
             elif(param == 'hyper_params'):
                 param_hyper = f" --input_data '{value}' "
             elif(param == 'in_dir' ):
@@ -47,8 +47,8 @@ def dkr_container_create(image_name, params):
                 volume_markups = f' -v /family{value}:/input_data '
             elif(param == 'video_storage'):
                 volume_storage = f' -v /family{value}:/family{value} '
-            # elif(param == 'network' ):
-            #     param_network = f' --network {value} '
+            elif(param == 'network' and False ):
+                param_network = f' --network {value} '
 
     command = f'docker create --rm -it {param_name} {param_gpu} {param_shm_size} {volume_storage} {volume_output} {volume_input} {volume_weights} {volume_socket} {volume_markups} {volume_family} {param_network} {image_name} {param_hyper} {param_input_data} {param_host_web} {param_ann_mode}'
     log_info(export_code, command)
