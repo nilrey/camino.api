@@ -138,7 +138,7 @@ class DatasetMarkupsExport:
       
         self.log_info(f"file_id: {file['id']}" ) 
         chains = self.prepare_chains(self.parent_dataset_id , file) # [{"id":1}, {"id":2}]
-        return {'file_name' : C.CNTR_BASE_01_DIR_IN + '/' + file['name'],
+        return {'file_name' : file['name'],
                 'file_id' : file['id'],
                 'file_subset': 'teach',
                 'file_chains' : self.convert_to_serializable(chains),
@@ -245,8 +245,10 @@ class DatasetMarkupsExport:
         
         if(self.image_id): # Используем наличие image_id, в качестве признака запуска контейнера
             # DOCKER RUN CONTAINER
-            self.log_info('Удаление директории "markups_out" перед запуском контейнера')
+            self.log_info('Удаление директории "markups_out"')
             self.clear_directory(self.ann_output_dir)
+            self.log_info('Создание директории "markups_out" перед запуском контейнера')
+            os.makedirs(self.ann_output_dir, exist_ok=True)
             self.log_info('Начало запуска контейнера')
             res = mng.mng_image_run_container(self.image_id, self.img_params)
             self.log_info('Окончание запуска контейнера. Результат')
