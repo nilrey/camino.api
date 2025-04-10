@@ -223,7 +223,7 @@ class ImportAnnJsonToDB:
         self.logger.info(f'{file_name}: files.file.file_id = {file_id}')
         if (file_id):
             try:
-                # self.logger.info(f"Начало обработки {file_path}")
+                self.logger.info(f"Начало обработки {file_path}")
                 with open(file_path, "r", encoding="utf-8") as file: 
                     self.logger.info(f'{file_name}: Подключение к БД ' )
                     conn = self.get_connect()

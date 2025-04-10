@@ -222,11 +222,7 @@ class DatasetMarkupsExport:
         self.monitor_thread.join()
         # создаем симлинки для pkl файлов из директории dataset_parent_id
         self.create_simlinks()
-        
-        self.log_info("Работа с файлами закончена") 
-        # self.close_idle()
-        # self.log_info(self.files_res)
-        # print("Работа с файлами закончена.", file=sys.stderr)
+        self.log_info("Работа с файлами закончена")
         try:
             ds_id = self.img_params.get('dataset_id', self.dataset_id)
             url = f"{C.HOST_RESTAPI}/projects/{self.project_id}/datasets/{ds_id}/on_export" 
@@ -254,11 +250,7 @@ class DatasetMarkupsExport:
             self.log_info('Окончание запуска контейнера. Результат')
             self.log_info(res)
 
-    def get_dataset_files(self, init_dataset_id):
-        # # получим корневой dataset id
-        # stmt = text("SELECT d2.id FROM datasets d1 , datasets d2 where d1.project_id = d2.project_id and d2.parent_id is null and d1.id = :dataset_id")
-        # parent_dataset_id = self.exec_query(stmt, {"dataset_id" : dataset_id } )
-        # # self.log_info(f'dataset_id = {dataset_id}')
+    def get_dataset_files(self, init_dataset_id): 
         if(init_dataset_id):
             self.log_info(f'parent_dataset_id = {init_dataset_id}')
             stmt = text("SELECT * FROM files f  WHERE f.dataset_id = :dataset_id AND f.is_deleted = false")
