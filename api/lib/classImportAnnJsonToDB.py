@@ -229,7 +229,7 @@ class ImportAnnJsonToDB:
 
 
     def process_json_file(self, file_name):
-        file_id = None
+        # v = None
         chain_success = markup_success = 0  
         start_time = time.time()
         file_path = f'{self.dir_json}/{file_name}'
@@ -241,8 +241,8 @@ class ImportAnnJsonToDB:
         cursor = conn.cursor()
         cursor.execute(self.stmt_file_id(), ( self.dataset_parent_id, json_file_name ))
         db_file = cursor.fetchone()
-        if( db_file[0] ):
-            file_id = db_file[0]
+        # if( db_file[0] ):
+        #     file_id = db_file[0]
         if(json_file_name):
             file_name = json_file_name
         self.logger.info(f'db_file: {file_id}')
