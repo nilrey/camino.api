@@ -94,7 +94,7 @@ class ImportAnnJsonToDB:
             return {k: ImportAnnJsonToDB.convert_to_serializable(v) for k, v in obj.items()}
         return obj  # Остальное оставляем без изменений
     
-    def get_file_id(self, file_path):
+    def get_json_file_id(self, file_path):
         with open(file_path, "r", encoding="utf-8") as file:
             parser = ijson.parse(file)
             is_first_file = False
@@ -105,6 +105,17 @@ class ImportAnnJsonToDB:
                     return value
         return None     
 
+    def get_json_file_name(self, file_path):
+        with open(file_path, "r", encoding="utf-8") as file:
+            parser = ijson.parse(file)
+            is_first_file = False
+            for prefix, event, value in parser:
+                if (prefix == "files.item" and event == "start_map"):
+                    is_first_file = True  # Нашли первый элемент списка files
+                if (is_first_file and prefix == "files.item.file_name" and event == "string"):
+                    return value
+        return None     
+    
 
     def load_config(self, filename='/code/api/database/database.ini', section='postgresql'):
         parser = ConfigParser()
@@ -213,21 +224,36 @@ class ImportAnnJsonToDB:
 
         return result_id
 
+    def stmt_file_id(self):
+        return "SELECT f.id FROM files f  WHERE f.dataset_id = %s AND f.name=%s"
+
 
     def process_json_file(self, file_name):
+        file_id = None
         chain_success = markup_success = 0  
         start_time = time.time()
         file_path = f'{self.dir_json}/{file_name}'
 
-        file_id = self.get_file_id(file_path)
-        self.logger.info(f'{file_name}: files.file.file_id = {file_id}')
+        file_id = self.get_json_file_id(file_path)
+        json_file_name = self.get_json_file_name(file_path)
+        self.logger.info(f'{file_name}: files.file.file_id = {file_id}, files.file.file_name = {file_name}')
+        conn = self.get_connect()
+        cursor = conn.cursor()
+        cursor.execute(self.stmt_file_id(), ( self.dataset_parent_id, json_file_name ))
+        db_file = cursor.fetchone()
+        if( db_file[0] ):
+            file_id = db_file[0]
+        if(json_file_name):
+            file_name = json_file_name
+        self.logger.info(f'db_file: {file_id}')
+
         if (file_id):
             try:
                 self.logger.info(f"Начало обработки {file_path}")
                 with open(file_path, "r", encoding="utf-8") as file: 
                     self.logger.info(f'{file_name}: Подключение к БД ' )
-                    conn = self.get_connect()
-                    cursor = conn.cursor()
+                    # conn = self.get_connect()
+                    # cursor = conn.cursor()
                     
                     
                     # Обрабатываем файлы
@@ -293,6 +319,10 @@ class ImportAnnJsonToDB:
                 
             except Exception as e:
                 self.logger.error(f"Произошла ошибка при открытии файла {file_name}: {e}")
+            finally:
+                cursor.close()
+                conn.close()
+                
 
         else:
             self.logger.error(f"{file_name} file_id not correct : {file_id}")
