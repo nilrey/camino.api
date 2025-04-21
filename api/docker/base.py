@@ -192,7 +192,8 @@ def img_fname(export_code):
     return f'img_{export_code}.tar'
 
 def tar_weights_file(weights):
-    return f' -C {C.WEIGHTS_DIR} {weights} '
+    # return f' -C {C.WEIGHTS_DIR} {weights} ' т.к. для архивации файла для прежней версии не нужно переходить в директорию, а архивировать ее целиком, то поднимаемся на директорию выше, т.е. в корень и архивируем всю директорию целиком 
+    return f' -C / {weights} '
 
 def tar_readme_file():
     return f' -C {C.EXPORT_README_PATH} {C.EXPORT_README_FNAME} '
