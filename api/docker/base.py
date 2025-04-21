@@ -26,8 +26,8 @@ def dkr_container_create(image_name, params):
     param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = param_hyper = ''
     param_shm_size = f' --shm-size={C.SET_SHM_SIZE}g '
     volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
-    volume_family = ' -v /family:/family '
-    param_host_web = f' --host_web \'{C.HOST_RESTAPI}\' '
+    volume_family = ' -v /family/projects_data:/projects_data '
+    param_host_web = f' --host_web \'{C.HOST_ANN}\' '
     param_gpu = ' --gpus all '
     for param, value in params.items():
         if( value ):
@@ -192,8 +192,7 @@ def img_fname(export_code):
     return f'img_{export_code}.tar'
 
 def tar_weights_file(weights):
-    # return f' -C {C.WEIGHTS_DIR} {weights} ' т.к. для архивации файла для прежней версии не нужно переходить в директорию, а архивировать ее целиком, то поднимаемся на директорию выше, т.е. в корень и архивируем всю директорию целиком 
-    return f' -C / {weights} '
+    return f' -C {C.WEIGHTS_DIR} {weights} '
 
 def tar_readme_file():
     return f' -C {C.EXPORT_README_PATH} {C.EXPORT_README_FNAME} '
