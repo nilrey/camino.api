@@ -18,6 +18,8 @@ import logging
 import gc
 
 class ImportAnnJsonToDB:
+
+    BATCH_SIZE = 10
     
     def __init__(self, project_id, dataset_id, files):
 
@@ -161,6 +163,9 @@ class ImportAnnJsonToDB:
     def stmt_dataset_parent_id(self):
         return "SELECT d2.id FROM datasets d1 , datasets d2 where d1.project_id = d2.project_id and d2.parent_id is null and d1.id = %s"
 
+    def stmt_dataset_state(self):
+        return "SELECT state_id FROM datasets where id= = %s"
+
     def stmt_author_id(self):
         return "SELECT u.id FROM users u  WHERE u.login = %s"
 
@@ -226,6 +231,11 @@ class ImportAnnJsonToDB:
 
     def stmt_file_id(self):
         return "SELECT f.id FROM files f  WHERE f.dataset_id = %s AND f.name=%s"
+    
+    def get_dataset_state(self, cursor, file_name):
+        cursor.execute(self.stmt_dataset_state(), (self.dataset_id,))
+        dataset_state = cursor.fetchone()
+        self.logger.info(f'{file_name} Dataset state: {dataset_state}')
 
 
     def process_json_file(self, file_name):
@@ -296,8 +306,11 @@ class ImportAnnJsonToDB:
                                 if( markup_id ):
                                     markup_success += 1
                                     self.exec_insert(cursor, self.insert_chain_markup_query(), ( chain_id, markup_id))
-                        if( cnt > 0 and cnt % 10 == 0):
+                        if( cnt > 0 and cnt % self.BATCH_SIZE == 0):
                             self.logger.info(f'{file_name} Обработано: Chains: {cnt}')
+                            # проверим в базе данных метку на прерывание процесса выгрузки для dataset_id
+                            self.get_dataset_state(cursor, file_name)
+
                         del chain  # Удаляем обработанный объект, чтобы освободить память
                         gc.collect() 
                     # Фиксация транзакции

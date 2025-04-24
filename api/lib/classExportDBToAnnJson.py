@@ -25,6 +25,8 @@ class DatasetMarkupsExport:
     # dataset_id - текущий датасет, в случае ИНС - тот в пространстве которого будет работать ИНС - загрузка данных из markups_in, выгрузка в markups_out
     # parent_dataset_id - родительский датасет текущего датасета, с этим параметром идет запрос в БД на выгрузку chains & markups
     # init_dataset_id - начальный датасет, к которому идет привязка видео файлов 
+
+    BATCH_SIZE = 10
     
     def __init__(self, exp_params, img_params): 
         self.params = exp_params
@@ -49,6 +51,7 @@ class DatasetMarkupsExport:
         self.files_res = {}
         self.stop_event = threading.Event()
         self.threads = []
+        self.dataset_state = -1
 
     
 
@@ -137,21 +140,36 @@ class DatasetMarkupsExport:
         file = self.convert_to_serializable(dict(file_data)) 
       
         self.log_info(f"file_id: {file['id']}" ) 
-        chains = self.prepare_chains(self.parent_dataset_id , file) # [{"id":1}, {"id":2}]
+        chains = self.prepare_chains(file) # [{"id":1}, {"id":2}]
         return {'file_name' : file['name'],
                 'file_id' : file['id'],
                 'file_subset': 'teach',
                 'file_chains' : self.convert_to_serializable(chains),
                 }
+    
+    def check_dataset_state(self):
+        try:
+            dataset_state = self.exec_query(self.stmt_dataset_state(), {"dataset_id":self.dataset_id} )
+            self.dataset_state = dataset_state[0]["state_id"]
+            self.log_info(f'Dataset state: {self.dataset_state}')
+        except Exception as e:
+            self.log_info(f'ОШИБКА: Dataset state: {e}')
 
-
-    def prepare_chains(self, parent_dataset_id, file): 
-        chains = self.get_chains(parent_dataset_id, file['id'])
+    def prepare_chains(self, file): 
+        # при экспорте без запуска ИНС нужно брать chains из текущего датасета
+        # в случае если идет запуск ИНС берем из родительского (текущий датасет еще не имеет записей)
+        chains = self.get_chains(self.parent_dataset_id if self.image_id else self.dataset_id , file['id'])
         chains_cnt = len(chains)
         markups_cnt = 0
         self.log_info(f'Chains: {chains_cnt}' ) 
         # Заполняем словарь
         for idx, chain in enumerate(chains, start=1): 
+            if( idx > 0 and idx % self.BATCH_SIZE == 0):
+                # проверим в базе данных метку на прерывание процесса выгрузки для dataset_id
+                self.check_dataset_state()
+                if self.dataset_state == 0 :
+                    break
+
             markups = self.get_markups(chain['chain_id']) 
             self.log_info(f"File id:{file['id']}; Chain_id: {chain['chain_id']}; {idx} of {chains_cnt}; Chain markups: {len(markups)})")
             chain["chain_markups"] = markups
@@ -170,33 +188,38 @@ class DatasetMarkupsExport:
     def create_json_file(self, file_data):  
         json_data = self.get_json_data(file_data)
 
-        try:
-            os.makedirs(self.output_dir, exist_ok=True)  # Создаем каталог, если его нет
-            file_path = os.path.join(self.output_dir, f"IN_{file_data['name']}.json")
-
-            self.log_info(f"путь к файлу: {file_path}")
-            with open(file_path, "w", encoding="utf-8") as f:
-                json.dump(json_data, f, ensure_ascii=False)
-                self.message = 'Success'
-
-            self.status[file_data['name']] = "Success"
-            self.log_info(f"{file_data['name']} is success done. ")
-        except Exception as e:
+        # Если обнаружен сигнал о прерывании - остановить выгрузку
+        if self.dataset_state == 0 :
+            mes = f'Получен сигнал в БД на прерывание процесса выгрузки self.dataset_state: {self.dataset_state}.'
             self.status[file_data['name']] = "Failed"
-            self.errors[file_data['name']] = traceback.format_exc()
-            self.log_info(self.status[file_data['name']])
-            self.log_info(self.errors[file_data['name']])
+            self.errors[file_data['name']] = mes
+            self.log_info(mes)
+        else:
+            try:
+                os.makedirs(self.output_dir, exist_ok=True)  # Создаем каталог, если его нет
+                file_path = os.path.join(self.output_dir, f"IN_{file_data['name']}.json")
+
+                self.log_info(f"путь к файлу: {file_path}")
+                with open(file_path, "w", encoding="utf-8") as f:
+                    json.dump(json_data, f, ensure_ascii=False)
+                    self.message = 'Success'
+
+                self.status[file_data['name']] = "Success"
+                self.log_info(f"{file_data['name']} is success done. ")
+            except Exception as e:
+                self.status[file_data['name']] = "Failed"
+                self.errors[file_data['name']] = traceback.format_exc()
+                self.log_info(self.status[file_data['name']])
+                self.log_info(self.errors[file_data['name']])
 
     def monitor_threads(self):
         # Менеджер потоков - для отслеживания состояния других потоков
         while not self.stop_event.is_set():
             all_finished = True
             for filename, state in list(self.status.items()):
-                if state not in ["Success", "Failed"]:
-                    #self.log_info(f'Error: state not in Success or Failed: {state}')
+                if state not in ["Success", "Failed"]: 
                     all_finished = False
-                elif state is not None:
-                    #print(f"{state} - {filename}")
+                elif state is not None: 
                     self.status[filename] = None  # Чтобы не дублировать вывод
             
             if all_finished:
@@ -210,9 +233,9 @@ class DatasetMarkupsExport:
             self.log_info(f"{filename}: {state}")
 
         if self.errors:
-            self.log_info("\nErrors:")
+            self.log_info("Errors while files proceed:")
             for filename, error in self.errors.items():
-                self.log_info(f"{filename} failed with error:\n{error}")
+                self.log_info(f"{filename} failed with error: {error}")
 
     def wait_for_threads(self):
         # Ожидание завершения всех потоков. 
@@ -224,6 +247,7 @@ class DatasetMarkupsExport:
         self.create_simlinks()
         self.log_info("Работа с файлами закончена")
         try:
+            # /export/on_error
             ds_id = self.img_params.get('dataset_id', self.dataset_id)
             url = f"{C.HOST_RESTAPI}/projects/{self.project_id}/datasets/{ds_id}/on_export" 
             self.log_info(f'prepare Url on_export: {url}')
@@ -316,6 +340,10 @@ class DatasetMarkupsExport:
             )
             SELECT * FROM dataset_hierarchy;
         """)
+
+    def stmt_dataset_state(self):
+        return text("""SELECT state_id FROM datasets where id = :dataset_id""")
+    
 
     def get_binded_datasets(self):
         self.datasets = self.exec_query( self.stmt_binded_datasets(), {"dataset_id": self.dataset_id })
@@ -411,11 +439,12 @@ class DatasetMarkupsExport:
             # print(f"{resp[0]['id']}", file=sys.stderr)
             # Запуск потоков создания файлов
             for file in self.data_files:
-                thread = threading.Thread(target=self.create_json_file, args=(file,))
-                thread.start()
-                self.threads.append(thread)
-
-            
+                
+                # Если обнаружен сигнал о прерывании - остановить выгрузку
+                if self.dataset_state != 0 :
+                    thread = threading.Thread(target=self.create_json_file, args=(file,))
+                    thread.start()
+                    self.threads.append(thread)
 
             # Запуск мониторинга
             self.monitor_thread = threading.Thread(target=self.monitor_threads)
