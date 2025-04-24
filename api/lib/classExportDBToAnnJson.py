@@ -262,8 +262,11 @@ class DatasetMarkupsExport:
             self.log_info(f'on_export response error: {e}')
         finally:
             self.log_info(f'Выгрузка данных из БД в Json закончена.')
+
+        if (self.dataset_state == 0) : 
+            self.log_info('Запуск контейнера отменен')
         
-        if(self.image_id): # Используем наличие image_id, в качестве признака запуска контейнера
+        elif(self.image_id): # Используем наличие image_id, в качестве признака запуска контейнера
             # DOCKER RUN CONTAINER
             self.log_info('Удаление директории "markups_out"')
             self.clear_directory(self.ann_output_dir)
