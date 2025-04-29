@@ -27,6 +27,7 @@ class DatasetMarkupsExport:
     # init_dataset_id - начальный датасет, к которому идет привязка видео файлов 
 
     BATCH_SIZE = 10
+    DATASET_STATE_PROCEED = 1
     
     def __init__(self, exp_params, img_params): 
         self.params = exp_params
@@ -52,6 +53,7 @@ class DatasetMarkupsExport:
         self.stop_event = threading.Event()
         self.threads = []
         self.dataset_state = -1
+        self.do_stop_export = False
 
     
 
@@ -152,6 +154,9 @@ class DatasetMarkupsExport:
             dataset_state = self.exec_query(self.stmt_dataset_state(), {"dataset_id":self.dataset_id} )
             self.dataset_state = dataset_state[0]["state_id"]
             self.log_info(f'Dataset state: {self.dataset_state}')
+            if self.dataset_state != self.DATASET_STATE_PROCEED :
+                self.do_stop_export = True
+                
         except Exception as e:
             self.log_info(f'ОШИБКА: Dataset state: {e}')
 
@@ -167,7 +172,7 @@ class DatasetMarkupsExport:
             if( idx > 0 and idx % self.BATCH_SIZE == 0):
                 # проверим в базе данных метку на прерывание процесса выгрузки для dataset_id
                 self.check_dataset_state()
-                if self.dataset_state == 0 :
+                if self.do_stop_export :
                     break
 
             markups = self.get_markups(chain['chain_id']) 
@@ -189,7 +194,7 @@ class DatasetMarkupsExport:
         json_data = self.get_json_data(file_data)
 
         # Если обнаружен сигнал о прерывании - остановить выгрузку
-        if self.dataset_state == 0 :
+        if self.do_stop_export :
             mes = f'Получен сигнал в БД на прерывание процесса выгрузки self.dataset_state: {self.dataset_state}.'
             self.status[file_data['name']] = "Failed"
             self.errors[file_data['name']] = mes
@@ -263,7 +268,7 @@ class DatasetMarkupsExport:
         finally:
             self.log_info(f'Выгрузка данных из БД в Json закончена.')
 
-        if (self.dataset_state == 0) : 
+        if self.do_stop_export : 
             self.log_info('Запуск контейнера отменен')
         
         elif(self.image_id): # Используем наличие image_id, в качестве признака запуска контейнера

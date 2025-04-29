@@ -164,7 +164,7 @@ class ImportAnnJsonToDB:
         return "SELECT d2.id FROM datasets d1 , datasets d2 where d1.project_id = d2.project_id and d2.parent_id is null and d1.id = %s"
 
     def stmt_dataset_state(self):
-        return "SELECT state_id FROM datasets where id= = %s"
+        return "SELECT state_id FROM datasets where id = %s"
 
     def stmt_author_id(self):
         return "SELECT u.id FROM users u  WHERE u.login = %s"
