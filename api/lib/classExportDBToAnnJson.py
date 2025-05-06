@@ -308,9 +308,10 @@ class DatasetMarkupsExport:
         return text("""SELECT c.id as chain_id, c.name as chain_name, c.vector as chain_vector 
                     FROM chains c WHERE c.dataset_id = :dataset_id AND c.file_id = :file_id AND c.is_deleted = false AND is_verified = true """)
         
-    def get_chains(self, parent_dataset_id, file_id):
+    def get_chains(self, dataset_id, file_id):
         stmt = self.stmt_chains()
-        params = {'dataset_id': self.parent_dataset_id if self.image_id else self.dataset_id, 'file_id': file_id}
+        params = {'dataset_id': dataset_id, 'file_id': file_id}
+        self.log_info(f"Get chains query params: {params}")
         if (self.only_verified_chains):
             stmt = self.stmt_chains_verified()
 
@@ -445,11 +446,16 @@ class DatasetMarkupsExport:
 
             self.status = {filename["name"]: "In Progress" for filename in self.data_files}
             # print(f"{resp[0]['id']}", file=sys.stderr)
-            # Запуск потоков создания файлов
+            # Проверка на прерывание
+            self.check_dataset_state()
+            # Запуск потоков создания файлов 
             for file in self.data_files:
                 
                 # Если обнаружен сигнал о прерывании - остановить выгрузку
-                if self.dataset_state != 0 :
+                if self.do_stop_export :
+                    self.log_info(f'Запуск обработки файла {file} отменен')
+                    break
+                else:
                     thread = threading.Thread(target=self.create_json_file, args=(file,))
                     thread.start()
                     self.threads.append(thread)
