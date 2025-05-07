@@ -446,11 +446,10 @@ class DatasetMarkupsExport:
 
             self.status = {filename["name"]: "In Progress" for filename in self.data_files}
             # print(f"{resp[0]['id']}", file=sys.stderr)
-            # Проверка на прерывание
-            self.check_dataset_state()
             # Запуск потоков создания файлов 
             for file in self.data_files:
-                
+                # Проверка на прерывание
+                self.check_dataset_state()
                 # Если обнаружен сигнал о прерывании - остановить выгрузку
                 if self.do_stop_export :
                     self.log_info(f'Запуск обработки файла {file} отменен')
