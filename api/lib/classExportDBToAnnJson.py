@@ -283,8 +283,8 @@ class DatasetMarkupsExport:
             self.log_info(res)
 
     def get_dataset_files(self, init_dataset_id): 
+        self.log_info(f'get_dataset_files: init_dataset_id = {init_dataset_id}')
         if(init_dataset_id):
-            self.log_info(f'parent_dataset_id = {init_dataset_id}')
             stmt = text("SELECT * FROM files f  WHERE f.dataset_id = :dataset_id AND f.is_deleted = false")
             files = self.exec_query(stmt, {"dataset_id" : init_dataset_id})
             self.log_info(f'найдено всех файлов корневого датасета = {len(files)}')

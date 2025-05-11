@@ -11,6 +11,33 @@ import api.format.response_teplates as rt # Response Template
 import api.format.response_objects as ro # Response Objects
 import time, datetime as dt
 
+import logging
+
+
+def init_logger(type = 'file'):
+    os.makedirs(C.LOG_PATH, exist_ok=True)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG) 
+    if(type == 'console'):    
+        # вывод в консоль
+        handler = logging.StreamHandler()
+    else:
+        # вывод в файл
+        LOG_FILE = f'{C.LOG_PATH}/backend_api_calls_{get_time_today_no_sec()}.log'
+        handler = logging.FileHandler(f"{LOG_FILE}", encoding="utf-8")
+    
+    handler.setLevel(logging.DEBUG)
+    # Определяем формат сообщений
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    # Добавляем обработчик к логгеру (если он ещё не добавлен)
+    if not logger.hasHandlers():
+        logger.addHandler(handler)
+
+    return logger
+
+
 
 def dkr_docker_info():
     return exeCommand(' docker info '+ C.PARAM_TO_JSON )
@@ -60,7 +87,16 @@ def dkr_containers():
 
 
 def dkr_containers_stats():
-    return exeCommand('docker stats -a --no-stream '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
+    logger = init_logger()
+    command = 'docker stats -a --no-stream '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON 
+    logger.info(command)
+    res = exeCommand(command)
+    m = "Recieve Not Json response"
+    if isJson(res):
+        m = "Recieve Json response"
+    logger.info(m)
+    logger.info(res)
+    return res
 
 
 def dkr_container(container_id):
@@ -200,6 +236,9 @@ def tar_readme_file():
 def get_time_no_microsec():
     return dt.datetime.now().replace(microsecond=0)
 
+def get_time_today_no_sec():
+    return dt.datetime.now().strftime("%Y%m%d_%H:%M")
+
 def send_arch_on_save(export_code, annId):
     url = f'{C.HOST_RESTAPI}/ann/{annId}/archive/on_save'
     try:
@@ -259,6 +298,7 @@ def exeCommand(command):
 def isJson(str):
   try:
     json.loads(str)
-  except ValueError as e:
+  except Exception as e:
     return False
+  
   return True
