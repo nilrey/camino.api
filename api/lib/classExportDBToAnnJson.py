@@ -279,8 +279,7 @@ class DatasetMarkupsExport:
             os.makedirs(self.ann_output_dir, exist_ok=True)
             self.log_info('Начало запуска контейнера')
             res = mng.mng_image_run_container(self.image_id, self.img_params)
-            self.log_info('Окончание запуска контейнера. Результат')
-            self.log_info(res)
+            self.log_info(f'Результат запуска контейнера: {res}')
 
     def get_dataset_files(self, init_dataset_id): 
         self.log_info(f'get_dataset_files: init_dataset_id = {init_dataset_id}')
@@ -301,11 +300,11 @@ class DatasetMarkupsExport:
         return files
     
     def stmt_chains(self):
-        return text("""SELECT c.id as chain_id, c.name as chain_name, c.vector as chain_vector 
+        return text("""SELECT c.id as chain_id, c.name as chain_name, c.vector as chain_vector , c.confidence as chain_confidence 
                     FROM chains c WHERE c.dataset_id = :dataset_id AND c.file_id = :file_id AND c.is_deleted = false """)
     
     def stmt_chains_verified(self):
-        return text("""SELECT c.id as chain_id, c.name as chain_name, c.vector as chain_vector 
+        return text("""SELECT c.id as chain_id, c.name as chain_name, c.vector as chain_vector , c.confidence as chain_confidence 
                     FROM chains c WHERE c.dataset_id = :dataset_id AND c.file_id = :file_id AND c.is_deleted = false AND is_verified = true """)
         
     def get_chains(self, dataset_id, file_id):
@@ -320,7 +319,7 @@ class DatasetMarkupsExport:
 
     def stmt_markups(self):
         return text("""
-            SELECT m.id as markup_id, m.mark_frame as markup_frame, m.mark_time as markup_time, m.vector as markup_vector, m.parent_id as markup_parent_id, m.mark_path as markup_path 
+            SELECT m.id as markup_id, m.mark_frame as markup_frame, m.mark_time as markup_time, m.vector as markup_vector, m.parent_id as markup_parent_id, m.mark_path as markup_path, m.confidence as markup_confidence 
             FROM markups_chains mc
             JOIN markups m ON mc.markup_id = m.id 
             WHERE mc.chain_id = :chain_id

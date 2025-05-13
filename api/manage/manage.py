@@ -12,6 +12,32 @@ from api.lib.classExportDBToAnnJson import *
 from api.lib.classImportAnnJsonToDB import *
 import requests
 
+import logging
+
+def init_logger(type = 'file'):
+    os.makedirs(C.LOG_PATH, exist_ok=True)
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG) 
+    if(type == 'console'):    
+        # вывод в консоль
+        handler = logging.StreamHandler()
+    else:
+        # вывод в файл
+        LOG_FILE = f'{C.LOG_PATH}/backend_api_calls_{dkr.get_time_today_no_sec()}.log'
+        handler = logging.FileHandler(f"{LOG_FILE}", encoding="utf-8")
+    
+    handler.setLevel(logging.DEBUG)
+    # Определяем формат сообщений
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+
+    # Добавляем обработчик к логгеру (если он ещё не добавлен)
+    if not logger.hasHandlers():
+        logger.addHandler(handler)
+
+    return logger
+
+
 # Users
 def mng_create_user(**kwargs):
    return mngdb_create_user(**kwargs)
@@ -116,6 +142,7 @@ def mng_image_run_container(image_id, params):
       
       url = f"{C.HOST_RESTAPI}/containers/{response['id']}/on_start"
       response['dataset_id'] = params['out_dir'].split('/')[-2]
+      response['host'] = '10.0.0.1'
       requests.post(url, json = response)
 
       # #???? if (not response['error']):       
@@ -145,7 +172,18 @@ def mng_containers():
 
 
 def mng_containers_stats():
+   logger = init_logger()
    response = dkr.dkr_containers_stats()
+   if dkr.isJson(response):
+      logger.info("mng_containers_stats, dkr_containers_stats - response:")
+      logger.info(response)
+   try:
+      logger.info("type(response['response'])")
+      logger.info(type(response['response']))
+      logger.info(response['response'])
+   except Exception as e:
+      logger.info(e)
+
    if (not response['error']): response = ro.containers_stats(response['response'])
    return response
 
