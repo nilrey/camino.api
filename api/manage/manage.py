@@ -177,12 +177,12 @@ def mng_containers_stats():
    if dkr.isJson(response):
       logger.info("mng_containers_stats, dkr_containers_stats - response:")
       logger.info(response)
-   try:
-      logger.info("type(response['response'])")
-      logger.info(type(response['response']))
-      logger.info(response['response'])
-   except Exception as e:
-      logger.info(e)
+   # try:
+   #    logger.info("type(response['response'])")
+   #    logger.info(type(response['response']))
+   #    logger.info(response['response'])
+   # except Exception as e:
+   #    logger.info(e)
 
    if (not response['error']): response = ro.containers_stats(response['response'])
    return response

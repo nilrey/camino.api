@@ -4,31 +4,31 @@ import subprocess
 import api.sets.const as C
 from api.format.exceptions import *
 
-import api.docker.base as dkr
-import logging
+# import api.docker.base as dkr
+# import logging
 
-def init_logger(type = 'file'):
-    os.makedirs(C.LOG_PATH, exist_ok=True)
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG) 
-    if(type == 'console'):    
-        # вывод в консоль
-        handler = logging.StreamHandler()
-    else:
-        # вывод в файл
-        LOG_FILE = f'{C.LOG_PATH}/backend_api_calls_{dkr.get_time_today_no_sec()}.log'
-        handler = logging.FileHandler(f"{LOG_FILE}", encoding="utf-8")
+# def init_logger(type = 'file'):
+#     os.makedirs(C.LOG_PATH, exist_ok=True)
+#     logger = logging.getLogger(__name__)
+#     logger.setLevel(logging.DEBUG) 
+#     if(type == 'console'):    
+#         # вывод в консоль
+#         handler = logging.StreamHandler()
+#     else:
+#         # вывод в файл
+#         LOG_FILE = f'{C.LOG_PATH}/backend_api_calls_{dkr.get_time_today_no_sec()}.log'
+#         handler = logging.FileHandler(f"{LOG_FILE}", encoding="utf-8")
     
-    handler.setLevel(logging.DEBUG)
-    # Определяем формат сообщений
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
+#     handler.setLevel(logging.DEBUG)
+#     # Определяем формат сообщений
+#     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+#     handler.setFormatter(formatter)
 
-    # Добавляем обработчик к логгеру (если он ещё не добавлен)
-    if not logger.hasHandlers():
-        logger.addHandler(handler)
+#     # Добавляем обработчик к логгеру (если он ещё не добавлен)
+#     if not logger.hasHandlers():
+#         logger.addHandler(handler)
 
-    return logger
+#     return logger
 
 def getPagination(cnt = 0):
     return { "page": 1, "pageSize": cnt, "totalItems": cnt, "totalPages": 1}
