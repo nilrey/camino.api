@@ -176,7 +176,7 @@ async def api_docker_image_create(request: Request,
    return mng_container_create(imageId, ContCreate.getAllParams() )
 
 
-@docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
+@docker_images.post("/{imageId}/run/old", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
 async def api_docker_image_run(request: Request,
       imageId:str,
       imrun: ImageRun
@@ -199,7 +199,7 @@ async def api_docker_ann_export(request: Request,
 # CONTAINERS
 
 
-@docker_images.post("/images/{imageId}/run")
+@docker_images.post("/{imageId}/run")
 async def run_container(request: CreateContainerRequest , imageId: str = Path(...)):
     try:
         params = request.model_dump()
