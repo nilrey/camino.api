@@ -86,7 +86,8 @@ def run_container(params):
         image_info = find_image_by_id(params["imageId"]) 
         logging.info(f'image_info: {image_info}')
         if image_info.get('name', False) :
-            name = params["name"]
+            logging.info(f'Формирование запроса')
+            name = 'test_name' #params["name"]
             command = [
                 "--input_data", params['hyper_params'],
                 "--host_web", C.HOST_ANN
@@ -109,7 +110,6 @@ def run_container(params):
             logging.info(f"{command_str}")
 
             # Используем device_requests для GPU
-            
             device_requests = []
             if not C.DEBUG_MODE:
                 device_requests = [
@@ -117,8 +117,9 @@ def run_container(params):
                 ]
 
             # Запуск контейнера
+            logging.info(f'Запуск контейнера')
             container = client.containers.run(
-                image=image_info['name'],
+                image=image_info.get('name'),
                 name=name,
                 command=command,
                 device_requests=device_requests,
