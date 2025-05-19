@@ -69,7 +69,7 @@ def find_image_by_id(image_id: str):
         for image in images:
             logging.info(f'{image.get("id")} {image_id}')
             if image.get("id") == image_id:
-                logging.info(f"Image {image.get("id")} found on VM: {image.get('location')}")
+                logging.info(f"Image {image.get('id')} found on VM: {image.get('location')}")
                 return image
     except Exception as e:
         logging.error(f"Error retrieving images from VM {image.get('location')}: {e}")
