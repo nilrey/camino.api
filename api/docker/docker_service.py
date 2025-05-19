@@ -83,54 +83,55 @@ def run_container(params):
     elif vm_ip:
         logging.info(f'params: {params}')
         client = docker.DockerClient(base_url=f'tcp://{vm_ip}:2375', timeout=5) 
-        image = find_image_by_id(params["imageId"]) 
-        name = params["name"]
-        command = [
-            "--input_data", params['hyper_params'],
-            "--host_web", C.HOST_ANN
-        ]
-        command.append('--work_format_training') if params['ann_mode'] == 'teach' else None
-
-        volumes = {
-            f'/family{params["video_storage"]}': {"bind": "/family/video", "mode": "rw"},
-            f'/family{params["out_dir"]}': {"bind": "/output", "mode": "rw"},
-            f'/family{params["in_dir"]}': {"bind": "/input_videos", "mode": "rw"},
-            f'/family{params["weights"]}': {"bind": "/weights/", "mode": "rw"},
-            f'/family{params["markups"]}': {"bind": "/input_data", "mode": "rw"},
-            "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
-            "/family/projects_data": {"bind": "/projects_data", "mode": "rw"}
-        }
-
-        # Формируем строку запуска для лога
-        volume_args = ' '.join([f'-v {host}:{opt["bind"]}:{opt["mode"]}' for host, opt in volumes.items()])
-        command_str = f"docker run --gpus all --shm-size=20g --name {name} {volume_args} {image} {' '.join(command)}"
-        logging.info(f"{command_str}")
-
-        # Используем device_requests для GPU
-        
-        device_requests = []
-        if not C.DEBUG_MODE:
-            device_requests = [
-                DeviceRequest(count=-1, capabilities=[['gpu']])
+        image_info = find_image_by_id(params["imageId"]) 
+        logging.info(f'image_info: {image_info}')
+        if image_info.get('name', False) :
+            name = params["name"]
+            command = [
+                "--input_data", params['hyper_params'],
+                "--host_web", C.HOST_ANN
             ]
+            command.append('--work_format_training') if params['ann_mode'] == 'teach' else None
 
-        # Запуск контейнера
-        container = client.containers.run(
-            image=f"{image.get('name')}:{image.get('tag', 'latest')}",
-            name=name,
-            command=command,
-            device_requests=device_requests,
-            shm_size="20g",
-            volumes=volumes,
-            # remove=True,
-            detach=True,
-            tty=True
-        )
+            volumes = {
+                f'/family{params["video_storage"]}': {"bind": "/family/video", "mode": "rw"},
+                f'/family{params["out_dir"]}': {"bind": "/output", "mode": "rw"},
+                f'/family{params["in_dir"]}': {"bind": "/input_videos", "mode": "rw"},
+                f'/family{params["weights"]}': {"bind": "/weights/", "mode": "rw"},
+                f'/family{params["markups"]}': {"bind": "/input_data", "mode": "rw"},
+                "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
+                "/family/projects_data": {"bind": "/projects_data", "mode": "rw"}
+            }
 
+            # Формируем строку запуска для лога
+            volume_args = ' '.join([f'-v {host}:{opt["bind"]}:{opt["mode"]}' for host, opt in volumes.items()])
+            command_str = f"docker run --gpus all --shm-size=20g --name {name} {volume_args} {image} {' '.join(command)}"
+            logging.info(f"{command_str}")
 
-        logging.info(f'Контейнер запущен на: {vm_ip}')
-        message = container.id
-        container_id = container.id
+            # Используем device_requests для GPU
+            
+            device_requests = []
+            if not C.DEBUG_MODE:
+                device_requests = [
+                    DeviceRequest(count=-1, capabilities=[['gpu']])
+                ]
+
+            # Запуск контейнера
+            container = client.containers.run(
+                image=image_info['name'],
+                name=name,
+                command=command,
+                device_requests=device_requests,
+                shm_size="20g",
+                volumes=volumes,
+                # remove=True,
+                detach=True,
+                tty=True
+            )
+
+            logging.info(f'Контейнер запущен на: {vm_ip}')
+            message = container.id
+            container_id = container.id
     else:
         message = 'Error: Нет свободных VM.'
         logging.info(message)
