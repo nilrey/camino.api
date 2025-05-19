@@ -2,6 +2,20 @@ from pydantic import BaseModel, EmailStr, Field, field_validator, ValidationErro
 import datetime as dt
 from typing import Optional, List
 
+class CreateContainerRequest(BaseModel):
+    name: Optional[str] = ""
+    ann_mode: Optional[str] = ""
+    weights: Optional[str] = ""
+    hyper_params: Optional[str] = ""
+    in_dir: Optional[str] = ""
+    out_dir: Optional[str] = ""
+    markups: Optional[str] = ""
+    video_storage: Optional[str] = ""
+    network: Optional[str] = ""
+    dataset_id: Optional[str] = ""
+    only_verified_chains: bool = False
+    only_selected_files: List[str] = []
+
 class ImageRun(BaseModel):
    name: str = Field(default="")
    ann_mode:str = Field(default="")
@@ -87,20 +101,6 @@ class ANNExport(BaseModel):
 
 class ContainerOnStopPostData(BaseModel):
    dataset_id: str = Field(default="undefined")
-
-class CreateContainerRequest(BaseModel):
-    name: Optional[str] = ""
-    ann_mode: Optional[str] = ""
-    weights: Optional[str] = ""
-    hyper_params: Optional[str] = ""
-    in_dir: Optional[str] = ""
-    out_dir: Optional[str] = ""
-    markups: Optional[str] = ""
-    video_storage: Optional[str] = ""
-    network: Optional[str] = ""
-    dataset_id: Optional[str] = ""
-    only_verified_chains: bool = False
-    only_selected_files: List[str] = []
 
 class ContainerIdRequest(BaseModel):
     container_id: str

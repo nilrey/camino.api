@@ -176,6 +176,17 @@ async def api_docker_image_create(request: Request,
    return mng_container_create(imageId, ContCreate.getAllParams() )
 
 
+@docker_images.post("/{imageId}/run")
+async def run_container(request: CreateContainerRequest , imageId: str = Path(...)):
+    try:
+        params = request.model_dump()
+        params["imageId"] = imageId  
+        response = docker_service.run_container(params)
+        return {"message": response}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
 @docker_images.post("/{imageId}/run/old", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
 async def api_docker_image_run(request: Request,
       imageId:str,
@@ -197,17 +208,6 @@ async def api_docker_ann_export(request: Request,
 
 
 # CONTAINERS
-
-
-@docker_images.post("/{imageId}/run")
-async def run_container(request: CreateContainerRequest , imageId: str = Path(...)):
-    try:
-        params = request.model_dump()
-        params["imageId"] = imageId  
-        response = docker_service.run_container(params)
-        return {"message": response}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
     
 
 @docker_containers.get("/vm/check")

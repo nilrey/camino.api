@@ -16,6 +16,7 @@ from configparser import ConfigParser
 from collections import defaultdict
 from api.lib.func_datetime import *
 import api.sets.const as C
+from api.docker import docker_service 
 
 import api.manage.manage as mng
 
@@ -278,7 +279,7 @@ class DatasetMarkupsExport:
             self.log_info('Создание директории "markups_out" перед запуском контейнера')
             os.makedirs(self.ann_output_dir, exist_ok=True)
             self.log_info('Начало запуска контейнера')
-            res = mng.mng_image_run_container(self.image_id, self.img_params)
+            res =  docker_service.run_container(self.img_params) # mng.mng_image_run_container(self.image_id, self.img_params)
             self.log_info(f'Результат запуска контейнера: {res}')
 
     def get_dataset_files(self, init_dataset_id): 

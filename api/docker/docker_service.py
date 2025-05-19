@@ -7,12 +7,13 @@ from docker.errors import NotFound, APIError
 import api.sets.const as C
 from docker.types import DeviceRequest
 from typing import List, Dict
+import requests
 
 log_dir = '/export/logs'
 os.makedirs(log_dir, exist_ok=True)
 
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-log_filename = os.path.join(log_dir, f"vm_checker_{timestamp}.log")
+log_filename = os.path.join(log_dir, f"image_run_{timestamp}.log")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -23,13 +24,13 @@ logging.basicConfig(
     ]
 )
 
-client = docker.DockerClient(base_url=f'tcp://{C.VIRTUAL_MACHINES_LIST[0]["host"]}:2375')
+# client = docker.DockerClient(base_url=f'tcp://{C.VIRTUAL_MACHINES_LIST[0]["host"]}:2375')
 
-def list_images(): 
-    return client.images()
+# def list_images(): 
+#     return client.images()
 
-def list_containers(all=True): 
-    return client.containers(all=all)
+# def list_containers(all=True): 
+#     return client.containers(all=all)
 
 
 def get_docker_images() -> List[Dict]:
@@ -76,12 +77,13 @@ def find_image_by_id(image_id: str):
 
 def run_container(params): 
     vm_ip, is_error = find_vm_without_ann_images() 
+    container_id = None
     if is_error:
         message = f'Ошибка при просмотре списка VM: {vm_ip}'
     elif vm_ip:
         logging.info(f'params: {params}')
         client = docker.DockerClient(base_url=f'tcp://{vm_ip}:2375', timeout=5) 
-        image = find_image_by_id(params["imageId"]) # '10.0.0.1:6000/bytetracker-image'  #params["imageId"]
+        image = find_image_by_id(params["imageId"]) 
         name = params["name"]
         command = [
             "--input_data", params['hyper_params'],
@@ -128,37 +130,52 @@ def run_container(params):
 
         logging.info(f'Контейнер запущен на: {vm_ip}')
         message = container.id
+        container_id = container.id
     else:
-        message = 'Нет свободных VM.'
+        message = 'Error: Нет свободных VM.'
         logging.info(message)
     
-    return message
+    if not params['dataset_id']:
+        params['dataset_id'] = "empty_dataset_id"
 
-def start_container(container_id: str): 
-    try:
-        container = client.containers.get(container_id)
-        container.start()
-        logging.info(f"Контейнер {container_id} успешно запущен.")
-    except NotFound:
-        logging.warning(f"Контейнер с ID {container_id} не найден.")
-    except APIError as e:
-        logging.error(f"Ошибка Docker API: {e.explanation}")
-    except Exception as e:
-        logging.exception(f"Произошла непредвиденная ошибка: {e}")    
-    return {"status": "started"}
+    # Отправить сообщение о запуске с указанием хоста и container_id 
+    if container_id:
+        url = f"{C.HOST_RESTAPI}/containers/{container_id}/on_start"
+    else:
+        url = f"{C.HOST_RESTAPI}/containers/{container_id}/on_error"
+    
+    response = { 'host' : vm_ip, 'dataset_id' : params['dataset_id']}
+    logging.info(f'Send post: Url: {url} , body: {response}')
 
-def stop_container(container_id: str, force=True): 
-    try:
-        container = client.containers.get(container_id)
-        container.stop(timeout=0)  # Или container.kill() для жёсткой остановки
-        logging.info(f"Контейнер {container_id} успешно остановлен.")
-    except NotFound:
-        logging.warning(f"Контейнер с ID {container_id} не найден.")
-    except APIError as e:
-        logging.error(f"Ошибка Docker API: {e.explanation}")
-    except Exception as e:
-        logging.exception(f"Произошла непредвиденная ошибка: {e}")
-    return {"status": "stopped"}
+    requests.post(url, json = response)
+    
+    return {"error": is_error, "container_id" : container_id}
+
+# def start_container(container_id: str): 
+#     try:
+#         container = client.containers.get(container_id)
+#         container.start()
+#         logging.info(f"Контейнер {container_id} успешно запущен.")
+#     except NotFound:
+#         logging.warning(f"Контейнер с ID {container_id} не найден.")
+#     except APIError as e:
+#         logging.error(f"Ошибка Docker API: {e.explanation}")
+#     except Exception as e:
+#         logging.exception(f"Произошла непредвиденная ошибка: {e}")    
+#     return {"status": "started"}
+
+# def stop_container(container_id: str, force=True): 
+#     try:
+#         container = client.containers.get(container_id)
+#         container.stop(timeout=0)  # Или container.kill() для жёсткой остановки
+#         logging.info(f"Контейнер {container_id} успешно остановлен.")
+#     except NotFound:
+#         logging.warning(f"Контейнер с ID {container_id} не найден.")
+#     except APIError as e:
+#         logging.error(f"Ошибка Docker API: {e.explanation}")
+#     except Exception as e:
+#         logging.exception(f"Произошла непредвиденная ошибка: {e}")
+#     return {"status": "stopped"}
 
 def is_host_reachable(ip, port=2375, timeout=3):
     try:
