@@ -87,7 +87,7 @@ def run_container(params):
         logging.info(f'image_info: {image_info}')
         if image_info.get('name', False) :
             logging.info(f'Формирование запроса')
-            name = 'test_name' #params["name"]
+            name = params["name"]
             command = [
                 "--input_data", params['hyper_params'],
                 "--host_web", C.HOST_ANN
