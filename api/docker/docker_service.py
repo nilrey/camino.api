@@ -83,7 +83,7 @@ def run_container(params):
     elif vm_ip:
         logging.info(f'params: {params}')
         client = docker.DockerClient(base_url=f'tcp://{vm_ip}:2375', timeout=5) 
-        image_info = find_image_by_id(params["imageId"]) 
+        image_info = find_image_by_id(params["image_id"]) 
         logging.info(f'image_info: {image_info}')
         if image_info.get('name', False) :
             logging.info(f'Формирование запроса')
