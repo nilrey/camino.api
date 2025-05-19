@@ -69,7 +69,7 @@ def find_image_by_id(image_id: str):
         for image in images:
             logging.info(f'{image.get("id")} {image_id}')
             if image.get("id") == image_id:
-                logging.info(f"Image {image_id} found on VM: {image.get('location')}")
+                logging.info(f"Image {image.get("id")} found on VM: {image.get('location')}")
                 return image
     except Exception as e:
         logging.error(f"Error retrieving images from VM {image.get('location')}: {e}")
@@ -92,13 +92,13 @@ def run_container(params):
         command.append('--work_format_training') if params['ann_mode'] == 'teach' else None
 
         volumes = {
-            f'/family{params["video_storage"]}': {"bind": "/family/video", "mode": "rw"},
-            f'/family{params["out_dir"]}': {"bind": "/output", "mode": "rw"},
-            f'/family{params["in_dir"]}': {"bind": "/input_videos", "mode": "rw"},
-            f'/family{params["weights"]}': {"bind": "/weights/", "mode": "rw"},
-            f'/family{params["markups"]}': {"bind": "/input_data", "mode": "rw"},
-            "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
-            "/family/projects_data": {"bind": "/projects_data", "mode": "rw"}
+            f'/family{params["video_storage"]}': {"bind": "/family/video"},
+            f'/family{params["out_dir"]}': {"bind": "/output"},
+            f'/family{params["in_dir"]}': {"bind": "/input_videos"},
+            f'/family{params["weights"]}': {"bind": "/weights/"},
+            f'/family{params["markups"]}': {"bind": "/input_data"},
+            "/var/run/docker.sock": {"bind": "/var/run/docker.sock"},
+            "/family/projects_data": {"bind": "/projects_data"}
         }
 
         # Формируем строку запуска для лога
@@ -116,7 +116,7 @@ def run_container(params):
 
         # Запуск контейнера
         container = client.containers.run(
-            image=image['name'],
+            image=f"{image.get('name')}:{image.get('tag', 'latest')}",
             name=name,
             command=command,
             device_requests=device_requests,
