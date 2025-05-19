@@ -92,13 +92,13 @@ def run_container(params):
         command.append('--work_format_training') if params['ann_mode'] == 'teach' else None
 
         volumes = {
-            f'/family{params["video_storage"]}': {"bind": "/family/video"},
-            f'/family{params["out_dir"]}': {"bind": "/output"},
-            f'/family{params["in_dir"]}': {"bind": "/input_videos"},
-            f'/family{params["weights"]}': {"bind": "/weights/"},
-            f'/family{params["markups"]}': {"bind": "/input_data"},
-            "/var/run/docker.sock": {"bind": "/var/run/docker.sock"},
-            "/family/projects_data": {"bind": "/projects_data"}
+            f'/family{params["video_storage"]}': {"bind": "/family/video", "mode": "rw"},
+            f'/family{params["out_dir"]}': {"bind": "/output", "mode": "rw"},
+            f'/family{params["in_dir"]}': {"bind": "/input_videos", "mode": "rw"},
+            f'/family{params["weights"]}': {"bind": "/weights/", "mode": "rw"},
+            f'/family{params["markups"]}': {"bind": "/input_data", "mode": "rw"},
+            "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
+            "/family/projects_data": {"bind": "/projects_data", "mode": "rw"}
         }
 
         # Формируем строку запуска для лога
