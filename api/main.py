@@ -11,7 +11,9 @@ from api.format.exceptions import http_exception_handler, NotFoundError
 import datetime as dt
 from api.lib.classExportDBToAnnJson import *
 import requests
+from fastapi import APIRouter, Path
 
+from api.docker import docker_service
 
 app = FastAPI(openapi_tags=tags_metadata)
 
@@ -196,6 +198,29 @@ async def api_docker_ann_export(request: Request,
 
 # CONTAINERS
 
+
+@docker_images.post("/images/{imageId}/run")
+async def run_container(request: CreateContainerRequest , imageId: str = Path(...)):
+    try:
+        params = request.model_dump()
+        params["imageId"] = imageId  
+        response = docker_service.run_container(params)
+        return {"message": response}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@docker_containers.get("/vm/check")
+async def get_vm_without_ann():
+    result, is_error = docker_service.find_vm_without_ann_images() 
+    if is_error:
+        message = f'Ошибка при просмотре VM: {result}'
+    elif result: 
+        message = f'Свободная VM: {result}'
+    else:
+        message = 'Нет свободных VM.'            
+
+    return {"message": message}    
 
 @docker_containers.get("/", tags=["Docker-контейнеры"], summary="Получение списка Docker-контейнеров на сервере")
 async def api_docker_containers():

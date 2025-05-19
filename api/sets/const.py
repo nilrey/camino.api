@@ -2,6 +2,9 @@
 HOST_RESTAPI = "http://camino-restapi"
 HOST_GRAFANA = "http://10.0.0.1:3000"
 HOST_ANN = "http://10.0.0.1:8000"
+HOST_DOCKER_API = 'tcp://10.0.0.1:2375'
+
+DEBUG_MODE = True
 
 ROOT = "/code"
 
@@ -25,6 +28,14 @@ PARAM_NO_TRUNC = " --no-trunc "
 
 BLOCK_LIST_IMAGES = ['idockerapi', 'vdbr/grafana', 'camino-camino-plugins', 'vdbr/monitor', 'vdbr/test', 'elestio/pgadmin', 'jrottenberg/ffmpeg', 'yiisoftware/yii2-php', 'postgres', 'inevm/camino', 'grafana/grafana-enterprise', 'postgres', 'prom/node-exporter', 'ubuntu/prometheus', 'gcr.io/cadvisor/cadvisor']
 BLOCK_LIST_CONTAINERS = ['camino-back', 'camino-pgdb', 'camino-restapi', 'camino-front', 'camino-plugins', 'camino-pgadmin', 'grafana', 'prometheus', 'cadvisor', 'node-exporter']
+
+VIRTUAL_MACHINES_LIST = [
+    {"name": "vm1", "host": "10.0.0.1", "port": 2375},
+    {"name": "vm2", "host": "10.0.0.2", "port": 2375},
+]
+ANN_IMAGES_LIST = ['bytetracker-image', 'ynp_inf', 'deeplab', 'sam']
+
+# VIRTUAL_MACHINES_LIST = ['10.0.0.1', '10.0.0.2', '10.0.0.3', '10.0.0.4']
 
 SET_MAX_WORKERS = 2
 SET_SHM_SIZE = 20 # размер shm при старте контейнера
