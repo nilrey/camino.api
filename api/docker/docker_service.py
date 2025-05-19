@@ -106,7 +106,7 @@ def run_container(params):
 
             # Формируем строку запуска для лога
             volume_args = ' '.join([f'-v {host}:{opt["bind"]}:{opt["mode"]}' for host, opt in volumes.items()])
-            command_str = f"docker run --gpus all --shm-size=20g --name {name} {volume_args} {image} {' '.join(command)}"
+            command_str = f"docker run --gpus all --shm-size=20g --name {name} {volume_args} {image_info.get('name')} {' '.join(command)}"
             logging.info(f"{command_str}")
 
             # Используем device_requests для GPU
