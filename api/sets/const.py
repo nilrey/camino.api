@@ -14,6 +14,7 @@ CNTR_BASE_01_DIR_OUT="/output"
 
 LOG_DIR = "/export/logs"
 LOG_PATH = LOG_DIR
+LOG_FNAME = "back"
 
 WEIGHTS_DIR = "/weights"
 EXPORT_DIR = "/export"
@@ -30,8 +31,8 @@ BLOCK_LIST_IMAGES = ['idockerapi', 'vdbr/grafana', 'camino-camino-plugins', 'vdb
 BLOCK_LIST_CONTAINERS = ['camino-back', 'camino-pgdb', 'camino-restapi', 'camino-front', 'camino-plugins', 'camino-pgadmin', 'grafana', 'prometheus', 'cadvisor', 'node-exporter']
 
 VIRTUAL_MACHINES_LIST = [
-    {"name": "vm1", "host": "10.0.0.1", "port": 2375},
-    {"name": "vm2", "host": "10.0.0.2", "port": 2375},
+    {"name": "vm1", "host": "172.17.0.1", "port": 2375},
+    {"name": "vm2", "host": "172.17.0.2", "port": 2375},
 ]
 ANN_IMAGES_LIST = ['bytetracker-image', 'ynp_inf', 'deeplab', 'sam']
 

@@ -17,6 +17,7 @@ from collections import defaultdict
 from api.lib.func_datetime import *
 import api.sets.const as C
 from api.docker import docker_service 
+from  api.format.logger import logger
 
 import api.manage.manage as mng
 
@@ -78,9 +79,9 @@ class DatasetMarkupsExport:
         self.output_dir = output_dir
     
 
-    def log_info(self, mes):
-        with open(C.LOG_PATH + f"/{self.logname}", "a") as file:
-            file.write(f'{get_dt_now_noms()} {mes}\n')
+    # def log_info(self, mes):
+    #     with open(C.LOG_PATH + f"/{self.logname}", "a") as file:
+    #         file.write(f'{get_dt_now_noms()} {mes}\n')
 
 
     def load_config(self, filename='/code/api/database/database.ini', section='postgresql'):
@@ -142,7 +143,7 @@ class DatasetMarkupsExport:
     def prepare_file(self, file_data):
         file = self.convert_to_serializable(dict(file_data)) 
       
-        self.log_info(f"file_id: {file['id']}" ) 
+        logger.info(f"file_id: {file['id']}" ) 
         chains = self.prepare_chains(file) # [{"id":1}, {"id":2}]
         return {'file_name' : file['name'],
                 'file_id' : file['id'],
@@ -154,12 +155,12 @@ class DatasetMarkupsExport:
         try:
             dataset_state = self.exec_query(self.stmt_dataset_state(), {"dataset_id":self.dataset_id} )
             self.dataset_state = dataset_state[0]["state_id"]
-            self.log_info(f'Dataset state: {self.dataset_state}')
+            logger.info(f'Dataset state: {self.dataset_state}')
             if self.dataset_state != self.DATASET_STATE_PROCEED :
                 self.do_stop_export = True
                 
         except Exception as e:
-            self.log_info(f'ОШИБКА: Dataset state: {e}')
+            logger.info(f'ОШИБКА: Dataset state: {e}')
 
     def prepare_chains(self, file): 
         # при экспорте без запуска ИНС нужно брать chains из текущего датасета
@@ -167,7 +168,7 @@ class DatasetMarkupsExport:
         chains = self.get_chains(self.parent_dataset_id if self.image_id else self.dataset_id , file['id'])
         chains_cnt = len(chains)
         markups_cnt = 0
-        self.log_info(f'Chains: {chains_cnt}' ) 
+        logger.info(f'Chains: {chains_cnt}' ) 
         # Заполняем словарь
         for idx, chain in enumerate(chains, start=1): 
             if( idx > 0 and idx % self.BATCH_SIZE == 0):
@@ -177,7 +178,7 @@ class DatasetMarkupsExport:
                     break
 
             markups = self.get_markups(chain['chain_id']) 
-            self.log_info(f"File id:{file['id']}; Chain_id: {chain['chain_id']}; {idx} of {chains_cnt}; Chain markups: {len(markups)})")
+            logger.info(f"File id:{file['id']}; Chain_id: {chain['chain_id']}; {idx} of {chains_cnt}; Chain markups: {len(markups)})")
             chain["chain_markups"] = markups
             markups_cnt += len(markups)
 
@@ -199,24 +200,24 @@ class DatasetMarkupsExport:
             mes = f'Получен сигнал в БД на прерывание процесса выгрузки self.dataset_state: {self.dataset_state}.'
             self.status[file_data['name']] = "Failed"
             self.errors[file_data['name']] = mes
-            self.log_info(mes)
+            logger.info(mes)
         else:
             try:
                 os.makedirs(self.output_dir, exist_ok=True)  # Создаем каталог, если его нет
                 file_path = os.path.join(self.output_dir, f"IN_{file_data['name']}.json")
 
-                self.log_info(f"путь к файлу: {file_path}")
+                logger.info(f"путь к файлу: {file_path}")
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(json_data, f, ensure_ascii=False)
                     self.message = 'Success'
 
                 self.status[file_data['name']] = "Success"
-                self.log_info(f"{file_data['name']} is success done. ")
+                logger.info(f"{file_data['name']} is success done. ")
             except Exception as e:
                 self.status[file_data['name']] = "Failed"
                 self.errors[file_data['name']] = traceback.format_exc()
-                self.log_info(self.status[file_data['name']])
-                self.log_info(self.errors[file_data['name']])
+                logger.info(self.status[file_data['name']])
+                logger.info(self.errors[file_data['name']])
 
     def monitor_threads(self):
         # Менеджер потоков - для отслеживания состояния других потоков
@@ -236,12 +237,12 @@ class DatasetMarkupsExport:
         for filename, state in self.status.items():
             if state is None:
                 state = "Success"
-            self.log_info(f"{filename}: {state}")
+            logger.info(f"{filename}: {state}")
 
         if self.errors:
-            self.log_info("Errors while files proceed:")
+            logger.info("Errors while files proceed:")
             for filename, error in self.errors.items():
-                self.log_info(f"{filename} failed with error: {error}")
+                logger.info(f"{filename} failed with error: {error}")
 
     def wait_for_threads(self):
         # Ожидание завершения всех потоков. 
@@ -251,51 +252,51 @@ class DatasetMarkupsExport:
         self.monitor_thread.join()
         # создаем симлинки для pkl файлов из директории dataset_parent_id
         self.create_simlinks()
-        self.log_info("Работа с файлами закончена")
+        logger.info("Работа с файлами закончена")
         try:
             # /export/on_error
             ds_id = self.img_params.get('dataset_id', self.dataset_id)
             url = f"{C.HOST_RESTAPI}/projects/{self.project_id}/datasets/{ds_id}/on_export" 
-            self.log_info(f'prepare Url on_export: {url}')
+            logger.info(f'prepare Url on_export: {url}')
             files_post = list(self.files_res.values())
-            self.log_info(f'Данные отправленные on_export "files": {files_post}')
+            logger.info(f'Данные отправленные on_export "files": {files_post}')
             headers = { "Content-Type": "application/json" }
             data = { "files": files_post }
 
             response = requests.post(url, json=data, headers=headers) 
-            self.log_info(f'on_export response: {response}')
+            logger.info(f'on_export response: {response}')
         except Exception as e:
-            self.log_info(f'on_export response error: {e}')
+            logger.info(f'on_export response error: {e}')
         finally:
-            self.log_info(f'Выгрузка данных из БД в Json закончена.')
+            logger.info(f'Выгрузка данных из БД в Json закончена.')
 
         if self.do_stop_export : 
-            self.log_info('Запуск контейнера отменен')
+            logger.info('Запуск контейнера отменен')
         
         elif(self.image_id): # Используем наличие image_id, в качестве признака запуска контейнера
             # DOCKER RUN CONTAINER
-            self.log_info('Удаление директории "markups_out"')
+            logger.info('Удаление директории "markups_out"')
             self.clear_directory(self.ann_output_dir)
-            self.log_info('Создание директории "markups_out" перед запуском контейнера')
+            logger.info('Создание директории "markups_out" перед запуском контейнера')
             os.makedirs(self.ann_output_dir, exist_ok=True)
-            self.log_info('Начало запуска контейнера')
+            logger.info('Начало запуска контейнера')
             res =  docker_service.run_container(self.img_params) # mng.mng_image_run_container(self.image_id, self.img_params)
-            self.log_info(f'Результат запуска контейнера: {res}')
+            logger.info(f'Результат запуска контейнера: {res}')
 
     def get_dataset_files(self, init_dataset_id): 
-        self.log_info(f'get_dataset_files: init_dataset_id = {init_dataset_id}')
+        logger.info(f'get_dataset_files: init_dataset_id = {init_dataset_id}')
         if(init_dataset_id):
             stmt = text("SELECT * FROM files f  WHERE f.dataset_id = :dataset_id AND f.is_deleted = false")
             files = self.exec_query(stmt, {"dataset_id" : init_dataset_id})
-            self.log_info(f'найдено всех файлов корневого датасета = {len(files)}')
+            logger.info(f'найдено всех файлов корневого датасета = {len(files)}')
             # проверка на only_selected_files
-            # self.log_info(files)
+            # logger.info(files)
             if(len(self.only_selected_files) > 0 ):
-                self.log_info("начата фильтрация по only_selected_files")
+                logger.info("начата фильтрация по only_selected_files")
                 files = [f for f in files if f['id'] in self.only_selected_files] 
                         
         else:
-            self.log_info(f'Error: parent_dataset_id is null')
+            logger.info(f'Error: parent_dataset_id is null')
             files = []
         #print(f"{resp}", file=sys.stderr)
         return files
@@ -311,7 +312,7 @@ class DatasetMarkupsExport:
     def get_chains(self, dataset_id, file_id):
         stmt = self.stmt_chains()
         params = {'dataset_id': dataset_id, 'file_id': file_id}
-        self.log_info(f"Get chains query params: {params}")
+        logger.info(f"Get chains query params: {params}")
         if (self.only_verified_chains):
             stmt = self.stmt_chains_verified()
 
@@ -332,7 +333,7 @@ class DatasetMarkupsExport:
         
     def get_markups(self, chain_id):
         markups = self.exec_query( self.stmt_markups(), {"chain_id": chain_id })
-        # self.log_info(f'markups: {len(markups)}')
+        # logger.info(f'markups: {len(markups)}')
         return markups
     
 
@@ -356,7 +357,7 @@ class DatasetMarkupsExport:
 
     def get_binded_datasets(self):
         self.datasets = self.exec_query( self.stmt_binded_datasets(), {"dataset_id": self.dataset_id })
-        self.log_info(f"datasets: {self.datasets}")
+        logger.info(f"datasets: {self.datasets}")
 
 
     def set_datasets_hierarchy(self):
@@ -380,13 +381,13 @@ class DatasetMarkupsExport:
 
     def clear_directory(self, dir):
         if ( not os.path.exists(dir)):
-            self.log_info(f"Удаление директории. Директория не существует: '{dir}'")
+            logger.info(f"Удаление директории. Директория не существует: '{dir}'")
         else:
             shutil.rmtree(dir)
             if ( not os.path.exists(dir)):
-                self.log_info(f"Удаление директории. Директория удалена: '{dir}'")
+                logger.info(f"Удаление директории. Директория удалена: '{dir}'")
             else:
-                self.log_info(f"Удаление директории. Ошибка: директория не удалена: '{dir}'")
+                logger.info(f"Удаление директории. Ошибка: директория не удалена: '{dir}'")
 
     def create_simlinks(self):
         try:
@@ -406,12 +407,12 @@ class DatasetMarkupsExport:
                         # Создаем символическую ссылку
                         os.symlink(os.path.abspath(source_file), target_link)
                         fsize = os.path.getsize(target_link)
-                        self.log_info(f"Создана ссылка: source_file:'{source_file}', target_link:'{target_link}', размер исходного файла: {fsize} байт")
+                        logger.info(f"Создана ссылка: source_file:'{source_file}', target_link:'{target_link}', размер исходного файла: {fsize} байт")
 
                     except Exception as e:
-                        self.log_info(f"Ошибка при создании ссылки для source_file:{source_file}: {e}")
+                        logger.info(f"Ошибка при создании ссылки для source_file:{source_file}: {e}")
         except Exception as e:
-            self.log_info(f"Ошибка при создании создании симлинк для pkl: {e}")
+            logger.info(f"Ошибка при создании создании симлинк для pkl: {e}")
 
 
     def run(self):
@@ -419,9 +420,9 @@ class DatasetMarkupsExport:
         if(not self.image_id):
             message = "Выгрузка данных из БД в json без запуска контейнера"
 
-        self.log_info(message)
-        self.log_info(f'exp_params: {self.params}')
-        self.log_info(f'img_params: {self.img_params}')
+        logger.info(message)
+        logger.info(f'exp_params: {self.params}')
+        logger.info(f'img_params: {self.img_params}')
 
         self.get_binded_datasets()
         self.set_datasets_hierarchy()
@@ -430,16 +431,16 @@ class DatasetMarkupsExport:
             self.get_param_output_dir(self.params, f"/projects_data/{self.project_id}/{self.dataset_id}/markups_in") # директория где создаются файлы json
             self.ann_output_dir = f"/projects_data/{self.project_id}/{self.dataset_id}/markups_out"
             
-            self.log_info(f'image_id: {self.image_id}')
-            self.log_info(f'project_id: {self.project_id}')
-            self.log_info(f'dataset_id: {self.dataset_id}')
-            self.log_info(f'parent_dataset_id: {self.parent_dataset_id}')
-            self.log_info(f'init_dataset_id: {self.init_dataset_id}')
-            self.log_info(f'only_verified_chains: {self.only_verified_chains}')
-            self.log_info(f'only_selected_files: {self.only_selected_files}')
+            logger.info(f'image_id: {self.image_id}')
+            logger.info(f'project_id: {self.project_id}')
+            logger.info(f'dataset_id: {self.dataset_id}')
+            logger.info(f'parent_dataset_id: {self.parent_dataset_id}')
+            logger.info(f'init_dataset_id: {self.init_dataset_id}')
+            logger.info(f'only_verified_chains: {self.only_verified_chains}')
+            logger.info(f'only_selected_files: {self.only_selected_files}')
 
             self.data_files = self.get_dataset_files(self.init_dataset_id)
-            self.log_info(f'Files found: {len(self.data_files)} ')
+            logger.info(f'Files found: {len(self.data_files)} ')
             # очистка директории перед выгрузкой из базы
             if (self.image_id):
                 self.clear_directory(self.output_dir)
@@ -452,7 +453,7 @@ class DatasetMarkupsExport:
                 self.check_dataset_state()
                 # Если обнаружен сигнал о прерывании - остановить выгрузку
                 if self.do_stop_export :
-                    self.log_info(f'Запуск обработки файла {file} отменен')
+                    logger.info(f'Запуск обработки файла {file} отменен')
                     break
                 else:
                     thread = threading.Thread(target=self.create_json_file, args=(file,))
@@ -468,10 +469,10 @@ class DatasetMarkupsExport:
             self.wait_thread.start()
             files_count = len(self.data_files)
             message = {'message': 'Файлы отправлены в обработку', 'files_count' : {files_count} }
-            self.log_info( f'Response json: {message} ')
+            logger.info( f'Response json: {message} ')
         else:
             message = {'message': f'Ошибка: project_id:\'{self.project_id}\', dataset_id: \'{self.dataset_id}\'', 'files_count' : 0 }
-            self.log_info( f'Response json: {message} ')
+            logger.info( f'Response json: {message} ')
 
         
         return message

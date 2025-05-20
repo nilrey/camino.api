@@ -11,31 +11,31 @@ import api.format.response_teplates as rt # Response Template
 import api.format.response_objects as ro # Response Objects
 import time, datetime as dt
 
-import logging
+from  api.format.logger import logger
 
 
-def init_logger(type = 'file'):
-    os.makedirs(C.LOG_PATH, exist_ok=True)
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG) 
-    if(type == 'console'):    
-        # вывод в консоль
-        handler = logging.StreamHandler()
-    else:
-        # вывод в файл
-        LOG_FILE = f'{C.LOG_PATH}/backend_api_calls_{get_time_today_no_sec()}.log'
-        handler = logging.FileHandler(f"{LOG_FILE}", encoding="utf-8")
+# def init_logger(type = 'file'):
+#     os.makedirs(C.LOG_PATH, exist_ok=True)
+#     logger = logging.getLogger(__name__)
+#     logger.setLevel(logging.DEBUG) 
+#     if(type == 'console'):    
+#         # вывод в консоль
+#         handler = logging.StreamHandler()
+#     else:
+#         # вывод в файл
+#         LOG_FILE = f'{C.LOG_PATH}/backend_api_calls_{get_time_today_no_sec()}.log'
+#         handler = logging.FileHandler(f"{LOG_FILE}", encoding="utf-8")
     
-    handler.setLevel(logging.DEBUG)
-    # Определяем формат сообщений
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
+#     handler.setLevel(logging.DEBUG)
+#     # Определяем формат сообщений
+#     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+#     handler.setFormatter(formatter)
 
-    # Добавляем обработчик к логгеру (если он ещё не добавлен)
-    if not logger.hasHandlers():
-        logger.addHandler(handler)
+#     # Добавляем обработчик к логгеру (если он ещё не добавлен)
+#     if not logger.hasHandlers():
+#         logger.addHandler(handler)
 
-    return logger
+#     return logger
 
 
 
@@ -43,11 +43,13 @@ def dkr_docker_info():
     return exeCommand(' docker info '+ C.PARAM_TO_JSON )
 
 def dkr_images():
-    return exeCommand('docker images '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
+    command = 'docker images '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON 
+    logger.info(command)
+    return exeCommand(command)
 
 def dkr_container_create(image_name, params):
     export_code = get_time_no_microsec()
-    log_info(export_code, f'params: {params}')
+    logger.info(f'params: {params}')
     command = 'docker create --rm '
     volume_weights = volume_input = volume_output = volume_socket = volume_markups = volume_storage = ''
     param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = param_hyper = ''
@@ -78,7 +80,7 @@ def dkr_container_create(image_name, params):
                 param_network = f' --network {value} '
 
     command = f'docker create --rm -it {param_name} {param_gpu} {param_shm_size} {volume_storage} {volume_output} {volume_input} {volume_weights} {volume_socket} {volume_markups} {volume_family} {param_network} {image_name} {param_hyper} {param_input_data} {param_host_web} {param_ann_mode}'
-    log_info(export_code, command)
+    logger.info(command)
     return execCommand(command) 
 
 
@@ -87,7 +89,7 @@ def dkr_containers():
 
 
 def dkr_containers_stats():
-    logger = init_logger()
+    # logger = init_logger()
     command = 'docker stats -a --no-stream '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON 
     logger.info(command)
     res = exeCommand(command)
@@ -114,7 +116,7 @@ def dkr_container_stop(container_id):
 def dkr_ann_export(imageId, export_code, annId):
     execCommand(f'mkdir {C.EXPORT_DIR}/tmp_{export_code}')
     command = f'docker save {imageId} > {img_file_path(export_code)} ' # выгружаем образ из докера в файл 
-    log_info(export_code, f"Выгрузка образа из докера: {command}")
+    logger.info(f"Выгрузка образа из докера: {command}")
     threading.Thread(target=runCommand, args=[command]).start() # запускаем в потоке чтобы отдать ответ сразу
     return True
 
@@ -128,7 +130,7 @@ def prepare_ann_archive(imageId, weights, export_code, annId):
 
 # мониторинг текущего статуса экспорта образа
 def process_archive(imageId, weights, export_code, annId):
-    log_info(export_code, "Мониторинг экспорта временного файла образа запущен.")
+    logger.info("Мониторинг экспорта временного файла образа запущен.")
     while process_runs(imageId, export_code, annId): # пока процесс висит в списке процессов - формирование образа незакончено
         time.sleep(2)
     # процесс завершен
@@ -137,11 +139,11 @@ def process_archive(imageId, weights, export_code, annId):
             if os.path.isfile( img_file_path(export_code) ): # если файл образа существует
             # команда перейти в дир. экспорта, потом формируем архив из файла образа + файл весов + readme
                 command = f'cd {C.EXPORT_DIR} && tar -zcf {arch_file_path(export_code)} {tar_img_file(export_code)} {tar_weights_file(weights)} {tar_readme_file()}'
-                log_info(export_code, f'Команда на архивацию: {command}')
+                logger.info(f'Команда на архивацию: {command}')
                 threading.Thread(target=run_command_with_finally, args=[export_code, command]).start() # запускаем в потоке чтобы перейти к мониторингу
             else:
                 msg = f'Ошибка: Файл образа не найден: {img_file_path(export_code)}'
-                log_info(export_code, msg)
+                logger.info(msg)
                 send_on_error(export_code, annId, msg)
     # мониторинг окончания архивации
     while archive_runs(export_code):
@@ -149,24 +151,24 @@ def process_archive(imageId, weights, export_code, annId):
     # процесс завершен
     threading.Thread(target=send_arch_on_save, args=[export_code, annId]).start() # отправить сообщение о завершении работы
     if os.path.isfile( arch_file_path(export_code) ):
-        log_info(export_code, "Файл экспорта нейросети успешно сформирован")
+        logger.info("Файл экспорта нейросети успешно сформирован")
         shutil.rmtree(img_path(export_code))
         if os.path.isfile( img_file_path(export_code) ):
-            log_info(export_code, "Ошибка: Временный файл образа удалить не удалось")
+            logger.info("Ошибка: Временный файл образа удалить не удалось")
         else:
-            log_info(export_code, "Временный файл образа удален")
+            logger.info("Временный файл образа удален")
     else:
         msg = f"Ошибка: Файл архива нейросети не найден. {arch_file_path(export_code)} , IsFile: {os.path.isfile( arch_file_path(export_code) )}"
-        log_info(export_code, msg)
+        logger.info(msg)
         send_on_error(export_code, annId, msg)
     return True
 
 def archive_runs(export_code):
     with open(log_file_path(export_code)) as f:      
         if C.EXPORT_ARCH_FINISHED in f.read(): #проверяем лог на наличие сигнала что процесс архивирования окончен
-            log_info(export_code, f'Процесс архивирования окончен' )
+            logger.info(f'Процесс архивирования окончен' )
             return False
-    log_info(export_code, f'Процесс архивирования запущен' )
+    logger.info(f'Процесс архивирования запущен' )
     return True
 
 def process_runs(imageId, export_code, annId):
@@ -183,12 +185,12 @@ def process_runs(imageId, export_code, annId):
         is_running = False
         msg = f'Процесс не запущен. Ошибка: {resp.stderr} | COMMAND: {command}'
         send_on_error(export_code, annId, msg)
-    log_info(export_code, msg)
+    logger.info(msg)
     return is_running
 
-def log_info(export_code, mes):
-    with open(log_file_path(export_code), "a") as file:
-        file.write(f'{get_time_no_microsec()} {mes}\n')
+# def logger.info(mes):
+    # with open(log_file_path(export_code), "a") as file:
+    #     file.write(f'{get_time_no_microsec()} {mes}\n')
 
 def run_command_with_finally(export_code, command):
     msg = ""
@@ -198,8 +200,8 @@ def run_command_with_finally(export_code, command):
     except Exception:
         msg = f"Ошибка: Команда выполенена с ошибкой. {command}"
     finally:
-        log_info(export_code, C.EXPORT_ARCH_FINISHED)
-        log_info(export_code, msg)
+        logger.info(C.EXPORT_ARCH_FINISHED)
+        logger.info(msg)
     return True
 
 def log_file_path(export_code):
@@ -247,7 +249,7 @@ def send_arch_on_save(export_code, annId):
     except Exception:
         mes = f"Ошибка: сообщение не отправлено. {url}"
     finally:
-        log_info(export_code, mes)
+        logger.info(mes)
 
 def send_on_error(export_code, annId, msg):
     url = f'{C.HOST_RESTAPI}/ann/{annId}/archive/on_error'
@@ -257,7 +259,7 @@ def send_on_error(export_code, annId, msg):
     except Exception:
         mes = f"Ошибка: сообщение не отправлено.{msg}. {url}"
     finally:
-        log_info(export_code, mes)
+        logger.info(mes)
 
 # запуск шелл команды через сокет
 def runCommand(command):

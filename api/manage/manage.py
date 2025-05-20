@@ -12,30 +12,30 @@ from api.lib.classExportDBToAnnJson import *
 from api.lib.classImportAnnJsonToDB import *
 import requests
 
-import logging
+from  api.format.logger import logger
 
-def init_logger(type = 'file'):
-    os.makedirs(C.LOG_PATH, exist_ok=True)
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.DEBUG) 
-    if(type == 'console'):    
-        # вывод в консоль
-        handler = logging.StreamHandler()
-    else:
-        # вывод в файл
-        LOG_FILE = f'{C.LOG_PATH}/backend_api_calls_{dkr.get_time_today_no_sec()}.log'
-        handler = logging.FileHandler(f"{LOG_FILE}", encoding="utf-8")
+# def init_logger(type = 'file'):
+#     os.makedirs(C.LOG_PATH, exist_ok=True)
+#     logger = logging.getLogger(__name__)
+#     logger.setLevel(logging.DEBUG) 
+#     if(type == 'console'):    
+#         # вывод в консоль
+#         handler = logging.StreamHandler()
+#     else:
+#         # вывод в файл
+#         LOG_FILE = f'{C.LOG_PATH}/backend_api_calls_{dkr.get_time_today_no_sec()}.log'
+#         handler = logging.FileHandler(f"{LOG_FILE}", encoding="utf-8")
     
-    handler.setLevel(logging.DEBUG)
-    # Определяем формат сообщений
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
+#     handler.setLevel(logging.DEBUG)
+#     # Определяем формат сообщений
+#     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+#     handler.setFormatter(formatter)
 
-    # Добавляем обработчик к логгеру (если он ещё не добавлен)
-    if not logger.hasHandlers():
-        logger.addHandler(handler)
+#     # Добавляем обработчик к логгеру (если он ещё не добавлен)
+#     if not logger.hasHandlers():
+#         logger.addHandler(handler)
 
-    return logger
+#     return logger
 
 
 # Users
@@ -110,7 +110,7 @@ def mng_docker_info():
    return response
 
 
-def mng_images():
+def mng_images(): 
    response = dkr.dkr_images()
    if (not response['error']): response = ro.docker_images(response['response'])
    return response
@@ -172,7 +172,6 @@ def mng_containers():
 
 
 def mng_containers_stats():
-   logger = init_logger()
    response = dkr.dkr_containers_stats()
    if dkr.isJson(response):
       logger.info("mng_containers_stats, dkr_containers_stats - response:")

@@ -14,6 +14,7 @@ import requests
 from fastapi import APIRouter, Path
 
 from api.docker import docker_service
+from  api.format.logger import logger
 
 app = FastAPI(openapi_tags=tags_metadata)
 
@@ -151,7 +152,7 @@ async def api_export_db_to_json(request: Request,
 
 
 @docker.get("/", tags=["Docker"], summary="Получение информации о состоянии Docker")
-async def api_docker_info():
+async def api_docker_info(): 
    return mng_docker_info()
 
 
