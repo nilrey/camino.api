@@ -12,3 +12,4 @@ Dockerfile.back
 dockerfiles/
 api/database/database.ini
 update_data_compose.sh
+api/sets/const.py
