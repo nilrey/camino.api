@@ -11,8 +11,9 @@ from api.format.exceptions import http_exception_handler, NotFoundError
 import datetime as dt
 from api.lib.classExportDBToAnnJson import *
 import requests
-from fastapi import APIRouter, Path
+from fastapi import Response, status, Path
 
+from fastapi.responses import JSONResponse
 from api.docker import docker_service
 from  api.format.logger import logger
 
@@ -135,7 +136,6 @@ async def api_import_json_to_db(request: Request,
    return mng_import_json_to_db(projectId, datasetId, parse_data)
 
 
-
 @projects.post("/{projectId}/datasets/{datasetId}/export", summary="Запускает процесс формирования JSON файлов разметки датасета и возвращает признак успешного начала операции. По окончании операции вызывается соотв. роут export on_save")
 async def api_export_db_to_json(request: Request,
       projectId:str,
@@ -160,13 +160,35 @@ async def api_docker_info():
 
 
 @docker_images.get("/", tags=["Docker-образы"], summary="Получение списка Docker-образов на сервере")
+# async def api_docker_images():
+#    return mng_images()
 async def api_docker_images():
-   return mng_images()
+    try:
+        images = docker_service.get_docker_images()
+        return JSONResponse(content={
+            "pagination": {"totalItems": len(images)},
+            "items": images
+        })
+    except Exception as e:
+        return JSONResponse(status_code=500, content={
+            "code": 500,
+            "message": str(e)
+        })
 
 
-@docker_images.get("/{imageId}", tags=["Docker-образы"], summary="Получение информации о Docker-образе на сервере")
-async def api_docker_image(imageId):
-   return mng_image(imageId)
+@docker_images.get("/{imageId}", tags=["Docker-образы"], summary="Получение информации о Docker-образе на сервере") 
+async def get_docker_image(image_id: str):
+    try:
+        image = docker_service.find_image_by_id(image_id)
+        if image:
+            return image
+        else:
+            raise HTTPException(status_code=404, detail="Image not found")
+    except Exception as e:
+        return {
+            "code": 500,
+            "message": str(e)
+        }
 
 
 @docker_images.put("/{imageId}/create", tags=["Docker-образы"], summary="Создание Docker-контейнера из Docker-образа")
@@ -213,7 +235,7 @@ async def api_docker_ann_export(request: Request,
 
 @docker_containers.get("/vm/check")
 async def get_vm_without_ann():
-    result, is_error = docker_service.find_vm_without_ann_images() 
+    result, is_error = docker_service.get_available_vm() 
     if is_error:
         message = f'Ошибка при просмотре VM: {result}'
     elif result: 
@@ -223,9 +245,26 @@ async def get_vm_without_ann():
 
     return {"message": message}    
 
-@docker_containers.get("/", tags=["Docker-контейнеры"], summary="Получение списка Docker-контейнеров на сервере")
-async def api_docker_containers():
-   return mng_containers()
+@docker_containers.get("/", tags=["Docker-контейнеры"], summary="Получение списка Docker-контейнеров на сервере") 
+async def get_containers():
+    try:
+        containers = docker_service.get_docker_containers()
+        return {
+            "pagination": {
+                "totalItems": len(containers)
+            },
+            "items": containers
+        }
+    except Exception as e:
+        docker_service.logger.error(f"Error retrieving containers: {str(e)}")
+        return Response(
+            content={
+                "code": 500,
+                "message": str(e)
+            },
+            media_type="application/json",
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
 
 @docker_containers.get("/stats", tags=["Docker-контейнеры"], summary="Получение списка состояний Docker-контейнеров на сервере")
@@ -234,9 +273,18 @@ async def api_docker_containers_stats():
 
 
 @docker_containers.get("/{containerId}", tags=["Docker-контейнеры"], summary="Получение информации о Docker-контейнере на сервере")
-async def api_docker_container(containerId):
-   return mng_container(containerId)
-
+async def api_docker_container(container_id: str):
+    try:
+        container = docker_service.find_container_by_id(container_id)
+        if container:
+            return container
+        else:
+            raise HTTPException(status_code=404, detail="Image not found")
+    except Exception as e:
+        return {
+            "code": 500,
+            "message": str(e)
+        }
 
 @docker_containers.get("/{containerId}/stats", tags=["Docker-контейнеры"], summary="Получение состояния Docker-контейнера на сервере")
 async def api_docker_container_stats(containerId):
@@ -255,12 +303,15 @@ async def api_docker_container_start(containerId ):
 
 @docker_containers.put("/{containerId}/stop", tags=["Docker-контейнеры"], summary="Остановка Docker-контейнер на сервере")
 async def api_docker_container_stop(request: Request,
-      containerId:str,
-      data:ContainerOnStopPostData ):
-   threading.Thread(target=mng_container_stop, args=(containerId, data.dataset_id)).start()
-   resp = mng_container_stats(containerId)
-   return resp
-
+      data:ContainerOnStopPostData,
+      container_id: str = Path(..., alias="containerId") ):
+   try:
+      threading.Thread(target=mng_container_stop, args=(container_id, data.dataset_id)).start()
+      # resp = mng_container_stats(containerId)
+      return {"message": "Запрос на остановку отправлен"}
+   except Exception as e:
+      raise HTTPException(status_code=500, detail=str(e))
+   
 
 # EVENTS
 

@@ -1,22 +1,25 @@
 import os
-from datetime import datetime
-import socket
 import docker
-import logging
+from docker.types import DeviceRequest
+from docker.errors import NotFound, APIError
+import socket
+from datetime import datetime
+from typing import List, Dict
 from docker.errors import NotFound, APIError
 import api.sets.const as C
 from docker.types import DeviceRequest
-from typing import List, Dict
 import requests
 from  api.format.logger import logger
+from docker.models.containers import Container as DockerContainer
+from api.docker.docker_client import docker_client
 
 # client = docker.DockerClient(base_url=f'tcp://{C.VIRTUAL_MACHINES_LIST[0]["host"]}:2375')
 
 # def list_images(): 
-#     return client.images()
+#     return docker_client.images()
 
 # def list_containers(all=True): 
-#     return client.containers(all=all)
+#     return docker_client.containers(all=all)
 
 
 def get_docker_images() -> List[Dict]:
@@ -63,22 +66,75 @@ def find_image_by_id(image_id: str):
         logger.error(f"Error retrieving images from VM {image.get('location')}: {e}")
     return None
 
+
+def get_docker_containers() -> List[Dict]:
+    containers_info = []
+    for vm in C.VIRTUAL_MACHINES_LIST:
+        try: 
+            client = docker.DockerClient(base_url=f"tcp://{vm['host']}:{vm['port']}")
+            containers = client.containers.list()
+            for container in containers:
+                if not container.attrs:
+                    continue
+                assert isinstance(container, DockerContainer) 
+                if container.name in C.BLOCK_LIST_CONTAINERS:
+                    continue
+
+                command = container.attrs['Config']['Cmd']
+                command_str = " ".join(command) if isinstance(command, list) else str(command)
+
+                ports = container.attrs['NetworkSettings']['Ports']
+                ports_str = ", ".join([
+                    f"{container_port}" for container_port in ports.keys() if ports
+                ]) if ports else ""
+
+                container_info = {
+                    "id": container.id,
+                    "host": vm['host'],
+                    "image": {
+                        "id": container.image.id,
+                        "name": container.image.tags[0].split(":")[0] if container.image.tags else "",
+                        "tag": container.image.tags[0].split(":")[1] if container.image.tags else ""
+                    },
+                    "command": command_str,
+                    "names": container.name,
+                    "ports": ports_str,
+                    "created_at": container.attrs['Created'],
+                    "status": container.status
+                }
+                containers_info.append(container_info)
+        except Exception as e:
+            logger.error(f"Error connecting to {vm['host']}: {str(e)}")
+    return containers_info
+
+def find_container_by_id(container_id: str):
+    try:
+        containers = get_docker_containers()
+        for container in containers:
+            logger.info(f'{container.get("id")} {container_id}')
+            if container.get("id") == container_id:
+                logger.info(f"Container {container_id} found on VM: {container.get('host')}")
+                return container
+    except Exception as e:
+        logger.error(f"Ошибка в поиске контейнера: {e}")
+    return None
+
 def run_container(params): 
     logger.info("Start run_container")
-    vm_ip, is_error = find_vm_without_ann_images() 
+    vm_host, is_error = get_available_vm() 
     container_id = None
     if is_error:
-        message = f'Ошибка при просмотре списка VM: {vm_ip}'
-    elif vm_ip:
+        message = f'Ошибка при просмотре списка VM: {vm_host}'
+    elif vm_host:
         logger.info(f'params: {params}')
-        client = docker.DockerClient(base_url=f'tcp://{vm_ip}:2375', timeout=5) 
+        client = docker.DockerClient(base_url=f'tcp://{vm_host}:2375', timeout=5) 
         image_info = find_image_by_id(params["image_id"]) 
         logger.info(f'image_info: {image_info}')
         if image_info.get('name', False) :
             logger.info(f'Формирование запроса')
             name = params["name"]
             command = [
-                # "--input_data", params['hyper_params'],
+                "--input_data", params['hyper_params'],
                 "--host_web", C.HOST_ANN
             ]
             command.append('--work_format_training') if params['ann_mode'] == 'teach' else None
@@ -114,12 +170,12 @@ def run_container(params):
                 device_requests=device_requests,
                 shm_size="20g",
                 volumes=volumes,
-                # remove=True,
+                remove=True,
                 detach=True,
                 tty=True
             )
 
-            logger.info(f'Контейнер запущен на: {vm_ip}')
+            logger.info(f'Контейнер запущен на: {vm_host}')
             message = container.id
             container_id = container.id
     else:
@@ -135,7 +191,7 @@ def run_container(params):
     else:
         url = f"{C.HOST_RESTAPI}/containers/{container_id}/on_error"
     
-    response = { 'host' : vm_ip, 'dataset_id' : params['dataset_id']}
+    response = { 'host' : vm_host, 'dataset_id' : params['dataset_id']}
     logger.info(f'Send post: Url: {url} , body: {response}')
 
     requests.post(url, json = response)
@@ -155,20 +211,36 @@ def run_container(params):
 #         logger.exception(f"Произошла непредвиденная ошибка: {e}")    
 #     return {"status": "started"}
 
-# def stop_container(container_id: str, force=True): 
-#     try:
-#         container = client.containers.get(container_id)
-#         container.stop(timeout=0)  # Или container.kill() для жёсткой остановки
-#         logger.info(f"Контейнер {container_id} успешно остановлен.")
-#     except NotFound:
-#         logger.warning(f"Контейнер с ID {container_id} не найден.")
-#     except APIError as e:
-#         logger.error(f"Ошибка Docker API: {e.explanation}")
-#     except Exception as e:
-#         logger.exception(f"Произошла непредвиденная ошибка: {e}")
-#     return {"status": "stopped"}
+
+def stop_container(container_id: str):
+    is_error = True
+    message = ""
+    container_host = None
+    try:
+        container_info = find_container_by_id(container_id)
+        if container_info :
+            client = docker.DockerClient(base_url=f'tcp://{container_info["host"]}:2375', timeout=5) 
+            container = client.containers.get(container_id)
+            container_host = container_info.get("host", None)
+            container.stop()  # Или container.kill() для жёсткой остановки
+            message = f"Контейнер {container_id} успешно остановлен."
+            logger.info(message)
+            is_error = False
+        else:
+            message = f"Контейнер с ID {container_id} не найден."
+            logger.info(message)
+    except APIError as e:
+        message = f"Ошибка Docker API: {e.explanation}" 
+        logger.error(message)
+    except Exception as e:
+        message = f"Произошла непредвиденная ошибка: {e}"
+        logger.exception(message)
+    
+    return [is_error, message, container_host]
 
 def is_host_reachable(ip, port=2375, timeout=3):
+    """ проверяем если вирт. машина доступна, доп. ставим таймаут 
+    """
     logger.info("Start is_host_reachable")
     try:
         with socket.create_connection((ip, port), timeout=timeout):
@@ -176,19 +248,23 @@ def is_host_reachable(ip, port=2375, timeout=3):
     except (socket.timeout, socket.error):
         return False
 
-def check_vm_containers(vm_ip, ann_images):
+def check_vm_containers(vm_host, ann_images) -> bool:
+    """ на виртуальной машине vm_host ищем контейнер созданный из образа в списке ann_images.
+    если найдено хоть одно название из ann_images, то выходим из цикла - данная машина занята (True)
+    иначе - возвращаем False
+    """
     logger.info("Start check_vm_containers")
-    if not is_host_reachable(vm_ip):
-        logger.error(f"{vm_ip} недоступен")
+    if not is_host_reachable(vm_host):
+        logger.error(f"{vm_host} недоступен")
         return True  # превышен таймаут подключение считаем, что VM можно пропустить
         
     try:
         # Подключение к удаленному Docker Engine API
-        url = f'tcp://{vm_ip}:2375' 
+        url = f'tcp://{vm_host}:2375' 
         logger.info(f"Подключение к удаленной ВМ {url}")
         client = docker.DockerClient(base_url=url, timeout=5) 
         containers = client.containers.list()
-        logger.info(f"{vm_ip} containers: {containers}")
+        logger.info(f"{vm_host} containers: {containers}")
 
         has_ann_image = False
 
@@ -204,16 +280,16 @@ def check_vm_containers(vm_ip, ann_images):
 
         client.close()
 
-        logger.info(f"{vm_ip} search result: {has_ann_image}")
+        logger.info(f"{vm_host} search result: {has_ann_image}")
         return has_ann_image
 
     except Exception as e:
-        logger.error(f'Ошибка при подключении к {vm_ip}: {e}')
+        logger.error(f'Ошибка при подключении к {vm_host}: {e}')
         # Возвращаем True, чтобы не останавливать перебор
         return True 
     
 
-def find_vm_without_ann_images():
+def get_available_vm():
     is_error = True
     try:
         if not C.VIRTUAL_MACHINES_LIST:
