@@ -177,7 +177,7 @@ async def api_docker_images():
 
 
 @docker_images.get("/{imageId}", tags=["Docker-образы"], summary="Получение информации о Docker-образе на сервере") 
-async def get_docker_image(image_id: str):
+async def get_docker_image(image_id: str = Path(..., alias="imageId")):
     try:
         image = docker_service.find_image_by_id(image_id)
         if image:
@@ -273,7 +273,7 @@ async def api_docker_containers_stats():
 
 
 @docker_containers.get("/{containerId}", tags=["Docker-контейнеры"], summary="Получение информации о Docker-контейнере на сервере")
-async def api_docker_container(container_id: str):
+async def api_docker_container(container_id: str = Path(..., alias="containerId")):
     try:
         container = docker_service.find_container_by_id(container_id)
         if container:
