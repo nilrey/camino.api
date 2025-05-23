@@ -14,31 +14,6 @@ import time, datetime as dt
 from  api.format.logger import logger
 
 
-# def init_logger(type = 'file'):
-#     os.makedirs(C.LOG_PATH, exist_ok=True)
-#     logger = logging.getLogger(__name__)
-#     logger.setLevel(logging.DEBUG) 
-#     if(type == 'console'):    
-#         # вывод в консоль
-#         handler = logging.StreamHandler()
-#     else:
-#         # вывод в файл
-#         LOG_FILE = f'{C.LOG_PATH}/backend_api_calls_{get_time_today_no_sec()}.log'
-#         handler = logging.FileHandler(f"{LOG_FILE}", encoding="utf-8")
-    
-#     handler.setLevel(logging.DEBUG)
-#     # Определяем формат сообщений
-#     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-#     handler.setFormatter(formatter)
-
-#     # Добавляем обработчик к логгеру (если он ещё не добавлен)
-#     if not logger.hasHandlers():
-#         logger.addHandler(handler)
-
-#     return logger
-
-
-
 def dkr_docker_info():
     return exeCommand(' docker info '+ C.PARAM_TO_JSON )
 

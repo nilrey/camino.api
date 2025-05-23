@@ -14,7 +14,8 @@ import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from configparser import ConfigParser
-import logging
+# import logger
+# from  api.format.logger import logger
 import gc
 
 class ImportAnnJsonToDB:
@@ -36,40 +37,36 @@ class ImportAnnJsonToDB:
         self.files_res = {}
         self.logname = get_dt_now_noms()
         self.message = responseMessage()
-        self.logger = self.init_logger()
         self.time_start = time.time()
         self.time_end = time.time()
 
+        self.init_logger()
+
 
     def init_logger(self, type = 'file'):
-        os.makedirs(C.LOG_PATH, exist_ok=True)
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.DEBUG) 
-        if(type == 'console'):    
-            # вывод в консоль
-            handler = logging.StreamHandler()
-        else:
-            # вывод в файл
-            handler = logging.FileHandler(f"{self.LOG_FILE}", encoding="utf-8")
-        
-        handler.setLevel(logging.DEBUG)
-        # Определяем формат сообщений
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        handler.setFormatter(formatter)
+        self.directory_name = C.LOG_PATH
+        self.file_name = f'{C.LOG_FNAME}_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_import_json.log'
+        self.file_path = os.path.join(self.directory_name, self.file_name)
+        os.makedirs(self.directory_name, exist_ok=True)
+        self.handler = open(self.file_path, 'a+')
 
-        # Добавляем обработчик к логгеру (если он ещё не добавлен)
-        if not logger.hasHandlers():
-            logger.addHandler(handler)
+    def logger_info(self, content):
+        if self.handler :
+            self.handler.write(content + "\n")
+            self.handler.flush()
 
-        return logger
+    def logger_error(self, content):
+        if self.handler :
+            self.handler.write("Ошибка: " + content + "\n")
+            self.handler.flush()
 
-    def log(self, m, is_error = False): # save log message to log & prepare as response message
-        if( not is_error ):
-            self.logger.info(m)
-            self.message.set(m)
-        else:
-            self.logger.error(m)
-            self.message.setError(m)
+    # def log(self, m, is_error = False): # save log message to log & prepare as response message
+    #     if( not is_error ):
+    #         self.logger_info(m)
+    #         self.message.set(m)
+    #     else:
+    #         self.logger_error(m)
+    #         self.message.setError(m)
 
     def get_color(self, i):
         color_count = len(self.color_set)
@@ -143,7 +140,7 @@ class ImportAnnJsonToDB:
             host=config['host'],
             port=config['port'],
         )
-        # self.logger.info(f"Данные подключения: хост: {config['host']},  название БД: {config['database']}")
+        self.logger_info(f"Данные подключения: хост: {config['host']},  название БД: {config['database']}")
         return conn 
         
     def close_idle(self):
@@ -170,7 +167,7 @@ class ImportAnnJsonToDB:
         return "SELECT u.id FROM users u  WHERE u.login = %s"
 
     def get_dataset_parent_id(self):
-        self.logger.info(f'Поиск dataset_parent_id. Подключение к базе.' )
+        self.logger_info(f'Поиск dataset_parent_id. Подключение к базе.' )
         conn = self.get_connect()
         cursor = conn.cursor()
         try:
@@ -178,11 +175,11 @@ class ImportAnnJsonToDB:
             dataset_parent_id = cursor.fetchone() 
             if(dataset_parent_id):
                 self.dataset_parent_id = dataset_parent_id[0]
-                self.logger.info(f'dataset_parent_id = {self.dataset_parent_id}')
+                self.logger_info(f'dataset_parent_id = {self.dataset_parent_id}')
             else:
-                self.logger.error(f'dataset_parent_id не найден . Параметры поиска: dataset_id={self.dataset_id}')
+                self.logger_error(f'dataset_parent_id не найден . Параметры поиска: dataset_id={self.dataset_id}')
         except psycopg2.DatabaseError as e:
-            self.logger.error(f"Поиск dataset_parent_id. Ошибка базы данных: {e}") 
+            self.logger_error(f"Поиск dataset_parent_id. Ошибка базы данных: {e}") 
         finally:
             cursor.close()
             conn.close()
@@ -190,7 +187,7 @@ class ImportAnnJsonToDB:
         return True
 
     def get_author_id(self, user_login):
-        self.logger.info(f'Поиск author_id. Подключение к базе.' )
+        self.logger_info(f'Поиск author_id. Подключение к базе.' )
         conn = self.get_connect()
         cursor = conn.cursor()
         try:
@@ -198,11 +195,11 @@ class ImportAnnJsonToDB:
             author = cursor.fetchone()
             if(author):
                 self.author_id = author[0]
-                self.logger.info(f'author_id = {self.author_id}')
+                self.logger_info(f'author_id = {self.author_id}')
             else:
-                self.logger.error(f'author_id не найден . Параметры поиска: user_login={user_login}')
+                self.logger_error(f'author_id не найден . Параметры поиска: user_login={user_login}')
         except psycopg2.DatabaseError as e:
-            self.logger.error(f"Поиск author_id. Ошибка базы данных: {e}") 
+            self.logger_error(f"Поиск author_id. Ошибка базы данных: {e}") 
         finally:
             cursor.close()
             conn.close()
@@ -220,10 +217,10 @@ class ImportAnnJsonToDB:
             count_success += 1
         except psycopg2.IntegrityError as e:
             cursor.execute("ROLLBACK TO SAVEPOINT sp1;")   # Очищаем состояние транзакции после ошибки
-            self.logger.error(f"Ошибка целостности данных: {e}") 
+            self.logger_error(f"Ошибка целостности данных: {e}") 
         except psycopg2.DatabaseError as e:
             cursor.execute("ROLLBACK TO SAVEPOINT sp1;") 
-            self.logger.error(f"Ошибка базы данных: {e}") 
+            self.logger_error(f"Ошибка базы данных: {e}") 
         finally:
             cursor.execute("RELEASE SAVEPOINT sp1;") 
 
@@ -235,33 +232,36 @@ class ImportAnnJsonToDB:
     def get_dataset_state(self, cursor, file_name):
         cursor.execute(self.stmt_dataset_state(), (self.dataset_id,))
         dataset_state = cursor.fetchone()
-        self.logger.info(f'{file_name} Dataset state: {dataset_state}')
+        self.logger_info(f'{file_name} Dataset state: {dataset_state}')
 
 
     def process_json_file(self, file_name):
+        self.logger_info("process_json_file")
         file_id = None
         chain_success = markup_success = 0  
         start_time = time.time()
         file_path = f'{self.dir_json}/{file_name}'
-
-        file_id = self.get_json_file_id(file_path)
-        json_file_name = self.get_json_file_name(file_path)
-        self.logger.info(f'{file_name}: files.file.file_id = {file_id}, files.file.file_name = {file_name}')
-        conn = self.get_connect()
-        cursor = conn.cursor()
-        cursor.execute(self.stmt_file_id(), ( self.dataset_parent_id, json_file_name ))
-        db_file = cursor.fetchone()
-        if( db_file[0] ):
-            file_id = db_file[0]
-        if(json_file_name):
-            file_name = json_file_name
-        self.logger.info(f'db_file: {file_id}')
+        if (os.path.exists(file_path)):
+            file_id = self.get_json_file_id(file_path)
+            json_file_name = self.get_json_file_name(file_path)
+            self.logger_info(f'{file_name}: files.file.file_id = {file_id}, files.file.file_name = {file_name}')
+            conn = self.get_connect()
+            cursor = conn.cursor()
+            cursor.execute(self.stmt_file_id(), ( self.dataset_parent_id, json_file_name ))
+            db_file = cursor.fetchone()
+            if( db_file[0] ):
+                file_id = db_file[0]
+            if(json_file_name):
+                file_name = json_file_name
+            self.logger_info(f'db_file: {file_id}')
+        else:
+            self.logger_error(f'Файл не найден: {file_path}')
 
         if (file_id):
             try:
-                self.logger.info(f"Начало обработки {file_path}")
+                self.logger_info(f"Начало обработки {file_path}")
                 with open(file_path, "r", encoding="utf-8") as file: 
-                    self.logger.info(f'{file_name}: Подключение к БД ' )
+                    self.logger_info(f'{file_name}: Подключение к БД ' )
                     # conn = self.get_connect()
                     # cursor = conn.cursor()
                     
@@ -269,7 +269,7 @@ class ImportAnnJsonToDB:
                     # Обрабатываем файлы
                     parser = ijson.items(file, "files.item.file_chains.item")  # Извлекаем цепочки напрямую
                     for cnt, chain in enumerate(parser):
-                        # self.logger.info(f'Chain: {cnt}')      
+                        # self.logger_info(f'Chain: {cnt}')      
                         chain_vector = json.dumps(self.convert_to_serializable(chain.get("chain_vector", [])))
                         chain_id = self.exec_insert( cursor, self.insert_chain_query(), 
                             (
@@ -282,12 +282,12 @@ class ImportAnnJsonToDB:
                                 chain.get("chain_confidence", None),
                             )
                         ) 
-                        # self.logger.info(f'chain_id: {chain_id}')
+                        # self.logger_info(f'chain_id: {chain_id}')
 
                         if( chain_id ):
                             chain_success += 1
                             for cnt2, markup in enumerate(chain.get("chain_markups", [])):
-                                # self.logger.info(f'markup {cnt2}')
+                                # self.logger_info(f'markup {cnt2}')
                                 markup_vector = json.dumps(self.convert_to_serializable(markup.get("markup_vector", [])))
                                 markup_id = self.exec_insert(cursor, self.insert_markup_query(), 
                                     (
@@ -302,96 +302,95 @@ class ImportAnnJsonToDB:
                                         markup.get("markup_confidence", None)
                                     )
                                 ) 
-                                # self.logger.info(f'markup_id: {markup_id}')
+                                # self.logger_info(f'markup_id: {markup_id}')
                                 if( markup_id ):
                                     markup_success += 1
                                     self.exec_insert(cursor, self.insert_chain_markup_query(), ( chain_id, markup_id))
                         if( cnt > 0 and cnt % self.BATCH_SIZE == 0):
-                            self.logger.info(f'{file_name} Обработано: Chains: {cnt}')
+                            self.logger_info(f'{file_name} Обработано: Chains: {cnt}')
                             # проверим в базе данных метку на прерывание процесса выгрузки для dataset_id
                             self.get_dataset_state(cursor, file_name)
 
                         del chain  # Удаляем обработанный объект, чтобы освободить память
                         gc.collect() 
                     # Фиксация транзакции
-                    self.logger.info(f'chain_success: {chain_success}')
+                    self.logger_info(f'chain_success: {chain_success}')
                     if ( chain_success > 0 ) :
                         try:
                             conn.commit()
                         except psycopg2.DatabaseError as e:
                             conn.rollback()
-                            self.logger.error(f"Ошибка при commit(): {e}")
+                            self.logger_error(f"Ошибка при commit(): {e}")
                     else:
-                        self.logger.error("Данные не добавлены.")
+                        self.logger_error("Данные не добавлены.")
 
-                    self.logger.info(f"{file_name} добавлено записей: Chains = {chain_success}. Markups: {markup_success}")
+                    self.logger_info(f"{file_name} добавлено записей: Chains = {chain_success}. Markups: {markup_success}")
                     self.files_res[file_id] = {'name': file_name, 'file_id': file_id, 'chains_count':chain_success, 'markups_count':markup_success }
 
                     cursor.close()
                     conn.close()                   
                 
             except Exception as e:
-                self.logger.error(f"Произошла ошибка при открытии файла {file_name}: {e}")
+                self.logger_error(f"Произошла ошибка при открытии файла {file_name}: {e}")
             finally:
                 cursor.close()
                 conn.close()
                 
 
         else:
-            self.logger.error(f"{file_name} file_id not correct : {file_id}")
+            self.logger_error(f"{file_name} file_id not correct : {file_id}")
 
         end_time = time.time()
-        self.logger.info(f"{file_name} обработан за {end_time - start_time:.2f} сек")
+        self.logger_info(f"{file_name} обработан за {end_time - start_time:.2f} сек")
         
 
     def run_monitor_thread(self):
         # Запуск обработки файлов в нескольких потоках
+        self.logger_info("Запуск обработки файлов в нескольких потоках")
         with ThreadPoolExecutor(max_workers=C.SET_MAX_WORKERS) as executor:
             executor.map(self.process_json_file, self.files)
 
         try:
             url = f"{C.HOST_RESTAPI}/projects/{self.project_id}/datasets/{self.dataset_id}/on_import" 
-            self.logger.info(f'prepare Url on_import: {url}')
+            self.logger_info(f'prepare Url on_import: {url}')
             files_post = list(self.files_res.values())
-            self.logger.info(f'Данные отправленные on_import "files": {files_post}')
+            self.logger_info(f'Данные отправленные on_import "files": {files_post}')
             headers = { "Content-Type": "application/json" }
             data = { "files": files_post }
 
             response = requests.post(url, json=data, headers=headers) 
-            self.logger.info(f'on_import response: {response}')
+            self.logger_info(f'on_import response: {response}')
         except Exception as e:
-            self.logger.info(f'on_import response error: {e}')
+            self.logger_info(f'on_import response error: {e}')
 
         # self.close_idle()
         self.time_end = time.time()
-        self.logger.info(f"Окончание работы. Время работы скрипта {self.time_end - self.time_start:.2f} сек")
+        self.logger_info(f"Окончание работы. Время работы скрипта {self.time_end - self.time_start:.2f} сек")
             
 
     def run(self):
-        self.logger.info(f"Начало работы. Чтение файлов импорта из директории: {self.dir_json}")
+        self.logger_info(f"Начало работы. Чтение файлов импорта из директории: {self.dir_json}")
         self.time_start = time.time()
         if not os.path.isdir(self.dir_json):
-            self.log(f"Ошибка: {self.dir_json} указанная директория не сущестует или не доступна", True)
+            self.logger_info(f"Ошибка: {self.dir_json} указанная директория не сущестует или не доступна")
         else:
             if len(self.files) == 0 : 
-                self.log(f"Ошибка: получен пустой список json файлов", True)
+                self.logger_info(f"Ошибка: получен пустой список json файлов")
             else:
                 # Запуск мониторинга
                 self.get_dataset_parent_id()
                 self.get_author_id('manager')
                 if( not self.dataset_parent_id):
-                    self.log(f"Ошибка: dataset parent_id: '{self.dataset_parent_id}'", True)
+                    self.logger_info(f"Ошибка: dataset parent_id: '{self.dataset_parent_id}'")
                 elif( not self.author_id):
-                    self.log(f"Ошибка: dataset author_id: '{self.author_id}'", True)
+                    self.logger_info(f"Ошибка: dataset author_id: '{self.author_id}'")
                 else:
                     self.monitor_thread = threading.Thread(target=self.run_monitor_thread)
                     self.monitor_thread.start()
-                    self.log(f"Данные получены. Файлов в обработке: '{len(self.files)}'")
+                    self.logger_info(f"Данные получены. Файлов в обработке: '{len(self.files)}'")
 
         return self.message.get()
     
     def __del__(self):
-        # закрываем логгер, иначе с открытым дескриптором - писать будет в один файл
-        for handler in self.logger.handlers[:]:
-            self.logger.removeHandler(handler)
-            handler.close()
+        if self.handler:
+            self.handler.close()

@@ -160,9 +160,8 @@ async def api_docker_info():
 
 
 @docker_images.get("/", tags=["Docker-образы"], summary="Получение списка Docker-образов на сервере")
-# async def api_docker_images():
-#    return mng_images()
 async def api_docker_images():
+    logger.info("Получение списка Docker-образов на сервере")
     try:
         images = docker_service.get_docker_images()
         return JSONResponse(content={
@@ -178,6 +177,7 @@ async def api_docker_images():
 
 @docker_images.get("/{imageId}", tags=["Docker-образы"], summary="Получение информации о Docker-образе на сервере") 
 async def get_docker_image(image_id: str = Path(..., alias="imageId")):
+    logger.info("Получение информации о Docker-образе на сервере")
     try:
         image = docker_service.find_image_by_id(image_id)
         if image:
@@ -196,6 +196,7 @@ async def api_docker_image_create(request: Request,
       imageId:str,
       ContCreate: ContainerCreate
    ):
+   logger.info("Создание Docker-контейнера из Docker-образа")
    return mng_container_create(imageId, ContCreate.getAllParams() )
 
 
@@ -215,6 +216,7 @@ async def api_docker_image_run(request: Request,
       imageId:str,
       imrun: ImageRun
    ):
+   logger.info("Создание Dockеr-контейнера из Docker-образа и его запуск")
    post_data = imrun.getAllParams()
    post_data['image_id'] = imageId
    return mng_image_run( post_data)
@@ -227,6 +229,7 @@ async def api_docker_image_run(request: Request,
 async def api_docker_ann_export(request: Request,
       annId:str,
       export: ANNExport ):
+   logger.info("Выгрузка ИНС (Docker-образа и файла весов) в архив")
    return mng_ann_export(export.image_id, export.weights, export.export, annId)
 
 
@@ -247,6 +250,7 @@ async def get_vm_without_ann():
 
 @docker_containers.get("/", tags=["Docker-контейнеры"], summary="Получение списка Docker-контейнеров на сервере") 
 async def get_containers():
+    logger.info("Получение списка Docker-контейнеров на сервере")
     try:
         containers = docker_service.get_docker_containers()
         return {
@@ -269,11 +273,13 @@ async def get_containers():
 
 @docker_containers.get("/stats", tags=["Docker-контейнеры"], summary="Получение списка состояний Docker-контейнеров на сервере")
 async def api_docker_containers_stats():
+   logger.info("Получение списка состояний Docker-контейнеров на сервере")
    return mng_containers_stats()
 
 
 @docker_containers.get("/{containerId}", tags=["Docker-контейнеры"], summary="Получение информации о Docker-контейнере на сервере")
 async def api_docker_container(container_id: str = Path(..., alias="containerId")):
+    logger.info("Получение информации о Docker-контейнере на сервере")
     try:
         container = docker_service.find_container_by_id(container_id)
         if container:
@@ -305,6 +311,7 @@ async def api_docker_container_start(containerId ):
 async def api_docker_container_stop(request: Request,
       data:ContainerOnStopPostData,
       container_id: str = Path(..., alias="containerId") ):
+   logger.info("Остановка Docker-контейнер на сервере")
    try:
       threading.Thread(target=mng_container_stop, args=(container_id, data.dataset_id)).start()
       # resp = mng_container_stats(containerId)

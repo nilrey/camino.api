@@ -68,6 +68,7 @@ def find_image_by_id(image_id: str):
 
 
 def get_docker_containers() -> List[Dict]:
+    logger.info("Start get_docker_containers")
     containers_info = []
     for vm in C.VIRTUAL_MACHINES_LIST:
         try: 
@@ -100,11 +101,12 @@ def get_docker_containers() -> List[Dict]:
                     "names": container.name,
                     "ports": ports_str,
                     "created_at": container.attrs['Created'],
-                    "status": container.status
+                    "status": container.attrs['State'].get('Status', '') # container.status
                 }
                 containers_info.append(container_info)
         except Exception as e:
             logger.error(f"Error connecting to {vm['host']}: {str(e)}")
+    logger.info(f"Найдено {len(containers_info)}")
     return containers_info
 
 def find_container_by_id(container_id: str):
