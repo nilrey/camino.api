@@ -249,10 +249,17 @@ def create_start_container(params):
             volumes=volumes,
             device_requests=device_requests
         )
-
-        container.start()
-
-        logger.info(f'Контейнер запущен')
+        logger.info(f'Контейнер создан id: {container.id}')
+        # Отправить сообщение о создании с указанием хоста и container_id
+        try:
+            url = f"{C.HOST_RESTAPI}/containers/{container.id}/on_start"
+            response = { 'host' : vm_host, 'dataset_id' : params['dataset_id']}
+            logger.info(f'Send post: Url: {url} , body: {response}')
+            requests.post(url, json = response)
+            container.start()
+            logger.info(f'Контейнер запущен')
+        except Exception as e:
+            logger.error(f"Ошибка запуска контейнера host: {vm_host}; id: {container.id}: {e}")
         message = container.id
 
     else:
@@ -261,6 +268,31 @@ def create_start_container(params):
     
     return message
 
+def start_container(container_id: str):
+    is_error = True
+    message = ""
+    container_host = None
+    try:
+        container_info = find_container_by_id(container_id)
+        if container_info :
+            client = docker.DockerClient(base_url=f'tcp://{container_info["host"]}:2375', timeout=5) 
+            container = client.containers.get(container_id)
+            container_host = container_info.get("host", None)
+            container.start() 
+            message = f"Контейнер {container_id} успешно запущен."
+            logger.info(message)
+            is_error = False
+        else:
+            message = f"Контейнер с ID {container_id} не найден."
+            logger.info(message)
+    except APIError as e:
+        message = f"Ошибка Docker API: {e.explanation}" 
+        logger.error(message)
+    except Exception as e:
+        message = f"Произошла непредвиденная ошибка: {e}"
+        logger.error(message)
+    
+    return [is_error, message, container_host]
 
 def stop_container(container_id: str):
     is_error = True
