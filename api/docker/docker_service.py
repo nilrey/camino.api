@@ -74,7 +74,7 @@ def get_docker_containers() -> List[Dict]:
     for vm in C.VIRTUAL_MACHINES_LIST:
         try: 
             client = docker.DockerClient(base_url=f"tcp://{vm['host']}:{vm['port']}")
-            containers = client.containers.list()
+            containers = client.containers.list(all=True)
             for container in containers:
                 if not container.attrs:
                     continue
