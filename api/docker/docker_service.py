@@ -94,7 +94,7 @@ def get_docker_containers() -> List[Dict]:
                     "id": container.id,
                     "host": vm['host'],
                     "image": {
-                        "id": container.image.id,
+                        "id": container.image.id.replace("sha256:", ""),
                         "name": container.image.tags[0].split(":")[0] if container.image.tags else "",
                         "tag": container.image.tags[0].split(":")[1] if container.image.tags else ""
                     },
