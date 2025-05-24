@@ -371,25 +371,33 @@ class ImportAnnJsonToDB:
     def run(self):
         self.logger_info(f"Начало работы. Чтение файлов импорта из директории: {self.dir_json}")
         self.time_start = time.time()
+        is_error = True
+        mes = 'undefined'
         if not os.path.isdir(self.dir_json):
-            self.logger_info(f"Ошибка: {self.dir_json} указанная директория не сущестует или не доступна")
+            mes = f"Ошибка: {self.dir_json} указанная директория не сущестует или не доступна"
+            self.logger_info(mes)
         else:
             if len(self.files) == 0 : 
-                self.logger_info(f"Ошибка: получен пустой список json файлов")
+                mes = f"Ошибка: получен пустой список json файлов"
+                self.logger_info(mes)
             else:
                 # Запуск мониторинга
                 self.get_dataset_parent_id()
                 self.get_author_id('manager')
                 if( not self.dataset_parent_id):
-                    self.logger_info(f"Ошибка: dataset parent_id: '{self.dataset_parent_id}'")
+                    mes = f"Ошибка: dataset parent_id: '{self.dataset_parent_id}'"
+                    self.logger_info(mes)
                 elif( not self.author_id):
-                    self.logger_info(f"Ошибка: dataset author_id: '{self.author_id}'")
+                    mes = f"Ошибка: dataset author_id: '{self.author_id}'"
+                    self.logger_info(mes)
                 else:
                     self.monitor_thread = threading.Thread(target=self.run_monitor_thread)
                     self.monitor_thread.start()
-                    self.logger_info(f"Данные получены. Файлов в обработке: '{len(self.files)}'")
+                    mes = f"Данные получены. Файлов в обработке: '{len(self.files)}'"
+                    self.logger_info(mes)
+                    is_error = False
 
-        return self.message.get()
+        return {'error': is_error, 'text': mes}
     
     def __del__(self):
         if self.handler:
