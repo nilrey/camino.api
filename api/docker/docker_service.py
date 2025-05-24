@@ -213,7 +213,7 @@ def create_start_container(params):
         name = params["name"]
         command = [
             "--input_data", params['hyper_params'],
-            "--host_web", IP.HOST_ANN
+            "--host_web", C.HOST_ANN
         ]
         if params['ann_mode'] == 'teach':
             command.append('--work_format_training')
@@ -234,7 +234,7 @@ def create_start_container(params):
         logger.info(f"{command_str}")
 
         device_requests = []
-        if not DEBUG_MODE:
+        if not C.DEBUG_MODE:
             device_requests = [DeviceRequest(count=-1, capabilities=[['gpu']])]
 
         container = client.containers.create(
