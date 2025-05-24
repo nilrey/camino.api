@@ -161,30 +161,45 @@ async def api_docker_info():
 
 @docker_images.get("/", tags=["Docker-образы"], summary="Получение списка Docker-образов на сервере")
 async def api_docker_images():
-    logger.info("Получение списка Docker-образов на сервере")
+   #  logger.info("Получение списка Docker-образов на сервере")
+    logger.info(f"*************** Запрос информации списка Docker-образов на сервере **************")
     try:
         images = docker_service.get_docker_images()
-        return JSONResponse(content={
+        response = JSONResponse(content={
             "pagination": {"totalItems": len(images)},
             "items": images
         })
+        logger.info(f"Результат images: {response}")
+        logger.info(f"*************** Конец работы по запросу  информации списка Docker-образов на сервере **************")
+        return response
     except Exception as e:
-        return JSONResponse(status_code=500, content={
+        response = JSONResponse(status_code=500, content={
             "code": 500,
             "message": str(e)
         })
+        logger.info(f"Ошибка status_code=500: {response}")
+        logger.info(f"*************** Конец работы по запросу  информации списка Docker-образов на сервере **************")
+        return 
 
 
 @docker_images.get("/{imageId}", tags=["Docker-образы"], summary="Получение информации о Docker-образе на сервере") 
 async def get_docker_image(image_id: str = Path(..., alias="imageId")):
-    logger.info("Получение информации о Docker-образе на сервере")
+   #  logger.info("Получение информации о Docker-образе на сервере")
+    logger.info(f"*************** Запрос информации Docker-образа на сервере {image_id} **************")
     try:
         image = docker_service.find_image_by_id(image_id)
+        logger.info(f"Результат поиска: {image}")
         if image:
+            logger.info(f"Response на запрос: {image} ")
+            logger.info(f"*************** Конец работы по запросу информации Docker-образа на сервере {image_id} **************")
             return image
         else:
+            logger.info(f"Response на запрос: status_code=404 , Ошибка: образ не найден {image_id} ")
+            logger.info(f"*************** Конец работы по запросу  информации Docker-образа на сервере {image_id} **************")
             raise HTTPException(status_code=404, detail="Image not found")
     except Exception as e:
+        logger.info(f"Response на запрос: status_code=500 , Ошибка: {image_id} Описание: {str(e)} ")
+        logger.info(f"*************** Конец работы по запросу  информации Docker-образа на сервере {image_id} **************")
         return {
             "code": 500,
             "message": str(e)
