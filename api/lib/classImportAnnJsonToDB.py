@@ -45,19 +45,19 @@ class ImportAnnJsonToDB:
 
     def init_logger(self, type = 'file'):
         self.directory_name = C.LOG_PATH
-        self.file_name = f'{C.LOG_FNAME}_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_import_json.log'
+        self.file_name = f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_import_json.log'
         self.file_path = os.path.join(self.directory_name, self.file_name)
         os.makedirs(self.directory_name, exist_ok=True)
         self.handler = open(self.file_path, 'a+')
 
     def logger_info(self, content):
         if self.handler :
-            self.handler.write(content + "\n")
+            self.handler.write(f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")} - {content}\n')
             self.handler.flush()
 
     def logger_error(self, content):
         if self.handler :
-            self.handler.write("Ошибка: " + content + "\n")
+            self.handler.write(f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")} - Ошибка: {content}\n')
             self.handler.flush()
 
     # def log(self, m, is_error = False): # save log message to log & prepare as response message
