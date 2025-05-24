@@ -12,6 +12,7 @@ import requests
 from  api.format.logger import logger
 from docker.models.containers import Container as DockerContainer
 from api.docker.docker_client import docker_client
+import time
 
 # client = docker.DockerClient(base_url=f'tcp://{C.VIRTUAL_MACHINES_LIST[0]["host"]}:2375')
 
@@ -253,9 +254,15 @@ def create_start_container(params):
         # Отправить сообщение о создании с указанием хоста и container_id
         try:
             url = f"{C.HOST_RESTAPI}/containers/{container.id}/on_start"
-            response = { 'host' : vm_host, 'dataset_id' : params['dataset_id']}
-            logger.info(f'Send post: Url: {url} , body: {response}')
-            requests.post(url, json = response)
+            send = { 'host' : vm_host, 'dataset_id' : params['dataset_id']}
+            logger.info(f'Send post: Url: {url} , body: {send}')
+
+            response = requests.post(url, json = send)
+            if response.status_code == 200:
+                time.sleep(3) # таймаут на 3 сек. , для успешной записи в БД сообщения от restapi
+                container.start()
+            else:
+                print(f"Ошибка: получен статус {response.status_code}")
             container.start()
             logger.info(f'Контейнер запущен')
         except Exception as e:
