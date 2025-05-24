@@ -279,14 +279,22 @@ async def api_docker_containers_stats():
 
 @docker_containers.get("/{containerId}", tags=["Docker-контейнеры"], summary="Получение информации о Docker-контейнере на сервере")
 async def api_docker_container(container_id: str = Path(..., alias="containerId")):
-    logger.info("Получение информации о Docker-контейнере на сервере")
+    logger.info(f"*************** Запрос информации о 1 контейнере {container_id} **************")
     try:
         container = docker_service.find_container_by_id(container_id)
+        logger.info(f"Результат поиска: {container}")
         if container:
+            logger.info(f"Response на запрос: {container} ")
+            logger.info(f"*************** Конец работы по запросу информации о 1 контейнере {container_id} **************")
             return container
         else:
-            raise HTTPException(status_code=404, detail="Image not found")
+            logger.info(f"Response на запрос: status_code=404 , Ошибка: конейнер не найден {container_id} ")
+            logger.info(f"*************** Конец работы по запросу информации о 1 контейнере {container_id} **************")
+            raise HTTPException(status_code=404, detail=f"Ошибка: конейнер не найден {container_id}")
     except Exception as e:
+        logger.info(f"Response на запрос: status_code=500 , Ошибка: {container_id} Описание: {str(e)} ")
+        
+        logger.info(f"*************** Конец работы по запросу информации о 1 контейнере {container_id} **************")
         return {
             "code": 500,
             "message": str(e)
