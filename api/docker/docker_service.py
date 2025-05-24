@@ -74,7 +74,7 @@ def get_docker_containers() -> List[Dict]:
     for vm in C.VIRTUAL_MACHINES_LIST:
         try: 
             client = docker.DockerClient(base_url=f"tcp://{vm['host']}:{vm['port']}")
-            containers = client.containers.list()
+            containers = client.containers.list(all=True)
             for container in containers:
                 if not container.attrs:
                     continue
@@ -250,7 +250,7 @@ def create_start_container(params):
             volumes=volumes,
             device_requests=device_requests
         )
-        logger.info(f'Контейнер создан id: {container.id}')
+        logger.info(f'Контейнер успешно создан id: {container.id}')
         # Отправить сообщение о создании с указанием хоста и container_id
         try:
             url = f"{C.HOST_RESTAPI}/containers/{container.id}/on_start"
@@ -259,7 +259,7 @@ def create_start_container(params):
 
             response = requests.post(url, json = send)
             
-            logger.info(f'response = {response}')
+            logger.info(f'response.json() = {response.json()}')
             time.sleep(3) # таймаут на 3 сек. , для успешной записи в БД сообщения от restapi
             container.start()
             logger.info(f'Контейнер успешно запущен, host:{vm_host} id:{container.id}') 
@@ -350,7 +350,7 @@ def check_vm_containers(vm_host, ann_images) -> bool:
         url = f'tcp://{vm_host}:2375' 
         logger.info(f"Подключение к удаленной ВМ {url}")
         client = docker.DockerClient(base_url=url, timeout=5) 
-        containers = client.containers.list()
+        containers = client.containers.list() # all=True исключаем, ищем только запущенные 
         logger.info(f"{vm_host} containers: {containers}")
 
         has_ann_image = False
