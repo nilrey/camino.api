@@ -259,12 +259,12 @@ def create_start_container(params):
 
             response = requests.post(url, json = send)
             if response.status_code == 200:
+                logger.info(f'response.status_code = {response.status_code}')
                 time.sleep(3) # таймаут на 3 сек. , для успешной записи в БД сообщения от restapi
                 container.start()
+                logger.info(f'Контейнер запущен')
             else:
-                print(f"Ошибка: получен статус {response.status_code}")
-            container.start()
-            logger.info(f'Контейнер запущен')
+                logger.info(f"Ошибка: от {C.HOST_RESTAPI} получен ответ {response.status_code}")
         except Exception as e:
             logger.error(f"Ошибка запуска контейнера host: {vm_host}; id: {container.id}: {e}")
         message = container.id
