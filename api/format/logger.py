@@ -29,9 +29,9 @@ LOG_FILE = f'{C.LOG_PATH}/{C.LOG_FNAME}_{datetime.now().strftime("%Y-%m-%d_%H:%M
 # logger.info("Logger started")
 
 class LogManager:
-    def __init__(self):
+    def __init__(self, log_name = C.LOG_FNAME):
         self.directory_name = C.LOG_PATH
-        self.file_name = f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{C.LOG_FNAME}.log'
+        self.file_name = f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_{log_name}.log'
         self.file_path = os.path.join(self.directory_name, self.file_name)
         os.makedirs(self.directory_name, exist_ok=True)
         self.handler = open(self.file_path, 'a+')
