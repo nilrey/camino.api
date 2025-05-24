@@ -133,7 +133,12 @@ async def api_import_json_to_db(request: Request,
       datasetId:str,
       parse_data:ANNParseOutput
    ):
-   return mng_import_json_to_db(projectId, datasetId, parse_data)
+   logger.info(f"*************** Загрузка датасета из JSON файлов **************")
+   logger.info(f"Requested url: /{projectId}/datasets/{datasetId}/import")
+   res = mng_import_json_to_db(projectId, datasetId, parse_data)
+   logger.info(f"Результат import: {res}")
+   logger.info(f"*************** Конец работы по Загрузка датасета из JSON файлов **************")
+   return 
 
 
 @projects.post("/{projectId}/datasets/{datasetId}/export", summary="Запускает процесс формирования JSON файлов разметки датасета и возвращает признак успешного начала операции. По окончании операции вызывается соотв. роут export on_save")
