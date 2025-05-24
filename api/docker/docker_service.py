@@ -200,18 +200,66 @@ def run_container(params):
     
     return {"error": is_error, "container_id" : container_id}
 
-# def start_container(container_id: str): 
-#     try:
-#         container = client.containers.get(container_id)
-#         container.start()
-#         logger.info(f"Контейнер {container_id} успешно запущен.")
-#     except NotFound:
-#         logger.warning(f"Контейнер с ID {container_id} не найден.")
-#     except APIError as e:
-#         logger.error(f"Ошибка Docker API: {e.explanation}")
-#     except Exception as e:
-#         logger.exception(f"Произошла непредвиденная ошибка: {e}")    
-#     return {"status": "started"}
+
+def create_start_container(params): 
+    vm_host, is_error = get_available_vm() 
+    if is_error:
+        message = f'Ошибка при просмотре списка VM: {vm_host}'
+    elif vm_host:
+
+        logger.info(f'params: {params}')
+        client = docker.DockerClient(base_url=f'tcp://{vm_host}:2375', timeout=5) 
+        image = find_image_by_id(params["imageId"])
+        name = params["name"]
+        command = [
+            "--input_data", params['hyper_params'],
+            "--host_web", IP.HOST_ANN
+        ]
+        if params['ann_mode'] == 'teach':
+            command.append('--work_format_training')
+
+        volumes = {
+            f'/family{params["video_storage"]}': {"bind": "/family/video", "mode": "rw"},
+            f'/family{params["out_dir"]}': {"bind": "/output", "mode": "rw"},
+            f'/family{params["in_dir"]}': {"bind": "/input_videos", "mode": "rw"},
+            f'/family{params["weights"]}': {"bind": "/weights/", "mode": "rw"},
+            f'/family{params["markups"]}': {"bind": "/input_data", "mode": "rw"},
+            "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
+            "/family/projects_data": {"bind": "/projects_data", "mode": "rw"}
+        }
+
+        # Формируем строку запуска для логирования
+        volume_args = ' '.join([f'-v {host}:{opt["bind"]}:{opt["mode"]}' for host, opt in volumes.items()])
+        command_str = f"docker run --gpus all --shm-size=20g --name {name} {volume_args} {image} {' '.join(command)}"
+        logger.info(f"{command_str}")
+
+        device_requests = []
+        if not DEBUG_MODE:
+            device_requests = [DeviceRequest(count=-1, capabilities=[['gpu']])]
+
+        container = client.containers.create(
+            image=image['name'],
+            name=name,
+            command=command,
+            tty=True,
+            stdin_open=True,
+            detach=True,
+            auto_remove=True,                 
+            shm_size="20g",                   
+            volumes=volumes,
+            device_requests=device_requests
+        )
+
+        container.start()
+
+        logger.info(f'Контейнер запущен')
+        message = container.id
+
+    else:
+        message = 'Нет свободных VM.'
+        logger.info(message)
+    
+    return message
 
 
 def stop_container(container_id: str):
