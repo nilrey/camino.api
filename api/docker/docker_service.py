@@ -209,7 +209,7 @@ def create_start_container(params):
 
         logger.info(f'params: {params}')
         client = docker.DockerClient(base_url=f'tcp://{vm_host}:2375', timeout=5) 
-        image = find_image_by_id(params["imageId"])
+        image = find_image_by_id(params["image_id"])
         name = params["name"]
         command = [
             "--input_data", params['hyper_params'],
