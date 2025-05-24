@@ -213,9 +213,13 @@ class DatasetMarkupsExport:
                 with open(file_path, "w", encoding="utf-8") as f:
                     json.dump(json_data, f, ensure_ascii=False)
                     self.message = 'Success'
+                if os.path.isfile(file_path) :
+                    self.status[file_data['name']] = "Success"
+                    self.logger.info(f"{file_data['name']} файл успешно создан. ")
+                else:
+                    self.status[file_data['name']] = "Failed"
+                    self.logger.info(f"{file_data['name']} файл не создан. ")
 
-                self.status[file_data['name']] = "Success"
-                self.logger.info(f"{file_data['name']} is success done. ")
             except Exception as e:
                 self.status[file_data['name']] = "Failed"
                 self.errors[file_data['name']] = traceback.format_exc()
@@ -253,8 +257,9 @@ class DatasetMarkupsExport:
             thread.join()
         self.stop_event.set()
         self.monitor_thread.join()
-        # создаем симлинки для pkl файлов из директории dataset_parent_id
-        self.create_simlinks()
+        # создаем симлинки для pkl файлов из директории dataset_parent_id, только если родительский датасет не является начальным
+        if self.parent_dataset_id != self.init_dataset_id :
+            self.create_simlinks()
         self.logger.info("Работа с файлами закончена")
         try:
             # /export/on_error
@@ -391,6 +396,9 @@ class DatasetMarkupsExport:
                 self.logger.info(f"Удаление директории. Директория удалена: '{dir}'")
             else:
                 self.logger.info(f"Удаление директории. Ошибка: директория не удалена: '{dir}'")
+        # создаем директорию снова уже пустую
+        os.makedirs(dir, exist_ok=True) 
+
 
     def create_simlinks(self):
         try:
