@@ -6,21 +6,12 @@ import socket
 from datetime import datetime
 from typing import List, Dict
 from docker.errors import NotFound, APIError
-import api.sets.const as C
+import api.sets.config as C
 from docker.types import DeviceRequest
 import requests
 from  api.format.logger import logger
-from docker.models.containers import Container as DockerContainer
-from api.docker.docker_client import docker_client
+from docker.models.containers import Container as DockerContainer 
 import time
-
-# client = docker.DockerClient(base_url=f'tcp://{C.VIRTUAL_MACHINES_LIST[0]["host"]}:2375')
-
-# def list_images(): 
-#     return docker_client.images()
-
-# def list_containers(all=True): 
-#     return docker_client.containers(all=all)
 
 
 def get_docker_images() -> List[Dict]:

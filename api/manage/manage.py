@@ -4,7 +4,7 @@ import api.docker.base as dkr
 from api.docker.monitor import *
 import api.format.response_objects as ro # Response Objects
 import api.format.response_teplates as rt # Response Template
-import api.sets.const as C
+import api.sets.config as C
 import time 
 from api.lib.func_ann_out_db_save import ann_out_db_save as save_output
 import api.lib.func_utils as fu
@@ -13,29 +13,6 @@ from api.lib.classImportAnnJsonToDB import *
 import requests
 
 from  api.format.logger import logger
-
-# def init_logger(type = 'file'):
-#     os.makedirs(C.LOG_PATH, exist_ok=True)
-#     logger = logging.getLogger(__name__)
-#     logger.setLevel(logging.DEBUG) 
-#     if(type == 'console'):    
-#         # вывод в консоль
-#         handler = logging.StreamHandler()
-#     else:
-#         # вывод в файл
-#         LOG_FILE = f'{C.LOG_PATH}/backend_api_calls_{dkr.get_time_today_no_sec()}.log'
-#         handler = logging.FileHandler(f"{LOG_FILE}", encoding="utf-8")
-    
-#     handler.setLevel(logging.DEBUG)
-#     # Определяем формат сообщений
-#     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-#     handler.setFormatter(formatter)
-
-#     # Добавляем обработчик к логгеру (если он ещё не добавлен)
-#     if not logger.hasHandlers():
-#         logger.addHandler(handler)
-
-#     return logger
 
 
 # Users

@@ -1,7 +1,7 @@
 import os
 import copy
 import subprocess
-import api.sets.const as C
+import api.sets.config as C
 
 class Monitor():
     # Создается экземпляр класса Monitor 

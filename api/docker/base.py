@@ -6,7 +6,7 @@ import json
 import threading
 
 import requests 
-import api.sets.const as C
+import api.sets.config as C
 import api.format.response_teplates as rt # Response Template
 import api.format.response_objects as ro # Response Objects
 import time, datetime as dt
@@ -24,38 +24,38 @@ def dkr_images():
 
 def dkr_container_create(image_name, params):
     export_code = get_time_no_microsec()
-    logger.info(f'params: {params}')
+    # logger.info(f'params: {params}')
     command = 'docker create --rm '
-    volume_weights = volume_input = volume_output = volume_socket = volume_markups = volume_storage = ''
-    param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = param_hyper = ''
-    param_shm_size = f' --shm-size={C.SET_SHM_SIZE}g '
-    volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
-    volume_family = ' -v /family/projects_data:/projects_data '
-    param_host_web = f' --host_web \'{C.HOST_ANN}\' '
-    param_gpu = ' --gpus all '
-    for param, value in params.items():
-        if( value ):
-            if(param == 'name' ):
-                param_name = f' --name {value} '
-            elif(param == 'ann_mode' and value == 'teach'):
-                param_ann_mode = ' --work_format_training  '
-            elif(param == 'weights' ):
-                volume_weights = f' -v /family{value}:/weights/ '
-            elif(param == 'hyper_params'):
-                param_hyper = f" --input_data '{value}' "
-            elif(param == 'in_dir' ):
-                volume_input = f' -v /family{value}:{C.CNTR_BASE_01_DIR_IN} '
-            elif(param == 'out_dir' ):
-                volume_output = f' -v /family{value}:{C.CNTR_BASE_01_DIR_OUT} '
-            elif(param == 'markups'):
-                volume_markups = f' -v /family{value}:/input_data '
-            elif(param == 'video_storage'):
-                volume_storage = f' -v /family{value}:/family{value} '
-            elif(param == 'network' and False ):
-                param_network = f' --network {value} '
+    # volume_weights = volume_input = volume_output = volume_socket = volume_markups = volume_storage = ''
+    # param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = param_hyper = ''
+    # param_shm_size = f' --shm-size={C.SET_SHM_SIZE}g '
+    # volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
+    # volume_family = ' -v /family/projects_data:/projects_data '
+    # param_host_web = f' --host_web \'{C.HOST_ANN}\' '
+    # param_gpu = ' --gpus all '
+    # for param, value in params.items():
+    #     if( value ):
+    #         if(param == 'name' ):
+    #             param_name = f' --name {value} '
+    #         elif(param == 'ann_mode' and value == 'teach'):
+    #             param_ann_mode = ' --work_format_training  '
+    #         elif(param == 'weights' ):
+    #             volume_weights = f' -v /family{value}:/weights/ '
+    #         elif(param == 'hyper_params'):
+    #             param_hyper = f" --input_data '{value}' "
+    #         elif(param == 'in_dir' ):
+    #             volume_input = f' -v /family{value}:{C.CNTR_BASE_01_DIR_IN} '
+    #         elif(param == 'out_dir' ):
+    #             volume_output = f' -v /family{value}:{C.CNTR_BASE_01_DIR_OUT} '
+    #         elif(param == 'markups'):
+    #             volume_markups = f' -v /family{value}:/input_data '
+    #         elif(param == 'video_storage'):
+    #             volume_storage = f' -v /family{value}:/family{value} '
+    #         elif(param == 'network' and False ):
+    #             param_network = f' --network {value} '
 
-    command = f'docker create --rm -it {param_name} {param_gpu} {param_shm_size} {volume_storage} {volume_output} {volume_input} {volume_weights} {volume_socket} {volume_markups} {volume_family} {param_network} {image_name} {param_hyper} {param_input_data} {param_host_web} {param_ann_mode}'
-    logger.info(command)
+    # command = f'docker create --rm -it {param_name} {param_gpu} {param_shm_size} {volume_storage} {volume_output} {volume_input} {volume_weights} {volume_socket} {volume_markups} {volume_family} {param_network} {image_name} {param_hyper} {param_input_data} {param_host_web} {param_ann_mode}'
+    # logger.info(command)
     return execCommand(command) 
 
 
@@ -180,7 +180,7 @@ def run_command_with_finally(export_code, command):
     return True
 
 def log_file_path(export_code):
-    dir = f'{C.LOG_DIR}' if(os.path.isdir(f'{C.LOG_DIR}')) else C.EXPORT_DIR # если сущ. директория для логов
+    dir = f'{C.LOG_PATH}' if(os.path.isdir(f'{C.LOG_PATH}')) else C.EXPORT_DIR # если сущ. директория для логов
     return f'{dir}/{log_fname(export_code)}'
 
 def log_fname(export_code):

@@ -1,7 +1,7 @@
 import os
 import sys
 import threading
-import api.sets.const as C  
+import api.sets.config as C  
 from api.lib.func_datetime import *
 from api.lib.classResponseMessage import responseMessage
 import json
