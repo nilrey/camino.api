@@ -84,6 +84,8 @@ def get_docker_containers() -> List[Dict]:
                     f"{container_port}" for container_port in ports.keys() if ports
                 ]) if ports else ""
 
+                status = get_uptime_string(container.attrs['Created']) if container.status == 'running' else container.status
+
                 container_info = {
                     "id": container.id,
                     "host": vm['host'],
@@ -96,7 +98,7 @@ def get_docker_containers() -> List[Dict]:
                     "names": container.name,
                     "ports": ports_str,
                     "created_at": container.attrs['Created'],
-                    "status": container.attrs['State'].get('Status', '') # container.status
+                    "status": status
                 }
                 containers_info.append(container_info)
         except Exception as e:
@@ -398,3 +400,33 @@ def get_available_vm():
     logger.error(message) if is_error else logger.info(message)
 
     return message , is_error
+
+
+def get_uptime_string(created_at):
+    """Преобразует время создания контейнера в строку формата 'Up X minutes'"""
+    created_datetime = datetime.strptime(created_at.split('.')[0], '%Y-%m-%dT%H:%M:%S')
+    uptime = datetime.utcnow() - created_datetime
+    total_seconds = int(uptime.total_seconds())
+    
+    if total_seconds < 60:
+        return "Up less than a minute"
+    
+    minutes = total_seconds // 60
+    
+    if minutes < 60:
+        return f"Up {minutes} minute{'s' if minutes != 1 else ''}"
+    
+    hours = minutes // 60
+    remaining_minutes = minutes % 60
+    
+    if hours < 24:
+        if remaining_minutes == 0:
+            return f"Up {hours} hour{'s' if hours != 1 else ''}"
+        return f"Up {hours} hour{'s' if hours != 1 else ''} {remaining_minutes} minute{'s' if remaining_minutes != 1 else ''}"
+    
+    days = hours // 24
+    remaining_hours = hours % 24
+    
+    if remaining_hours == 0:
+        return f"Up {days} day{'s' if days != 1 else ''}"
+    return f"Up {days} day{'s' if days != 1 else ''} {remaining_hours} hour{'s' if remaining_hours != 1 else ''}"
