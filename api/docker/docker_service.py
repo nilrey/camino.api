@@ -30,6 +30,8 @@ def get_docker_images() -> List[Dict]:
                         name, tag_part = tag.rsplit(":", 1)
                     else:
                         name, tag_part = tag, "<none>"
+                    if name in C.BLOCK_LIST_IMAGES:
+                        continue
                     location = 'registry'  if C.HOST_REGISTRY in name and vm["name"] else vm["name"]
                     images_info.append({
                         "id": image.id.replace("sha256:", ""),
