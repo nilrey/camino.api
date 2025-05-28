@@ -99,40 +99,40 @@ def mng_image(image_id):
    return response
 
 
-def mng_container_create(image_id, params):
-   resp_cmd_json_img = dkr.dkr_images()
-   image = ro.getImageById(image_id, resp_cmd_json_img['response'] )
-   if( image["name"] ):
-      response = dkr.dkr_container_create(image["name"], params)
-      # if (not response['error']): response = mng_container(response['response'][0])
-   else: 
-      response['error'] = True
-      response['error_descr'] = 'По данному Id образ не найден'
-   return response
+# def mng_container_create(image_id, params):
+#    resp_cmd_json_img = dkr.dkr_images()
+#    image = ro.getImageById(image_id, resp_cmd_json_img['response'] )
+#    if( image["name"] ):
+#       response = dkr.dkr_container_create(image["name"], params)
+#       # if (not response['error']): response = mng_container(response['response'][0])
+#    else: 
+#       response['error'] = True
+#       response['error_descr'] = 'По данному Id образ не найден'
+#    return response
 
 
-def mng_image_run_container(image_id, params):
-   response = mng_container_create(image_id, params)
-   if (not response['error']): 
-      response = mng_container_start(response['response'][0])
-      # регистрация контейнера
+# def mng_image_run_container(image_id, params):
+#    response = mng_container_create(image_id, params)
+#    if (not response['error']): 
+#       response = mng_container_start(response['response'][0])
+#       # регистрация контейнера
       
-      url = f"{C.HOST_RESTAPI}/containers/{response['id']}/on_start"
-      response['dataset_id'] = params['out_dir'].split('/')[-2]
-      response['host'] = '10.0.0.1'
-      requests.post(url, json = response)
+#       url = f"{C.HOST_RESTAPI}/containers/{response['id']}/on_start"
+#       response['dataset_id'] = params['out_dir'].split('/')[-2]
+#       response['host'] = '10.0.0.1'
+#       requests.post(url, json = response)
 
-      # #???? if (not response['error']):       
-      # if( response.get('id', None)):
-      #    print(f"container_id: {response['id']}", file=sys.stderr)
-      #    url = f"{C.HOST_RESTAPI}/containers/{response['id']}/on_start"
-      #    response['dataset_id'] = params['out_dir'].split('/')[-2]
-      #    requests.post(url, json = response)
-      # else:
-      #    print(f"ERROR: ошибка запуска конейнера", file=sys.stderr)
-      #    print(f"{response['error_descr']}", file=sys.stderr)
+#       # #???? if (not response['error']):       
+#       # if( response.get('id', None)):
+#       #    print(f"container_id: {response['id']}", file=sys.stderr)
+#       #    url = f"{C.HOST_RESTAPI}/containers/{response['id']}/on_start"
+#       #    response['dataset_id'] = params['out_dir'].split('/')[-2]
+#       #    requests.post(url, json = response)
+#       # else:
+#       #    print(f"ERROR: ошибка запуска конейнера", file=sys.stderr)
+#       #    print(f"{response['error_descr']}", file=sys.stderr)
 
-   return response
+#    return response
 
 
 def mng_image_run(post_data):

@@ -211,13 +211,13 @@ async def get_docker_image(image_id: str = Path(..., alias="imageId")):
         }
 
 
-@docker_images.put("/{imageId}/create", tags=["Docker-образы"], summary="Создание Docker-контейнера из Docker-образа")
-async def api_docker_image_create(request: Request,
-      imageId:str,
-      ContCreate: ContainerCreate
-   ):
-   logger.info("Создание Docker-контейнера из Docker-образа")
-   return mng_container_create(imageId, ContCreate.getAllParams() )
+# @docker_images.put("/{imageId}/create", tags=["Docker-образы"], summary="Создание Docker-контейнера из Docker-образа")
+# async def api_docker_image_create(request: Request,
+#       imageId:str,
+#       ContCreate: ContainerCreate
+#    ):
+#    logger.info("Создание Docker-контейнера из Docker-образа")
+#    return mng_container_create(imageId, ContCreate.getAllParams() )
 
 
 # @docker_images.post("/{imageId}/run")

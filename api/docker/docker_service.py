@@ -17,32 +17,33 @@ import time
 def get_docker_images() -> List[Dict]:
     logger.info("Start get_docker_images")
     images_info = []
-    for vm in C.VIRTUAL_MACHINES_LIST:
-        try:
-            if is_host_reachable(vm['host']):
-                client = docker.DockerClient(base_url=f"tcp://{vm['host']}:{vm['port']}")
-                images = client.images.list()
-                for image in images:
-                    image_tags = image.tags if image.tags else ["<none>:<none>"]
-                    for tag in image_tags:
-                        if ":" in tag:
-                            name, tag_part = tag.rsplit(":", 1)
-                        else:
-                            name, tag_part = tag, "<none>"
-                        
-                        images_info.append({
-                            "id": image.id.replace("sha256:", ""),
-                            "name": name,
-                            "tag": tag_part,
-                            "location": vm["name"],
-                            "created_at": image.attrs.get("Created", ""),
-                            "size": image.attrs.get("Size", 0),
-                            "comment": image.attrs.get("Comment", ""),
-                            "archive": ""
-                        })
-                client.close()
-        except Exception as e:
-            logger.error(f"Ошибка при подключении к {vm['name']} ({vm['host']}): {e}")
+    vm = C.HOST_VM # берем только ВМ , где располагается репозиторий образов ИНС
+    # for vm in C.VIRTUAL_MACHINES_LIST:
+    try:
+        if is_host_reachable(vm['host']):
+            client = docker.DockerClient(base_url=f"tcp://{vm['host']}:{vm['port']}")
+            images = client.images.list()
+            for image in images:
+                image_tags = image.tags if image.tags else ["<none>:<none>"]
+                for tag in image_tags:
+                    if ":" in tag:
+                        name, tag_part = tag.rsplit(":", 1)
+                    else:
+                        name, tag_part = tag, "<none>"
+                    location = 'registry'  if C.HOST_REGISTRY in name and vm["name"] else vm["name"]
+                    images_info.append({
+                        "id": image.id.replace("sha256:", ""),
+                        "name": name,
+                        "tag": tag_part,
+                        "location": location,
+                        "created_at": image.attrs.get("Created", ""),
+                        "size": image.attrs.get("Size", 0),
+                        "comment": image.attrs.get("Comment", ""),
+                        "archive": ""
+                    })
+            client.close()
+    except Exception as e:
+        logger.error(f"Ошибка при подключении к {vm['name']} ({vm['host']}): {e}")
     return images_info
 
 def find_image_by_id(image_id: str):
