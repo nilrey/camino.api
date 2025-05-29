@@ -311,7 +311,7 @@ def stop_container(container_id: str):
             container = client.containers.get(container_id)
             container_host = container_info.get("host", None)
             container.stop()  # Или container.kill() для жёсткой остановки
-            message = f"Контейнер {container_id} успешно остановлен."
+            message = f"Контейнер {container_id} успешно остановлен на {container_host}."
             logger.info(message)
             is_error = False
         else:

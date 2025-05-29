@@ -21,6 +21,7 @@ import gc
 class ImportAnnJsonToDB:
 
     BATCH_SIZE = 10
+    IMPORT_CHAINS_ORIGIN_ID_AUTO = 1
     
     def __init__(self, project_id, dataset_id, files):
 
@@ -149,7 +150,7 @@ class ImportAnnJsonToDB:
         cursor.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE state = \'idle\' AND pid <> pg_backend_pid()")
     
     def insert_chain_query(self):
-        return "INSERT INTO chains ( dataset_id, file_id, name, vector, author_id, color, confidence ) VALUES ( %s, %s, %s, %s, %s, %s, %s) RETURNING id"
+        return "INSERT INTO chains ( dataset_id, file_id, name, vector, author_id, origin_id, color, confidence ) VALUES ( %s, %s, %s,  %s, %s, %s, %s, %s) RETURNING id"
 
     def insert_markup_query(self):
         return "INSERT INTO markups ( dataset_id, file_id, parent_id, mark_frame, mark_time, vector, mark_path, author_id, confidence) VALUES ( %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id "
@@ -261,15 +262,10 @@ class ImportAnnJsonToDB:
             try:
                 self.logger_info(f"Начало обработки {file_path}")
                 with open(file_path, "r", encoding="utf-8") as file: 
-                    self.logger_info(f'{file_name}: Подключение к БД ' )
-                    # conn = self.get_connect()
-                    # cursor = conn.cursor()
-                    
-                    
+                    # self.logger_info(f'{file_name}: Подключение к БД ' )
                     # Обрабатываем файлы
                     parser = ijson.items(file, "files.item.file_chains.item")  # Извлекаем цепочки напрямую
                     for cnt, chain in enumerate(parser):
-                        # self.logger_info(f'Chain: {cnt}')      
                         chain_vector = json.dumps(self.convert_to_serializable(chain.get("chain_vector", [])))
                         chain_id = self.exec_insert( cursor, self.insert_chain_query(), 
                             (
@@ -278,6 +274,7 @@ class ImportAnnJsonToDB:
                                 chain.get("chain_name", None),
                                 chain_vector,
                                 self.author_id,
+                                self.IMPORT_CHAINS_ORIGIN_ID_AUTO,
                                 self.get_color(cnt),
                                 chain.get("chain_confidence", None),
                             )
