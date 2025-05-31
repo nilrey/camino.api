@@ -205,7 +205,6 @@ def create_start_container(params):
         if is_error:
             message = f'Ошибка при просмотре списка VM: {vm_host}'
         elif vm_host:
-
             logger.info(f'params: {params}')
             client = docker.DockerClient(base_url=f'tcp://{vm_host}:2375', timeout=5) 
             image = find_image_by_id(params["image_id"])
@@ -229,7 +228,7 @@ def create_start_container(params):
 
             # Формируем строку запуска для логирования
             volume_args = ' '.join([f'-v {host}:{opt["bind"]}:{opt["mode"]}' for host, opt in volumes.items()])
-            command_str = f"docker run --gpus all --shm-size=20g --name {name} {volume_args} {image} {' '.join(command)}"
+            command_str = f"docker create --gpus all --shm-size=20g {volume_args} {image} {' '.join(command)}"
             logger.info(f"{command_str}")
 
             device_requests = []
@@ -261,9 +260,10 @@ def create_start_container(params):
                 logger.info(f'response.json() = {response.json()}')
                 time.sleep(3) # таймаут на 3 сек. , для успешной записи в БД сообщения от restapi
                 container.start()
-                logger.info(f'Контейнер успешно запущен, host:{vm_host} id:{container.id}') 
+                logger.info(f"Контейнер успешно запущен на '{vm_host}' id:{container.id}") 
             except Exception as e:
-                logger.error(f"Ошибка запуска контейнера host: {vm_host} : {e}")
+                message = f"Ошибка запуска контейнера на '{vm_host}': {e}"
+                logger.error(message)
 
         else:
             message = 'Нет свободных VM.'

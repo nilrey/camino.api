@@ -14,7 +14,7 @@ import requests
 from fastapi import Response, status, Path
 
 from fastapi.responses import JSONResponse
-from api.docker import docker_service
+from api.services import docker_service
 from  api.format.logger import logger
 
 app = FastAPI(openapi_tags=tags_metadata)
