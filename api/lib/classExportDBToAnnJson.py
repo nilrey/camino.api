@@ -18,6 +18,7 @@ from api.lib.func_datetime import *
 import api.sets.config as C
 from api.services import docker_service 
 from  api.format.logger import LogManager
+from concurrent.futures import ThreadPoolExecutor
 
 import api.manage.manage as mng
 
@@ -42,6 +43,8 @@ class DatasetMarkupsExport:
         self.init_dataset_id = None
         self.only_verified_chains = self.params.get('only_verified_chains', False)
         self.only_selected_files = self.params.get('only_selected_files', [])        
+        self.time_start = time.time()
+        self.time_end = time.time()
         self.monitor_thread = None
         self.wait_thread = None
         self.output_dir = ''
@@ -49,7 +52,7 @@ class DatasetMarkupsExport:
         self.engine = create_engine(self.get_connection_string())
         self.logname = get_dt_now_noms()+'_db_export_json.log'
         self.data_files = {}
-        self.status = {}
+        # self.status = {}
         self.errors = {}
         self.files_res = {}
         self.stop_event = threading.Event()
@@ -257,10 +260,25 @@ class DatasetMarkupsExport:
             thread.join()
         self.stop_event.set()
         self.monitor_thread.join()
+        self.after_export_done()
+
+    def after_export_done(self):
         # создаем симлинки для pkl файлов из директории dataset_parent_id, только если родительский датасет не является начальным
         if self.parent_dataset_id != self.init_dataset_id :
             self.create_simlinks()
         self.logger.info("Работа с файлами закончена")
+        self.send_on_export()
+
+        if self.do_stop_export : 
+            self.logger.info('Запуск контейнера отменен')        
+        elif(self.image_id): # Используем наличие image_id, в качестве признака запуска контейнера
+            # DOCKER RUN CONTAINER
+            self.before_container_run()
+            self.logger.info('Начало запуска контейнера')
+            res =  docker_service.create_start_container(self.img_params) # mng.mng_image_run_container(self.image_id, self.img_params)
+            self.logger.info(f'Результат запуска контейнера: {res}')
+
+    def send_on_export(self):
         try:
             # /export/on_error
             ds_id = self.img_params.get('dataset_id', self.dataset_id)
@@ -278,18 +296,13 @@ class DatasetMarkupsExport:
         finally:
             self.logger.info(f'Выгрузка данных из БД в Json закончена.')
 
-        if self.do_stop_export : 
-            self.logger.info('Запуск контейнера отменен')
         
-        elif(self.image_id): # Используем наличие image_id, в качестве признака запуска контейнера
-            # DOCKER RUN CONTAINER
+    def before_container_run(self):
             self.logger.info('Удаление директории "markups_out"')
             self.clear_directory(self.ann_output_dir)
             self.logger.info('Создание директории "markups_out" перед запуском контейнера')
             os.makedirs(self.ann_output_dir, exist_ok=True)
-            self.logger.info('Начало запуска контейнера')
-            res =  docker_service.create_start_container(self.img_params) # mng.mng_image_run_container(self.image_id, self.img_params)
-            self.logger.info(f'Результат запуска контейнера: {res}')
+
 
     def get_dataset_files(self, init_dataset_id): 
         self.logger.info(f'get_dataset_files: init_dataset_id = {init_dataset_id}')
@@ -425,6 +438,17 @@ class DatasetMarkupsExport:
         except Exception as e:
             self.logger.info(f"Ошибка при создании создании симлинк для pkl: {e}")
 
+    def run_monitor_thread(self):
+        # Запуск обработки файлов в нескольких потоках
+        self.logger.info("Запуск обработки файлов в нескольких потоках")
+        with ThreadPoolExecutor(max_workers=C.SET_MAX_WORKERS) as executor:
+            executor.map(self.create_json_file, self.data_files)
+
+        self.after_export_done()
+
+        self.time_end = time.time()
+        self.logger.info(f"Окончание работы. Время работы скрипта {self.time_end - self.time_start:.2f} сек")
+           
 
     def run(self):
         message = "Выгрузка данных из БД в json и запуск контейнера из образа"
@@ -456,28 +480,32 @@ class DatasetMarkupsExport:
             if (self.image_id):
                 self.clear_directory(self.output_dir)
 
-            self.status = {filename["name"]: "In Progress" for filename in self.data_files}
+            # self.status = {filename["name"]: "In Progress" for filename in self.data_files}
             # print(f"{resp[0]['id']}", file=sys.stderr)
             # Запуск потоков создания файлов 
-            for file in self.data_files:
-                # Проверка на прерывание
-                self.check_dataset_state()
-                # Если обнаружен сигнал о прерывании - остановить выгрузку
-                if self.do_stop_export :
-                    self.logger.info(f'Запуск обработки файла {file} отменен')
-                    break
-                else:
-                    thread = threading.Thread(target=self.create_json_file, args=(file,))
-                    thread.start()
-                    self.threads.append(thread)
 
-            # Запуск мониторинга
-            self.monitor_thread = threading.Thread(target=self.monitor_threads)
+            self.monitor_thread = threading.Thread(target=self.run_monitor_thread)
             self.monitor_thread.start()
 
+            # for file in self.data_files:
+            #     # Проверка на прерывание
+            #     self.check_dataset_state()
+            #     # Если обнаружен сигнал о прерывании - остановить выгрузку
+            #     if self.do_stop_export :
+            #         self.logger.info(f'Запуск обработки файла {file} отменен')
+            #         break
+            #     else:
+            #         thread = threading.Thread(target=self.create_json_file, args=(file,))
+            #         thread.start()
+            #         self.threads.append(thread)
+
+            # Запуск мониторинга
+            # self.monitor_thread = threading.Thread(target=self.monitor_threads)
+            # self.monitor_thread.start()
+
             # Запуск ожидания завершения в отдельном потоке
-            self.wait_thread = threading.Thread(target=self.wait_for_threads)
-            self.wait_thread.start()
+            # self.wait_thread = threading.Thread(target=self.wait_for_threads)
+            # self.wait_thread.start()
             files_count = len(self.data_files)
             message = {'message': 'Файлы отправлены в обработку', 'files_count' : {files_count} }
             self.logger.info( f'Response json: {message} ')

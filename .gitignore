@@ -13,3 +13,4 @@ dockerfiles/
 api/database/database.ini
 update_data_compose.sh
 api/sets/config.py
+Dockerfile.mockimage

@@ -208,62 +208,65 @@ def create_start_container(params):
             logger.info(f'params: {params}')
             client = docker.DockerClient(base_url=f'tcp://{vm_host}:2375', timeout=5) 
             image = find_image_by_id(params["image_id"])
-            name = params["name"]
-            command = [
-                "--input_data", params['hyper_params'],
-                "--host_web", C.HOST_ANN
-            ]
-            if params['ann_mode'] == 'teach':
-                command.append('--work_format_training')
+            logger.info(f"Найден образ: {image}")
 
-            volumes = {
-                f'/family{params["video_storage"]}': {"bind": "/family/video", "mode": "rw"},
-                f'/family{params["out_dir"]}': {"bind": "/output", "mode": "rw"},
-                f'/family{params["in_dir"]}': {"bind": "/input_videos", "mode": "rw"},
-                f'/family{params["weights"]}': {"bind": "/weights/", "mode": "rw"},
-                f'/family{params["markups"]}': {"bind": "/input_data", "mode": "rw"},
-                "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
-                "/family/projects_data": {"bind": "/projects_data", "mode": "rw"}
-            }
+            if image:
+                name = params["name"]
+                command = [
+                    "--input_data", params['hyper_params'],
+                    "--host_web", C.HOST_ANN
+                ]
+                if params['ann_mode'] == 'teach':
+                    command.append('--work_format_training')
 
-            # Формируем строку запуска для логирования
-            volume_args = ' '.join([f'-v {host}:{opt["bind"]}:{opt["mode"]}' for host, opt in volumes.items()])
-            command_str = f"docker create --gpus all --shm-size=20g {volume_args} {image} {' '.join(command)}"
-            logger.info(f"{command_str}")
+                volumes = {
+                    f'/family{params["video_storage"]}': {"bind": "/family/video", "mode": "rw"},
+                    f'/family{params["out_dir"]}': {"bind": "/output", "mode": "rw"},
+                    f'/family{params["in_dir"]}': {"bind": "/input_videos", "mode": "rw"},
+                    f'/family{params["weights"]}': {"bind": "/weights/", "mode": "rw"},
+                    f'/family{params["markups"]}': {"bind": "/input_data", "mode": "rw"},
+                    "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
+                    "/family/projects_data": {"bind": "/projects_data", "mode": "rw"}
+                }
 
-            device_requests = []
-            if not C.DEBUG_MODE:
-                device_requests = [DeviceRequest(count=-1, capabilities=[['gpu']])]
+                # Формируем строку запуска для логирования
+                volume_args = ' '.join([f'-v {host}:{opt["bind"]}:{opt["mode"]}' for host, opt in volumes.items()])
+                command_str = f"docker create --gpus all --shm-size=20g {volume_args} {image} {' '.join(command)}"
+                logger.info(f"{command_str}")
 
-            try:
-                container = client.containers.create(
-                    image=image['name'],
-                    name=name,
-                    command=command,
-                    tty=True,
-                    stdin_open=True,
-                    detach=True,
-                    auto_remove=True,                 
-                    shm_size="20g",                   
-                    volumes=volumes,
-                    device_requests=device_requests
-                )
-                logger.info(f'Контейнер успешно создан id: {container.id}')
-                message = container.id
-                # Отправить сообщение о создании с указанием хоста и container_id
-                url = f"{C.HOST_RESTAPI}/containers/{container.id}/on_start"
-                send = { 'host' : vm_host, 'dataset_id' : params['dataset_id']}
-                logger.info(f'Send post: Url: {url} , body: {send}')
+                device_requests = []
+                if not C.DEBUG_MODE:
+                    device_requests = [DeviceRequest(count=-1, capabilities=[['gpu']])]
 
-                response = requests.post(url, json = send)
-                
-                logger.info(f'response.json() = {response.json()}')
-                time.sleep(3) # таймаут на 3 сек. , для успешной записи в БД сообщения от restapi
-                container.start()
-                logger.info(f"Контейнер успешно запущен на '{vm_host}' id:{container.id}") 
-            except Exception as e:
-                message = f"Ошибка запуска контейнера на '{vm_host}': {e}"
-                logger.error(message)
+                try:
+                    container = client.containers.create(
+                        image=image['name'],
+                        name=name,
+                        command=command,
+                        tty=True,
+                        stdin_open=True,
+                        detach=True,
+                        # auto_remove=True,                 
+                        # shm_size="20g",                   
+                        volumes=volumes,
+                        device_requests=device_requests
+                    )
+                    logger.info(f'Контейнер успешно создан id: {container.id}')
+                    message = container.id
+                    # Отправить сообщение о создании с указанием хоста и container_id
+                    url = f"{C.HOST_RESTAPI}/containers/{container.id}/on_start"
+                    send = { 'host' : vm_host, 'dataset_id' : params['dataset_id']}
+                    logger.info(f'Send post: Url: {url} , body: {send}')
+
+                    response = requests.post(url, json = send)
+                    
+                    logger.info(f'response.json() = {response.json()}')
+                    time.sleep(3) # таймаут на 3 сек. , для успешной записи в БД сообщения от restapi
+                    container.start()
+                    logger.info(f"Контейнер успешно запущен на '{vm_host}' id:{container.id}") 
+                except Exception as e:
+                    message = f"Ошибка запуска контейнера на '{vm_host}': {e}"
+                    logger.error(message)
 
         else:
             message = 'Нет свободных VM.'
