@@ -246,8 +246,8 @@ def create_start_container(params):
                         tty=True,
                         stdin_open=True,
                         detach=True,
-                        # auto_remove=True,                 
-                        # shm_size="20g",                   
+                        auto_remove=True,                 
+                        shm_size="20g",                   
                         volumes=volumes,
                         device_requests=device_requests
                     )

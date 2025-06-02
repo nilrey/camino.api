@@ -98,43 +98,6 @@ def mng_image(image_id):
    if (not response['error']): response = ro.docker_image(image_id, response['response'])
    return response
 
-
-# def mng_container_create(image_id, params):
-#    resp_cmd_json_img = dkr.dkr_images()
-#    image = ro.getImageById(image_id, resp_cmd_json_img['response'] )
-#    if( image["name"] ):
-#       response = dkr.dkr_container_create(image["name"], params)
-#       # if (not response['error']): response = mng_container(response['response'][0])
-#    else: 
-#       response['error'] = True
-#       response['error_descr'] = 'По данному Id образ не найден'
-#    return response
-
-
-# def mng_image_run_container(image_id, params):
-#    response = mng_container_create(image_id, params)
-#    if (not response['error']): 
-#       response = mng_container_start(response['response'][0])
-#       # регистрация контейнера
-      
-#       url = f"{C.HOST_RESTAPI}/containers/{response['id']}/on_start"
-#       response['dataset_id'] = params['out_dir'].split('/')[-2]
-#       response['host'] = '10.0.0.1'
-#       requests.post(url, json = response)
-
-#       # #???? if (not response['error']):       
-#       # if( response.get('id', None)):
-#       #    print(f"container_id: {response['id']}", file=sys.stderr)
-#       #    url = f"{C.HOST_RESTAPI}/containers/{response['id']}/on_start"
-#       #    response['dataset_id'] = params['out_dir'].split('/')[-2]
-#       #    requests.post(url, json = response)
-#       # else:
-#       #    print(f"ERROR: ошибка запуска конейнера", file=sys.stderr)
-#       #    print(f"{response['error_descr']}", file=sys.stderr)
-
-#    return response
-
-
 def mng_image_run(post_data):
    resp = DatasetMarkupsExport({"dataset_id": post_data['dataset_id'], "only_verified_chains": post_data['only_verified_chains'], "only_selected_files": post_data['only_selected_files']}, post_data)
    res = resp.run()
@@ -152,13 +115,7 @@ def mng_containers_stats():
    response = dkr.dkr_containers_stats()
    if dkr.isJson(response):
       logger.info("mng_containers_stats, dkr_containers_stats - response:")
-      logger.info(response)
-   # try:
-   #    logger.info("type(response['response'])")
-   #    logger.info(type(response['response']))
-   #    logger.info(response['response'])
-   # except Exception as e:
-   #    logger.info(e)
+      logger.info(response) 
 
    if (not response['error']): response = ro.containers_stats(response['response'])
    return response
