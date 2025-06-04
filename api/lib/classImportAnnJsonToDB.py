@@ -341,8 +341,7 @@ class ImportAnnJsonToDB:
         self.logger_info(f"{file_name} обработан за {end_time - start_time:.2f} сек")
         
 
-    def run_monitor_thread(self):
-        # Запуск обработки файлов в нескольких потоках
+    def run_monitor_thread(self): 
         self.logger_info("Запуск обработки файлов в нескольких потоках")
         with ThreadPoolExecutor(max_workers=C.SET_MAX_WORKERS) as executor:
             executor.map(self.process_json_file, self.files)

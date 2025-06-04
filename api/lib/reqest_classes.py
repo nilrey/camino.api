@@ -104,3 +104,8 @@ class ContainerOnStopPostData(BaseModel):
 
 class ContainerIdRequest(BaseModel):
     container_id: str
+
+
+class VideoConverterParams(BaseModel):
+    source_dir: str
+    target_dir: str
