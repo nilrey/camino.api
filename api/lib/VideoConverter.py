@@ -9,9 +9,7 @@ import api.sets.config as C
 
 
 class VideoConverter:
-    SUPPORTED_EXTENSIONS = ['.avi', '.m4v', '.mov', '.mpg', '.mpeg', '.wmv']
-    PRIMARY_EXT = '.mp4'
-    TIME_BUFFER_TO_RUN = 1
+    TIME_BUFFER_TO_RUN = 3
 
     def __init__(self, source_dir, target_dir):
         self.source_dir = source_dir
@@ -39,13 +37,13 @@ class VideoConverter:
 
     def find_video_files(self):
         try:  
-            for ext in self.SUPPORTED_EXTENSIONS:
+            for ext in C.VIDEO_EXT_LIST:
                 self.video_files.extend(self.source_dir.glob(f'*{ext}'))
         except Exception as e:
             self.logger_error(f'Ошибка при поиске файлов в директории: {e} ')
 
     def convert_file(self, orig_file_path):
-        target_file_path = self.target_dir / orig_file_path.with_suffix(self.PRIMARY_EXT).name
+        target_file_path = self.target_dir / orig_file_path.with_suffix(C.PRIMARY_EXT).name
         if target_file_path.exists():
             self.logger_info(f"Файл: {target_file_path.name} существует, исключаем его из обработки.")
             return
