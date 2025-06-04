@@ -16,9 +16,9 @@ class VideoConverter:
         self.target_dir = target_dir
         self.video_files = []
         self.log_handler = None
-        self.init_logger()
+        self._init_logger()
 
-    def init_logger(self, type = 'file'):
+    def _init_logger(self, type = 'file'):
         self.directory_name = C.LOG_PATH #'/home/sadmin/Work/mounts/export/logs' #
         self.file_name = f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}_video_convreter.log'
         self.file_path = os.path.join(self.directory_name, self.file_name)
@@ -35,14 +35,14 @@ class VideoConverter:
             self.log_handler.write(f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")} - Ошибка: {content}\n')
             self.log_handler.flush()
 
-    def find_video_files(self):
+    def _find_video_files(self):
         try:  
             for ext in C.VIDEO_EXT_LIST:
                 self.video_files.extend(self.source_dir.glob(f'*{ext}'))
         except Exception as e:
             self.logger_error(f'Ошибка при поиске файлов в директории: {e} ')
 
-    def convert_file(self, orig_file_path):
+    def _convert_file(self, orig_file_path):
         target_file_path = self.target_dir / orig_file_path.with_suffix(C.PRIMARY_EXT).name
         if target_file_path.exists():
             self.logger_info(f"Файл: {target_file_path.name} существует, исключаем его из обработки.")
@@ -63,27 +63,25 @@ class VideoConverter:
         except ffmpeg.Error as e:
             self.logger_error(f"Ошибка при конвертации {orig_file_path.name}:\n{e.stderr.decode()}")
 
-    def convert_all(self):
+    def _convert_all(self):
         try:
             with ThreadPoolExecutor(max_workers=C.SET_MAX_WORKERS) as executor:
-                executor.map(self.convert_file, self.video_files) 
+                executor.map(self._convert_file, self.video_files) 
         except Exception as e:
             self.logger_error(f"ThreadPoolExecutor, ошибка при запуске конвертации: {e}")
 
     def run(self):
-        self.find_video_files()
+        self._find_video_files()
         if not self.video_files:
             self.logger_error("Файлы для конвертации не найдены. Обработка закончена")
         self.target_dir.mkdir(parents=True, exist_ok=True)
-        thread = threading.Thread(target=self.convert_all)
+        thread = threading.Thread(target=self._convert_all)
         thread.start()
         time.sleep(self.TIME_BUFFER_TO_RUN)
         message = f'Файлов в обработке: {len(self.video_files)}'
         self.logger_info(message)
         return message
 
-
-# Пример использования
 if __name__ == "__main__":
     source_dir = PathLib("/home/sadmin/Work/mounts/export/convert")
     target_dir = PathLib("/home/sadmin/Work/mounts/export/convert/new")

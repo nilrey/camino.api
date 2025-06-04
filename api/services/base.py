@@ -22,43 +22,6 @@ def dkr_images():
     logger.info(command)
     return exeCommand(command)
 
-def dkr_container_create(image_name, params):
-    export_code = get_time_no_microsec()
-    # logger.info(f'params: {params}')
-    command = 'docker create --rm '
-    # volume_weights = volume_input = volume_output = volume_socket = volume_markups = volume_storage = ''
-    # param_name = param_network = param_input_data = param_ann_mode = param_host_web = param_network = param_hyper = ''
-    # param_shm_size = f' --shm-size={C.SET_SHM_SIZE}g '
-    # volume_socket = ' -v /var/run/docker.sock:/var/run/docker.sock '
-    # volume_family = ' -v /family/projects_data:/projects_data '
-    # param_host_web = f' --host_web \'{C.HOST_ANN}\' '
-    # param_gpu = ' --gpus all '
-    # for param, value in params.items():
-    #     if( value ):
-    #         if(param == 'name' ):
-    #             param_name = f' --name {value} '
-    #         elif(param == 'ann_mode' and value == 'teach'):
-    #             param_ann_mode = ' --work_format_training  '
-    #         elif(param == 'weights' ):
-    #             volume_weights = f' -v /family{value}:/weights/ '
-    #         elif(param == 'hyper_params'):
-    #             param_hyper = f" --input_data '{value}' "
-    #         elif(param == 'in_dir' ):
-    #             volume_input = f' -v /family{value}:{C.CNTR_BASE_01_DIR_IN} '
-    #         elif(param == 'out_dir' ):
-    #             volume_output = f' -v /family{value}:{C.CNTR_BASE_01_DIR_OUT} '
-    #         elif(param == 'markups'):
-    #             volume_markups = f' -v /family{value}:/input_data '
-    #         elif(param == 'video_storage'):
-    #             volume_storage = f' -v /family{value}:/family{value} '
-    #         elif(param == 'network' and False ):
-    #             param_network = f' --network {value} '
-
-    # command = f'docker create --rm -it {param_name} {param_gpu} {param_shm_size} {volume_storage} {volume_output} {volume_input} {volume_weights} {volume_socket} {volume_markups} {volume_family} {param_network} {image_name} {param_hyper} {param_input_data} {param_host_web} {param_ann_mode}'
-    # logger.info(command)
-    return execCommand(command) 
-
-
 def dkr_containers():
     return exeCommand('docker ps '+ C.PARAM_NO_TRUNC + C.PARAM_TO_JSON )
 
@@ -231,8 +194,8 @@ def send_on_error(export_code, annId, msg):
     try:
         requests.post(url, json = {"msg": msg} )
         mes = f"Сообщение об ошибке отправлено: {msg}. {url}"
-    except Exception:
-        mes = f"Ошибка: сообщение не отправлено.{msg}. {url}"
+    except Exception as e:
+        mes = f"Ошибка: сообщение не отправлено.{e}. {url}"
     finally:
         logger.info(mes)
 

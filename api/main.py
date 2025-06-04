@@ -24,60 +24,6 @@ app = FastAPI(openapi_tags=tags_metadata)
 
 app.add_exception_handler(HTTPException, http_exception_handler)
 
-
-# USERS
-
-@users.get("", summary="Получение списка пользователей")
-async def api_all_users():
-   output = mng_all_users()
-   return output
-
-
-@users.post("/create", summary="Создание пользователя")
-async def api_create_user(request: Request, 
-      name:str,
-      login:str,
-      password:str,
-      role_code:str,
-      description:str = None
-   ):
-   return mng_create_user(**get_request_params(request))
-
-
-@users.get("/{userId}", summary="Получение информации пользователя")
-async def api_single_user(userId):
-   output = mng_single_user(userId)
-   return output
-
-
-@users.put("/{userId}", summary="Обновление информации пользователя")
-async def api_update_user(request: Request,
-      userId:str,
-      name:str,
-      login:str,
-      password:str,
-      role_code:str,
-      description:str = None
-   ):
-   return mng_update_user(userId, **get_request_params(request, True, False))
-
-
-@users.delete("/{userId}", summary="Удаление пользователя")
-async def api_delete_user(userId):
-   output = mng_delete_user(userId)
-   return output
-
-
-# ROLES
-
-
-@roles.post("/create", tags=["Роли"], summary="Создание роли")
-async def api_create_role(code:str = None,
-      name:str = None
-   ):
-   return mng_create_role(name = name, code=code)
-
-
 # PROJECTS
 
 
@@ -301,13 +247,13 @@ async def api_docker_containers_stats():
 
 @docker_containers.get("/{containerId}", tags=["Docker-контейнеры"], summary="Получение информации о Docker-контейнере на сервере")
 async def api_docker_container(container_id: str = Path(..., alias="containerId")):
-    logger.info(f"*************** Запрос информации о 1 контейнере {container_id} **************")
+   #  logger.info(f"*************** Запрос информации о 1 контейнере {container_id} **************")
     try:
         container = docker_service.find_container_by_id(container_id)
-        logger.info(f"Результат поиска: {container}")
+      #   logger.info(f"Результат поиска: {container}")
         if container:
-            logger.info(f"Response на запрос: {container} ")
-            logger.info(f"*************** Конец работы по запросу информации о 1 контейнере {container_id} **************")
+            # logger.info(f"Response на запрос: {container} ")
+            # logger.info(f"*************** Конец работы по запросу информации о 1 контейнере {container_id} **************")
             return container
         else:
             resp = False
