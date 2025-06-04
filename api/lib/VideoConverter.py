@@ -65,7 +65,7 @@ class VideoConverter:
 
     def convert_all(self):
         try:
-            with ThreadPoolExecutor(max_workers=2) as executor:
+            with ThreadPoolExecutor(max_workers=C.SET_MAX_WORKERS) as executor:
                 executor.map(self.convert_file, self.video_files) 
         except Exception as e:
             self.logger_error(f"ThreadPoolExecutor, ошибка при запуске конвертации: {e}")
