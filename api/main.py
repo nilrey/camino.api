@@ -1,23 +1,19 @@
-#  # python3 -m venv venv
-#  source venv/bin/activate
-#  uvicorn api.main:app --reload
 from fastapi import FastAPI, Request, HTTPException
 from api.lib.func_request import get_request_params
 from api.sets.metadata_fastapi import *
 from api.manage.manage import *
-# from api.logg import *
 from api.lib.reqest_classes import *
 from api.format.exceptions import http_exception_handler, NotFoundError
 import datetime as dt
 from api.lib.classExportDBToAnnJson import *
-import requests
+from api.lib.VideoConverter import VideoConverter
+from api.lib.AnnExport import ANNExporter
 from fastapi import Response, status, Path
 
 from fastapi.responses import JSONResponse
 from api.services import docker_service
 from  api.format.logger import logger
 
-from api.lib.VideoConverter import VideoConverter
 from pathlib import Path as PathLib
 
 app = FastAPI(openapi_tags=tags_metadata)
@@ -198,7 +194,9 @@ async def api_docker_ann_export(request: Request,
       annId:str,
       export: ANNExport ):
    logger.info("Выгрузка ИНС (Docker-образа и файла весов) в архив")
-   return mng_ann_export(export.image_id, export.weights, export.export, annId)
+   exporter = ANNExporter(ann_id=annId, export_data=export)
+   exporter.run()
+   return {"status":"running"}
 
 
 # CONTAINERS

@@ -144,6 +144,7 @@ def run_command_with_finally(export_code, command):
 
 def log_file_path(export_code):
     dir = f'{C.LOG_PATH}' if(os.path.isdir(f'{C.LOG_PATH}')) else C.EXPORT_DIR # если сущ. директория для логов
+    logger.info(f'Директория логов: {dir}')
     return f'{dir}/{log_fname(export_code)}'
 
 def log_fname(export_code):
