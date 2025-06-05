@@ -1,10 +1,12 @@
 import tarfile
 import threading
+import requests 
 import datetime as dt
 import subprocess
 from pathlib import Path
 from  api.format.logger import LogManager
 import api.sets.config as C
+from api.sets.endpoints import ENDPOINTS
 from api.lib.func_datetime import * 
 
 
@@ -27,6 +29,24 @@ class ANNExporter:
 
     def _log_error(self, message: str):
         self.logger.error(f"[{self.ann_id}] {message}")
+
+    def _send_ann_arch_on_save(self, ann_id):
+        template = ENDPOINTS.get("ann_archive_on_save")
+        if not template:
+            raise ValueError("Параметр 'ann_archive_on_save' не задан.")
+        url = C.HOST_RESTAPI + template.format(annId=ann_id)
+        post_data = {"action":"start"}
+        try:
+            response = requests.post(url, json=post_data)
+            response.raise_for_status()
+            mes = f"Сообщение отправлено. {url}, статус: {response.status_code}"
+        except requests.exceptions.RequestException as e:
+            mes = f"RequestException: {url} \nОшибка: {e}"
+        except Exception as e:
+            mes = f"Ошибка: {e}"
+        
+        self.logger.info(mes)
+        return mes
 
     def _docker_save_image(self):
         self._log(f"Экспорт Docker-образа '{self.image_id}' в файл '{self.image_tar_path.name}'.")
@@ -61,6 +81,7 @@ class ANNExporter:
             self._docker_save_image()
             self._create_archive()
             self._log(f"Архив успешно создан: {str(self.export_path)}")
+            self._send_ann_arch_on_save(self.ann_id)
         except Exception as e:
             self._log_error(f"Ошибка при экспорте: {str(e)}")
         finally:
