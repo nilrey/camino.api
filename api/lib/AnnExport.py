@@ -17,7 +17,7 @@ class ANNExporter:
         self.ann_id = ann_id
         self.image_id = export_data.image_id
         self.weights_path = Path(export_data.weights)
-        self.export_path = Path(export_data.export)
+        self.export_path = self.base_path / export_data.export
         self.readme_path = Path(f"{C.EXPORT_README_PATH}/{C.EXPORT_README_FNAME}")
         self.image_tar_path = self.base_path / f"export_image_{get_dt_now_noms_nows()}"
 
