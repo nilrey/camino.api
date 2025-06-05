@@ -20,7 +20,7 @@ class ANNExporter:
         self.weights_path = Path(export_data.weights)
         self.export_path = self.base_path / export_data.export
         self.readme_path = Path(f"{C.EXPORT_README_PATH}/{C.EXPORT_README_FNAME}")
-        self.image_tar_path = self.base_path / f"export_img_{export_data.export}_{get_dt_now_noms_nows()}"
+        self.image_tar_path = self.base_path / f"{get_dt_now_noms_nows()}_export_img_{export_data.export}"
         self.is_archiving = False  
         self.logger = LogManager("ann_export")
         self.logger.info(f"Получены параметры: {export_data}")
