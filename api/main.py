@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, Body, HTTPException
 from api.lib.func_request import get_request_params
 from api.sets.metadata_fastapi import *
 from api.manage.manage import *
@@ -22,78 +22,27 @@ app.add_exception_handler(HTTPException, http_exception_handler)
 
 # PROJECTS
 
-
-@projects.get("/", tags=["Проекты"], summary="Получение списка проектов")
-async def api_all_projects():
-   output = mng_all_projects()
-   return output
-
-
-@projects.post("/create", tags=["Проекты"], summary="Создание проекта")
-async def api_create_project( request: Request, 
-      name:str, 
-      type_id:int = 1,
-      description:str = None, 
-      author_id:str = None
-   ):
-   return mng_create_project(**get_request_params(request))
-
-
-@projects.get("/{projectId}", tags=["Проекты"], summary="Получение информации о проекте")
-async def api_single_project(projectId):
-   output = mng_single_project(projectId)
-   return output
-
-
-@projects.get("/ext/{projectId}", tags=["Проекты"], summary="Получение информации о проекте")
-async def api_single_project_ext(projectId:str):
-   output = mng_single_project_ext(projectId)
-   return output
-
-
-@projects.put("/{projectId}", tags=["Проекты"], summary="Обновление информации о проекте")
-async def api_update_project(projectId,
-      name:str = None, 
-      type_id:str = None,
-      description:str = None, 
-      author_id:str = None, 
-      dt_created:str = None, 
-      is_deleted:bool = None
-   ):
-   fields = {'name':name, 'type_id':type_id, 'description':description, 'author_id':author_id, 'dt_created':dt_created, 'is_deleted':is_deleted}
-   output = mng_update_project(projectId, **fields)
-   return output
-
-
-@projects.delete("/{projectId}", tags=["Проекты"], summary="Удаление проекта")
-async def api_delete_project(projectId):
-   output = mng_delete_project(projectId)
-   return output
-
-
 @projects.post("/{projectId}/datasets/{datasetId}/import", summary="Загрузка датасета из JSON файлов")
 async def api_import_json_to_db(request: Request,
       projectId:str,
       datasetId:str,
-      parse_data:ANNParseOutput
+      import_data:DatasetImport
    ):
-   logger.info(f"*************** Загрузка датасета из JSON файлов **************")
    logger.info(f"Requested url: /{projectId}/datasets/{datasetId}/import")
-   res = mng_import_json_to_db(projectId, datasetId, parse_data)
+   res = mng_import_json_to_db(projectId, datasetId, import_data)
    logger.info(f"Результат import: {res}")
-   logger.info(f"*************** Конец работы по Загрузка датасета из JSON файлов **************")
    return res
 
 
 @projects.post("/{projectId}/datasets/{datasetId}/export", summary="Запускает процесс формирования JSON файлов разметки датасета и возвращает признак успешного начала операции. По окончании операции вызывается соотв. роут export on_save")
 async def api_export_db_to_json(request: Request,
-      projectId:str,
-      datasetId:str,
-      exparams:DbExportParams
+      project_id:str = Path(..., alias="projectId"),
+      dataset_id:str = Path(..., alias="datasetId"),
+      exparams:DbExportParams = Body(...),
    ):
    post_data = exparams.getAllParams()
-   post_data['project_id'] = projectId
-   post_data['dataset_id'] = datasetId
+   post_data['project_id'] = project_id
+   post_data['dataset_id'] = dataset_id
    return mng_export_db_to_json(post_data)
 
 
@@ -111,7 +60,6 @@ async def api_docker_info():
 @docker_images.get("/", tags=["Docker-образы"], summary="Получение списка Docker-образов на сервере")
 async def api_docker_images():
    #  logger.info("Получение списка Docker-образов на сервере")
-    logger.info(f"*************** Запрос информации списка Docker-образов на сервере **************")
     try:
         images = docker_service.get_docker_images()
         response = JSONResponse(content={
@@ -119,7 +67,6 @@ async def api_docker_images():
             "items": images
         })
         logger.info(f"Результат images: {response}")
-        logger.info(f"*************** Конец работы по запросу  информации списка Docker-образов на сервере **************")
         return response
     except Exception as e:
         response = JSONResponse(status_code=500, content={
@@ -127,53 +74,27 @@ async def api_docker_images():
             "message": str(e)
         })
         logger.info(f"Ошибка status_code=500: {response}")
-        logger.info(f"*************** Конец работы по запросу  информации списка Docker-образов на сервере **************")
         return 
 
 
 @docker_images.get("/{imageId}", tags=["Docker-образы"], summary="Получение информации о Docker-образе на сервере") 
 async def get_docker_image(image_id: str = Path(..., alias="imageId")):
    #  logger.info("Получение информации о Docker-образе на сервере")
-    logger.info(f"*************** Запрос информации Docker-образа на сервере {image_id} **************")
     try:
         image = docker_service.find_image_by_id(image_id)
         logger.info(f"Результат поиска: {image}")
         if image:
             logger.info(f"Response на запрос: {image} ")
-            logger.info(f"*************** Конец работы по запросу информации Docker-образа на сервере {image_id} **************")
             return image
         else:
             logger.info(f"Response на запрос: status_code=404 , Ошибка: образ не найден {image_id} ")
-            logger.info(f"*************** Конец работы по запросу  информации Docker-образа на сервере {image_id} **************")
             raise HTTPException(status_code=404, detail="Image not found")
     except Exception as e:
         logger.info(f"Response на запрос: status_code=500 , Ошибка: {image_id} Описание: {str(e)} ")
-        logger.info(f"*************** Конец работы по запросу  информации Docker-образа на сервере {image_id} **************")
         return {
             "code": 500,
             "message": str(e)
         }
-
-
-# @docker_images.put("/{imageId}/create", tags=["Docker-образы"], summary="Создание Docker-контейнера из Docker-образа")
-# async def api_docker_image_create(request: Request,
-#       imageId:str,
-#       ContCreate: ContainerCreate
-#    ):
-#    logger.info("Создание Docker-контейнера из Docker-образа")
-#    return mng_container_create(imageId, ContCreate.getAllParams() )
-
-
-# @docker_images.post("/{imageId}/run")
-# async def run_container(request: CreateContainerRequest , imageId: str = Path(...)):
-#     try:
-#         params = request.model_dump()
-#         params["imageId"] = imageId  
-#         response = docker_service.run_container(params)
-#         return {"message": response}
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-    
 
 @docker_images.post("/{imageId}/run", tags=["Docker-образы"], summary="Создание Dockеr-контейнера из Docker-образа и его запуск")
 async def api_docker_image_run(request: Request,
@@ -214,6 +135,7 @@ async def get_vm_without_ann():
 
     return {"message": message}    
 
+
 @docker_containers.get("/", tags=["Docker-контейнеры"], summary="Получение списка Docker-контейнеров на сервере") 
 async def get_containers():
     logger.info("Получение списка Docker-контейнеров на сервере")
@@ -240,40 +162,36 @@ async def get_containers():
 @docker_containers.get("/stats", tags=["Docker-контейнеры"], summary="Получение списка состояний Docker-контейнеров на сервере")
 async def api_docker_containers_stats():
    logger.info("Получение списка состояний Docker-контейнеров на сервере")
-   return mng_containers_stats()
+   containers = docker_service.get_docker_containers_stats()
+   return {"items": containers}
 
 
 @docker_containers.get("/{containerId}", tags=["Docker-контейнеры"], summary="Получение информации о Docker-контейнере на сервере")
 async def api_docker_container(container_id: str = Path(..., alias="containerId")):
-   #  logger.info(f"*************** Запрос информации о 1 контейнере {container_id} **************")
     try:
         container = docker_service.find_container_by_id(container_id)
-      #   logger.info(f"Результат поиска: {container}")
         if container:
-            # logger.info(f"Response на запрос: {container} ")
-            # logger.info(f"*************** Конец работы по запросу информации о 1 контейнере {container_id} **************")
             return container
-        else:
-            resp = False
-            logger.info(f"Ошибка: контейнер не найден {container_id} ")
-            logger.info(f"Response на запрос: {resp} ")
-            logger.info(f"*************** Конец работы по запросу информации о 1 контейнере {container_id} **************")
-            # raise HTTPException(status_code=404, detail=f"Ошибка: конейнер не найден {container_id}")
-            return resp
+
+        logger.error(f"Контейнер не найден: {container_id}")
+        return False
     except Exception as e:
-        resp = False
-        logger.info(f"Exception контейнере {container_id}. Описание: {str(e)}")
-        logger.info(f"Response на запрос: {resp} ")
-        logger.info(f"*************** Конец работы по запросу информации о 1 контейнере {container_id} **************")
-      #   return {
-      #       "code": 500,
-      #       "message": str(e)
-      #   }
-        return resp
+        logger.error(f"Ошибка при получении контейнера {container_id}: {e}")
+        return False
+
 
 @docker_containers.get("/{containerId}/stats", tags=["Docker-контейнеры"], summary="Получение состояния Docker-контейнера на сервере")
-async def api_docker_container_stats(containerId):
-   return mng_container_stats(containerId)
+async def api_docker_container_stats(container_id: str = Path(..., alias="containerId")):    
+    try:
+        container = docker_service.find_container_by_id(container_id, 'stats')
+        if container:
+            return container
+
+        logger.error(f"Контейнер не найден: {container_id}")
+        return False
+    except Exception as e:
+        logger.error(f"Ошибка при получении контейнера {container_id}: {e}")
+        return False
 
 
 @docker_containers.get("/{containerId}/monitor", tags=["Docker-контейнеры"], summary="Получение списка виджетов для мониторинга состояния Docker-контейнера")
@@ -313,49 +231,13 @@ async def api_video_convert(req: VideoConverterParams):
     message = converter.run()
     return {"message": message}
 
-
-# EVENTS
-
-
-@events.post("/{containerId}/before_start", summary="Мок-обработчик - Событие начала обработки данных")
-async def api_docker_events_before_start(request: Request,
-      containerId:str,
-      event: ANNEventBeforeRun
-   ):
-   return {"result":"ok", "conainerId":containerId}
-
-
-#   event  on_progress
-@events.post("/{containerId}/on_progress", summary="Мок-обработчик - Событие в процессе обработки данных")
-async def api_docker_events_on_progress(request: Request,
-      containerId:str,
-      event: ANNEventBeforeRun
-   ):
-   return {"result":"ok", "status":"on_progress", "conainerId":containerId}
-
-
-#   event  before_end
-@events.post("/{containerId}/before_end", summary="Мок-обработчик - Событие в конце обработки данных")
-async def api_docker_events_before_end(request: Request,
-      containerId:str,
-      event: ANNEventBeforeRun
-   ):
-   return {"result":"ok", "status":"before_end", "conainerId":containerId}
-
-
-app.include_router(auth)
 app.include_router(projects)
-app.include_router(proj_users)
 app.include_router(proj_datasets)
 app.include_router(proj_dts_files)
 app.include_router(proj_dts_primitives)
 app.include_router(proj_dts_prim_chains)
 app.include_router(proj_dts_ann)
-app.include_router(users)
-app.include_router(roles)
 app.include_router(docker)
-app.include_router(docker_registry)
 app.include_router(docker_images)
 app.include_router(docker_containers)
 app.include_router(events)
-app.include_router(ann)

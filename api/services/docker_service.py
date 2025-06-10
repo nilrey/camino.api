@@ -106,9 +106,13 @@ def get_docker_containers() -> List[Dict]:
     logger.info(f"Найдено {len(containers_info)}")
     return containers_info
 
-def find_container_by_id(container_id: str):
+def find_container_by_id(container_id: str, format_type: str = ''):
     try:
-        containers = get_docker_containers()
+        if format_type == 'stats':
+            containers = get_docker_containers_stats() 
+        else:
+            containers = get_docker_containers()
+
         for container in containers:
             logger.info(f'{container.get("id")} {container_id}')
             if container.get("id") == container_id:
@@ -117,6 +121,78 @@ def find_container_by_id(container_id: str):
     except Exception as e:
         logger.error(f"Ошибка в поиске контейнера: {e}")
     return None
+
+
+def get_docker_containers_stats() -> List[Dict]:
+    logger.info("Start get_docker_containers_stats")
+    containers_info = []
+    for vm in C.VIRTUAL_MACHINES_LIST:
+        try: 
+            client = docker.DockerClient(base_url=f"tcp://{vm['host']}:{vm['port']}")
+            containers = client.containers.list(all=True)
+            for container in containers:
+                if not container.attrs:
+                    continue
+                assert isinstance(container, DockerContainer) 
+                if container.name in C.BLOCK_LIST_CONTAINERS:
+                    continue
+
+                try:
+
+                    # Получаем статус контейнера
+                    state = container.status
+                    cpu_percent = "0.00%"
+                    mem_percent = "0.00%"
+                    mem_use = "0B / 0B"
+
+                    # Попытка получения stats (может не сработать для created/exited)
+                    try:
+                        stats = container.stats(stream=False)
+                        cpu_stats = stats.get("cpu_stats", {})
+                        precpu_stats = stats.get("precpu_stats", {})
+                        memory_stats = stats.get("memory_stats", {})
+
+                        cpu_total = cpu_stats.get("cpu_usage", {}).get("total_usage", 0)
+                        precpu_total = precpu_stats.get("cpu_usage", {}).get("total_usage", 0)
+                        system_cpu = cpu_stats.get("system_cpu_usage", 0)
+                        presystem_cpu = precpu_stats.get("system_cpu_usage", 0)
+
+                        cpu_delta = cpu_total - precpu_total
+                        system_delta = system_cpu - presystem_cpu
+
+                        if system_delta > 0 and cpu_delta > 0:
+                            num_cpus = len(cpu_stats.get("cpu_usage", {}).get("percpu_usage", [])) or 1
+                            cpu_percent = f"{(cpu_delta / system_delta) * num_cpus * 100:.2f}%"
+
+                        mem_usage = memory_stats.get("usage", 0)
+                        mem_limit = memory_stats.get("limit", 1)
+                        mem_percent = f"{(mem_usage / mem_limit) * 100:.2f}%"
+                        mem_use = f"{mem_usage}B / {mem_limit}B"
+
+                    except Exception:
+                        logger.error(f"Stats not available for container {container.id} on {vm['host']}")
+
+                    # Обновляем и получаем размер
+                    container.reload()
+                    size = container.attrs.get("SizeRootFs", 0)
+
+                    containers_info.append({
+                        "id": container.id,
+                        "host": vm['host'],
+                        "state": state,
+                        "cpu": cpu_percent,
+                        "mem": mem_percent,
+                        "mem_use": mem_use,
+                        "size": size
+                    })
+
+                except Exception as inner_e:
+                    logger.error(f"Failed to get stats for container {container.id} on {vm['host']}: {str(inner_e)}")
+        except Exception as e:
+            logger.error(f"Error connecting to {vm['host']}: {str(e)}")
+    logger.info(f"Найдено {len(containers_info)}")
+    return containers_info
+
 
 # def run_container(params): 
 #     logger.info("Start run_container")

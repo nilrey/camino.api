@@ -59,12 +59,7 @@ class DbExportParams(BaseModel):
             }
    
 
-class ANNEventBeforeRun(BaseModel):
-   msg: str = Field(default="")
-   details: str = Field(default="")
-   
-
-class ANNParseOutput(BaseModel):
+class DatasetImport(BaseModel):
    files: list = Field(default=[])
 
 
