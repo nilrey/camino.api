@@ -79,7 +79,7 @@ class DatasetMarkupsExport:
         self.output_dir = output_dir 
 
 
-    def load_config(self, filename='/code/api/database/database.ini', section='postgresql'):
+    def load_config(self, filename=C.POSTGRES_CONNECT, section='postgresql'):
         parser = ConfigParser()
         parser.read(filename)
         # get section, default to postgresql

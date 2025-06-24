@@ -9,9 +9,14 @@ DEBUG_MODE = True # указать False
 
 # Настроки файловой структуры
 ROOT = "/code" # корневая директория в развернутом контейнере, в которой расположен проект
+
+# Файл подключения к базе данных
+POSTGRES_CONNECT = ROOT+"/api/settings/config.py"
+# Разделы для VOLUMES при создании контейнера
 WEIGHTS_DIR = "/weights"
 EXPORT_DIR = "/export"
-EXPORT_README_PATH = ROOT+"/api/docs"
+
+EXPORT_README_PATH = ROOT+"/api/docs" # Раздел для хранения документации при создании архива образа
 LOG_PATH = "/export/logs" # корневая директория в развернутом контейнере, в которой расположены логи проекта
 LOG_FNAME = "back" # условное обозначение лог-файла, полное название имеет вид: "Y-m-d_H:M:S_<LOG_FNAME>.log"
 

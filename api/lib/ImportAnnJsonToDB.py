@@ -14,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 from configparser import ConfigParser
 import gc
 from  api.services.logger import LogManager
+import api.settings.config as C
 
 class ImportAnnJsonToDB:
 
@@ -105,7 +106,7 @@ class ImportAnnJsonToDB:
         return None     
     
 
-    def load_config(self, filename='/code/api/database/database.ini', section='postgresql'):
+    def load_config(self, filename=C.POSTGRES_CONNECT, section='postgresql'):
         parser = ConfigParser()
         parser.read(filename)
         # get section, default to postgresql
