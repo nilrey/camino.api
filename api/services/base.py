@@ -6,12 +6,12 @@ import json
 import threading
 
 import requests 
-import api.sets.config as C
+import api.settings.config as C
 import api.format.response_teplates as rt # Response Template
 import api.format.response_objects as ro # Response Objects
 import time, datetime as dt
 
-from  api.format.logger import logger
+from  api.services.logger import logger
 
 
 def dkr_docker_info():

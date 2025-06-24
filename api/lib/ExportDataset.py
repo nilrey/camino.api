@@ -13,14 +13,12 @@ from datetime import datetime
 from decimal import Decimal
 from sqlalchemy import create_engine, text
 from configparser import ConfigParser
-from collections import defaultdict
-from api.lib.func_datetime import *
-import api.sets.config as C
-from api.services import docker_service 
-from  api.format.logger import LogManager
-from concurrent.futures import ThreadPoolExecutor
+from api.utils.datetime import *
+import api.settings.config as C
+from api.services import docker_services 
+from  api.services.logger import LogManager
+from concurrent.futures import ThreadPoolExecutor 
 
-import api.manage.manage as mng
 
 class DatasetMarkupsExport:
     # выгрузка данных из БД в json и запуск контейнера из образа 
@@ -59,11 +57,7 @@ class DatasetMarkupsExport:
         self.threads = []
         self.dataset_state = -1
         self.do_stop_export = False
-        self.logger = LogManager("export_json")
-        
-        self.logger.info("DatasetMarkupsExport int")
-
-    
+        self.logger = LogManager("export_json")    
 
     def get_param_dataset_id(self, params, img_params):
         if ( img_params.get('markups', None)):
@@ -82,12 +76,7 @@ class DatasetMarkupsExport:
     def get_param_output_dir(self, params, output_dir):
         if ( params.get('target_dir', None)):
             output_dir = params['target_dir']
-        self.output_dir = output_dir
-    
-
-    # def log_info(self, mes):
-    #     with open(C.LOG_PATH + f"/{self.logname}", "a") as file:
-    #         file.write(f'{get_dt_now_noms()} {mes}\n')
+        self.output_dir = output_dir 
 
 
     def load_config(self, filename='/code/api/database/database.ini', section='postgresql'):
@@ -170,7 +159,7 @@ class DatasetMarkupsExport:
 
     def prepare_chains(self, file): 
         # при экспорте без запуска ИНС нужно брать chains из текущего датасета
-        # в случае если идет запуск ИНС берем из родительского (текущий датасет еще не имеет записей)
+        # в случае если идет запуск ИНС берем из родительского датасета (текущий датасет еще не имеет записей)
         chains = self.get_chains(self.parent_dataset_id if self.image_id else self.dataset_id , file['id'])
         chains_cnt = len(chains)
         markups_cnt = 0
@@ -275,7 +264,7 @@ class DatasetMarkupsExport:
             # DOCKER RUN CONTAINER
             self.before_container_run()
             self.logger.info('Начало запуска контейнера')
-            res =  docker_service.create_start_container(self.img_params) # mng.mng_image_run_container(self.image_id, self.img_params)
+            res =  docker_services.create_start_container(self.img_params)
             self.logger.info(f'Результат запуска контейнера: {res}')
 
     def send_on_export(self):
@@ -480,32 +469,9 @@ class DatasetMarkupsExport:
             if (self.image_id):
                 self.clear_directory(self.output_dir)
 
-            # self.status = {filename["name"]: "In Progress" for filename in self.data_files}
-            # print(f"{resp[0]['id']}", file=sys.stderr)
-            # Запуск потоков создания файлов 
-
             self.monitor_thread = threading.Thread(target=self.run_monitor_thread)
             self.monitor_thread.start()
 
-            # for file in self.data_files:
-            #     # Проверка на прерывание
-            #     self.check_dataset_state()
-            #     # Если обнаружен сигнал о прерывании - остановить выгрузку
-            #     if self.do_stop_export :
-            #         self.logger.info(f'Запуск обработки файла {file} отменен')
-            #         break
-            #     else:
-            #         thread = threading.Thread(target=self.create_json_file, args=(file,))
-            #         thread.start()
-            #         self.threads.append(thread)
-
-            # Запуск мониторинга
-            # self.monitor_thread = threading.Thread(target=self.monitor_threads)
-            # self.monitor_thread.start()
-
-            # Запуск ожидания завершения в отдельном потоке
-            # self.wait_thread = threading.Thread(target=self.wait_for_threads)
-            # self.wait_thread.start()
             files_count = len(self.data_files)
             message = {'message': 'Файлы отправлены в обработку', 'files_count' : {files_count} }
             self.logger.info( f'Response json: {message} ')

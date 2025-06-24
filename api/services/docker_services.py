@@ -1,24 +1,23 @@
-import os
 import docker
 from docker.types import DeviceRequest
 from docker.errors import NotFound, APIError
 import socket
 from datetime import datetime
-from typing import List, Dict
-from docker.errors import NotFound, APIError
-import api.sets.config as C
+from typing import List, Dict 
+import api.settings.config as C
 from docker.types import DeviceRequest
 import requests
-from  api.format.logger import logger
+from  api.services.logger import LogManager
 from docker.models.containers import Container as DockerContainer 
 import time
 
+logger = LogManager()
 
-def get_docker_images() -> List[Dict]:
-    logger.info("Start get_docker_images")
+
+def get_vms_images() -> List[Dict]:
+    logger.info("Поиск образов из списка ВМ")
     images_info = []
     vm = C.HOST_VM # берем только ВМ , где располагается репозиторий образов ИНС
-    # for vm in C.VIRTUAL_MACHINES_LIST:
     try:
         if is_host_reachable(vm['host']):
             client = docker.DockerClient(base_url=f"tcp://{vm['host']}:{vm['port']}")
@@ -49,9 +48,9 @@ def get_docker_images() -> List[Dict]:
     return images_info
 
 def find_image_by_id(image_id: str):
-    logger.info("Start find_image_by_id")
+    logger.info("Поиск образа по id")
     try:
-        images = get_docker_images()
+        images = get_vms_images()
         for image in images:
             # logger.info(f'{image.get("id")} {image_id}')
             if image.get("id") == image_id:
@@ -62,10 +61,11 @@ def find_image_by_id(image_id: str):
     return None
 
 
-def get_docker_containers() -> List[Dict]:
-    logger.info("Start get_docker_containers")
+def get_vms_containers() -> List[Dict]:
+    logger.info("Поиск конейнеров из списка ВМ")
     containers_info = []
     for vm in C.VIRTUAL_MACHINES_LIST:
+        client = None
         try: 
             client = docker.DockerClient(base_url=f"tcp://{vm['host']}:{vm['port']}")
             containers = client.containers.list(all=True)
@@ -103,15 +103,22 @@ def get_docker_containers() -> List[Dict]:
                 containers_info.append(container_info)
         except Exception as e:
             logger.error(f"Error connecting to {vm['host']}: {str(e)}")
-    logger.info(f"Найдено {len(containers_info)}")
+        finally:
+            if client:
+                try:
+                    client.close()
+                except Exception as close_err:
+                    logger.error(f"Ошибка при закрытии Docker клиента {vm['host']}: {close_err}")
+        logger.info(f"Найдено {len(containers_info)}")
     return containers_info
 
 def find_container_by_id(container_id: str, format_type: str = ''):
+    logger.info("Поиск контейнера по id")
     try:
         if format_type == 'stats':
-            containers = get_docker_containers_stats() 
+            containers = get_vms_containers_stats() 
         else:
-            containers = get_docker_containers()
+            containers = get_vms_containers()
 
         for container in containers:
             logger.info(f'{container.get("id")} {container_id}')
@@ -123,7 +130,7 @@ def find_container_by_id(container_id: str, format_type: str = ''):
     return None
 
 
-def get_docker_containers_stats() -> List[Dict]:
+def get_vms_containers_stats() -> List[Dict]:
     logger.info("Start get_docker_containers_stats")
     containers_info = []
     for vm in C.VIRTUAL_MACHINES_LIST:
@@ -138,7 +145,6 @@ def get_docker_containers_stats() -> List[Dict]:
                     continue
 
                 try:
-
                     # Получаем статус контейнера
                     state = container.status
                     cpu_percent = "0.00%"
@@ -192,87 +198,6 @@ def get_docker_containers_stats() -> List[Dict]:
             logger.error(f"Error connecting to {vm['host']}: {str(e)}")
     logger.info(f"Найдено {len(containers_info)}")
     return containers_info
-
-
-# def run_container(params): 
-#     logger.info("Start run_container")
-#     vm_host, is_error = get_available_vm() 
-#     container_id = None
-#     if is_error:
-#         message = f'Ошибка при просмотре списка VM: {vm_host}'
-#     elif vm_host:
-#         logger.info(f'params: {params}')
-#         client = docker.DockerClient(base_url=f'tcp://{vm_host}:2375', timeout=5) 
-#         image_info = find_image_by_id(params["image_id"]) 
-#         logger.info(f'image_info: {image_info}')
-#         if image_info.get('name', False) :
-#             logger.info(f'Формирование запроса')
-#             name = params["name"]
-#             command = [
-#                 "--input_data", params['hyper_params'],
-#                 "--host_web", C.HOST_ANN
-#             ]
-#             command.append('--work_format_training') if params['ann_mode'] == 'teach' else None
-
-#             volumes = {
-#                 f'/family{params["video_storage"]}': {"bind": "/family/video", "mode": "rw"},
-#                 f'/family{params["out_dir"]}': {"bind": "/output", "mode": "rw"},
-#                 f'/family{params["in_dir"]}': {"bind": "/input_videos", "mode": "rw"},
-#                 f'/family{params["weights"]}': {"bind": "/weights/", "mode": "rw"},
-#                 f'/family{params["markups"]}': {"bind": "/input_data", "mode": "rw"},
-#                 "/var/run/docker.sock": {"bind": "/var/run/docker.sock", "mode": "rw"},
-#                 "/family/projects_data": {"bind": "/projects_data", "mode": "rw"}
-#             }
-
-#             # Формируем строку запуска для лога
-#             volume_args = ' '.join([f'-v {host}:{opt["bind"]}:{opt["mode"]}' for host, opt in volumes.items()])
-#             command_str = f"docker run --gpus all --shm-size=20g --name {name} {volume_args} {image_info.get('name')} {' '.join(command)}"
-#             logger.info(f"{command_str}")
-
-#             # Используем device_requests для GPU
-#             device_requests = []
-#             if not C.DEBUG_MODE:
-#                 device_requests = [
-#                     DeviceRequest(count=-1, capabilities=[['gpu']])
-#                 ]
-
-#             # Запуск контейнера
-#             logger.info(f'Container run command')
-#             container = client.containers.run(
-#                 image=image_info.get('name'),
-#                 name=name,
-#                 command=command,
-#                 device_requests=device_requests,
-#                 shm_size="20g",
-#                 volumes=volumes,
-#                 remove=True,
-#                 detach=True,
-#                 tty=True
-#             )
-
-#             logger.info(f'Контейнер запущен на: {vm_host}')
-#             message = container.id
-#             container_id = container.id
-#     else:
-#         message = 'Error: Нет свободных VM.'
-#         logger.info(message)
-    
-#     if not params['dataset_id']:
-#         params['dataset_id'] = "empty_dataset_id"
-
-#     # Отправить сообщение о запуске с указанием хоста и container_id 
-#     if container_id:
-#         url = f"{C.HOST_RESTAPI}/containers/{container_id}/on_start"
-#     else:
-#         url = f"{C.HOST_RESTAPI}/containers/{container_id}/on_error"
-    
-#     response = { 'host' : vm_host, 'dataset_id' : params['dataset_id']}
-#     logger.info(f'Send post: Url: {url} , body: {response}')
-
-#     requests.post(url, json = response)
-    
-#     return {"error": is_error, "container_id" : container_id}
-
 
 def create_start_container(params): 
     message = 'Before container create'
@@ -406,8 +331,7 @@ def stop_container(container_id: str):
     return [is_error, message, container_host]
 
 def is_host_reachable(ip, port=2375, timeout=3):
-    """ проверяем если вирт. машина доступна, доп. ставим таймаут 
-    """
+    # проверяем если виртуальная машина доступна, дополнительно ставим таймаут на время ожидания 
     logger.info("Start is_host_reachable")
     try:
         with socket.create_connection((ip, port), timeout=timeout):
@@ -482,7 +406,7 @@ def get_available_vm():
 
 
 def get_uptime_string(created_at):
-    """Преобразует время создания контейнера в строку формата 'Up X minutes'"""
+    # Преобразует время создания контейнера в строку формата 'Up X minutes' 
     created_datetime = datetime.strptime(created_at.split('.')[0], '%Y-%m-%dT%H:%M:%S')
     uptime = datetime.utcnow() - created_datetime
     total_seconds = int(uptime.total_seconds())

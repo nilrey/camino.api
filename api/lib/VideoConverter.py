@@ -5,7 +5,7 @@ from pathlib import Path as PathLib
 import ffmpeg
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-import api.sets.config as C  
+import api.settings.config as C  
 
 
 class VideoConverter:

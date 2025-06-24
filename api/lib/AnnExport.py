@@ -5,10 +5,10 @@ import datetime as dt
 import subprocess
 import time
 from pathlib import Path
-from  api.format.logger import LogManager
-import api.sets.config as C
-from api.sets.endpoints import ENDPOINTS
-from api.lib.func_datetime import * 
+from  api.services.logger import LogManager
+import api.settings.config as C
+from api.settings.endpoints import endpoints_external
+from api.utils.datetime import * 
 
 
 class ANNExporter:
@@ -32,10 +32,10 @@ class ANNExporter:
         self.logger.error(message)
 
     def _send_ann_arch_on_save(self, ann_id):
-        template = ENDPOINTS.get("ann_archive_on_save")
+        template = endpoints_external.get("ann_archive_on_save")
         if not template:
-            raise ValueError("Параметр 'ann_archive_on_save' не задан.")
-        url = C.HOST_RESTAPI + template.format(annId=ann_id)
+            raise ValueError("Отсутствует url отправки уведомления: параметр 'ann_archive_on_save' не задан.")
+        url = C.HOST_RESTAPI + template.format(ann_id=ann_id)
         post_data = {"action":"start"}
         try:
             response = requests.post(url, json=post_data)

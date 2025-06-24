@@ -1,8 +1,8 @@
-from pydantic import BaseModel, EmailStr, Field, field_validator, ValidationError
+from pydantic import BaseModel, EmailStr, Field, field_validator
 import datetime as dt
 from typing import Optional, List
 
-class CreateContainerRequest(BaseModel):
+class PostedDataCreateContainer(BaseModel):
     name: Optional[str] = ""
     ann_mode: Optional[str] = ""
     weights: Optional[str] = ""
@@ -16,7 +16,7 @@ class CreateContainerRequest(BaseModel):
     only_verified_chains: bool = False
     only_selected_files: List[str] = []
 
-class ImageRun(BaseModel):
+class PostedDataImageRun(BaseModel):
    name: str = Field(default="")
    ann_mode:str = Field(default="")
    weights:str = Field(default="")
@@ -47,7 +47,7 @@ class ImageRun(BaseModel):
             }
 
 
-class DbExportParams(BaseModel):
+class PostedDataDatasetExport(BaseModel):
    target_dir:str = Field(default="")
    only_verified_chains:bool = Field(default=False)
    only_selected_files: list = Field(default=[])
@@ -59,11 +59,11 @@ class DbExportParams(BaseModel):
             }
    
 
-class DatasetImport(BaseModel):
+class PostedDataDatasetImport(BaseModel):
    files: list = Field(default=[])
 
 
-class ContainerCreate(BaseModel):
+class PostedDataContainerCreate(BaseModel):
    name: str = Field(default="")
    ann_mode:str = Field(default="")
    weights:str = Field(default="")
@@ -73,7 +73,6 @@ class ContainerCreate(BaseModel):
    markups:str = Field(default="")
    video_storage:str = Field(default="")
    network:str = Field(default="")
-   # host_web:str = Field(default="")
 
    def getAllParams(self):
       return {'name': self.name, 
@@ -89,18 +88,14 @@ class ContainerCreate(BaseModel):
             }
 
 
-class ANNExport(BaseModel):
+class PostedDataAnnExport(BaseModel):
    image_id:str = Field(default="") 
    weights:str = Field(default="") # path to weights file
    export:str = Field(default=f"ann_export_{int(dt.datetime.now().timestamp())}" )
 
-class ContainerOnStopPostData(BaseModel):
+class PostedDataContainerStop(BaseModel):
    dataset_id: str = Field(default="undefined")
 
-class ContainerIdRequest(BaseModel):
-    container_id: str
-
-
-class VideoConverterParams(BaseModel):
+class PostedDataVideoConverter(BaseModel):
     source_dir: str
     target_dir: str

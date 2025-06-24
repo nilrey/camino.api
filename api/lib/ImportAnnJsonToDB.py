@@ -1,9 +1,7 @@
 import os
-import sys
 import threading
-import api.sets.config as C  
-from api.lib.func_datetime import *
-from api.lib.classResponseMessage import responseMessage
+import api.settings.config as C  
+from api.utils.datetime import *
 import json
 import ijson
 import requests
@@ -14,9 +12,8 @@ import time
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from configparser import ConfigParser
-# import logger
-# from  api.format.logger import logger
 import gc
+from  api.services.logger import LogManager
 
 class ImportAnnJsonToDB:
 
@@ -37,9 +34,9 @@ class ImportAnnJsonToDB:
         self.color_set = [ "6b8e23", "a0522d", "00ff00", "778899", "00fa9a", "000080", "00ffff", "ff0000", "ffa500", "ffff00", "0000ff", "ff00ff", "1e90ff", "ff1493", "ffe4b5"]
         self.files_res = {}
         self.logname = get_dt_now_noms()
-        self.message = responseMessage()
         self.time_start = time.time()
         self.time_end = time.time()
+        self.logger = LogManager("import_json")
 
         self.init_logger()
 
@@ -61,18 +58,9 @@ class ImportAnnJsonToDB:
             self.handler.write(f'{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")} - Ошибка: {content}\n')
             self.handler.flush()
 
-    # def log(self, m, is_error = False): # save log message to log & prepare as response message
-    #     if( not is_error ):
-    #         self.logger_info(m)
-    #         self.message.set(m)
-    #     else:
-    #         self.logger_error(m)
-    #         self.message.setError(m)
-
     def get_color(self, i):
         color_count = len(self.color_set)
         return self.color_set[ i % color_count ]
-
 
     @staticmethod
     def convert_to_serializable(obj):

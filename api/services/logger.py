@@ -1,9 +1,7 @@
 # import logging
 from datetime import datetime
 import os 
-import api.sets.config as C
-
-LOG_FILE = f'{C.LOG_PATH}/{C.LOG_FNAME}_{datetime.now().strftime("%Y-%m-%d_%H:%M:%S")}.log'
+import api.settings.config as C
 
 class LogManager:
     def __init__(self, log_name = C.LOG_FNAME):
@@ -25,5 +23,4 @@ class LogManager:
         if self.handler:
             self.handler.close()
 
-logger = LogManager()
-logger.info("Log enabled")
+# logger = LogManager()
