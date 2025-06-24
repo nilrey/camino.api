@@ -15,3 +15,4 @@ api/settings/database.ini
 update_data_compose.sh
 Dockerfile.mockimage
 api/settings/config.py
+only_camino_back_update.sh
