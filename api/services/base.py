@@ -7,12 +7,11 @@ import threading
 
 import requests 
 import api.settings.config as C
-import api.format.response_teplates as rt # Response Template
-import api.format.response_objects as ro # Response Objects
 import time, datetime as dt
 
-from  api.services.logger import logger
+from  api.services.logger import LogManager
 
+logger = LogManager("ann_export")
 
 def dkr_docker_info():
     return exeCommand(' docker info '+ C.PARAM_TO_JSON )
@@ -182,21 +181,23 @@ def get_time_today_no_sec():
 
 def send_arch_on_save(export_code, annId):
     url = f'{C.HOST_RESTAPI}/ann/{annId}/archive/on_save'
+    mes = f"Ошибка: сообщение не отправлено. {url}"
     try:
         requests.post(url, json = {"action":"start"} )
         mes = f"Сообщение отправлено. {url}"
-    except Exception:
-        mes = f"Ошибка: сообщение не отправлено. {url}"
+    except Exception as e:
+        mes = f"Ошибка: сообщение не отправлено. {e}"
     finally:
         logger.info(mes)
 
 def send_on_error(export_code, annId, msg):
     url = f'{C.HOST_RESTAPI}/ann/{annId}/archive/on_error'
+    mes = f"Ошибка: сообщение не отправлено. {url}"
     try:
         requests.post(url, json = {"msg": msg} )
         mes = f"Сообщение об ошибке отправлено: {msg}. {url}"
     except Exception as e:
-        mes = f"Ошибка: сообщение не отправлено.{e}. {url}"
+        mes = f"Ошибка: сообщение не отправлено. {e}"
     finally:
         logger.info(mes)
 

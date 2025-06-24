@@ -9,8 +9,9 @@ docker-compose-back.yaml
 docker-compose-back-vm1.yaml
 docker-compose.yaml
 Dockerfile.back
+Dockerfile
 dockerfiles/
-api/database/database.ini
+api/settings/database.ini
 update_data_compose.sh
-api/sets/config.py
 Dockerfile.mockimage
+api/settings/config.py
